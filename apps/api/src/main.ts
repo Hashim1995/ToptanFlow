@@ -1,8 +1,24 @@
+import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { configureApp } from './bootstrap/configure-app';
+import { configureSwagger } from './bootstrap/configure-swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  await app.listen(process.env.PORT ?? 3000);
+
+  const { apiPrefix, port } = configureApp(app);
+  configureSwagger(app, apiPrefix);
+
+  // Ensures PrismaService.onModuleDestroy (graceful disconnect) runs on
+  // process termination signals (e.g. SIGTERM), per this task's requirement.
+  app.enableShutdownHooks();
+
+  await app.listen(port);
+  Logger.log(
+    `TOPTANFLOW API listening on port ${port}, prefix "/${apiPrefix}"`,
+    'Bootstrap',
+  );
 }
-bootstrap();
+
+void bootstrap();
