@@ -1,0 +1,16 @@
+{
+  "name": "toptanflow",
+  "private": true,
+  "version": "0.0.0",
+  "description": "TOPTANFLOW monorepo root. See AGENTS.md and docs/decisions/ for governing rules and accepted architecture decisions.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2"
+  }
+}
