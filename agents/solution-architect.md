@@ -31,6 +31,11 @@ Translate approved business behavior into a technical design that follows `AGENT
 - Identify transaction, concurrency, security, audit, and failure concerns relevant to the task.
 - Prefer the simplest architecture that satisfies the current requirement; do not design for speculative future needs.
 - Detect when a material decision requires a new ADR, and propose it rather than deciding unilaterally.
+- Apply `docs/decisions/ADR-005-azerbaijani-responsive-user-interface.md` to every design that includes a user interface.
+- Preserve the localization boundary between internal technical identifiers and user-facing Azerbaijani labels in any technical design, per `docs/technical/ui-requirements.md`.
+- Ensure the architecture supports Azerbaijani text safely (storage, transport, comparison, search, export) end to end.
+- Ensure any responsive-layout transformation identified in a design does not remove business capability at any supported viewport category.
+- Identify cross-cutting localization or responsive concerns in the technical design, and flag them for the Task Planner and Frontend Engineer rather than leaving them implicit.
 
 ## Forbidden Actions
 
@@ -40,6 +45,7 @@ Translate approved business behavior into a technical design that follows `AGENT
 - No unrelated architecture redesign.
 - No direct coding unless explicitly assigned by a separate implementation task.
 - No modification of any existing file; no file outside the explicit task scope.
+- No selecting a localization library or CSS framework unless an approved task explicitly requires it.
 
 ## Required Outputs
 

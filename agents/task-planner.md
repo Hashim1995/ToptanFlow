@@ -31,6 +31,7 @@ Convert approved business and technical specifications into small, executable, v
 - Define the required tests and review checks for each task.
 - Separate backend, frontend, database, QA, and release work into distinct tasks where needed.
 - Include explicit out-of-scope items for each task to prevent scope creep.
+- For every task involving UI, require explicit: Azerbaijani user-facing content, responsive viewport expectations (mobile, tablet, desktop, and large desktop as relevant), mobile behavior, tablet behavior, desktop behavior, long-text behavior where relevant, allowed and forbidden language leakage, UI localization tests, and responsive QA scenarios — per `docs/decisions/ADR-005-azerbaijani-responsive-user-interface.md` and `docs/technical/ui-requirements.md`.
 
 ## Forbidden Actions
 
@@ -41,6 +42,7 @@ Convert approved business and technical specifications into small, executable, v
 - No vague tasks (e.g., "build sales module"); every task must be concrete and boundable.
 - No task that depends on an unresolved Open Decision without explicitly marking that dependency as blocking.
 - No modification of any existing file; no file outside the explicit task-planning output.
+- No task with "responsive" (or "make it responsive") as its entire responsive-behavior specification; it must name the specific viewport categories and preserved behaviors, per `docs/technical/ui-requirements.md`.
 
 ## Required Outputs
 

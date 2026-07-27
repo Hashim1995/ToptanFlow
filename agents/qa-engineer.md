@@ -33,6 +33,13 @@ Verify that completed work behaves correctly against approved business requireme
 - Verify the frontend presents backend failures correctly, without inventing or masking them.
 - Report reproducible defects with evidence.
 - Distinguish requirement gaps (missing or ambiguous specification) from implementation defects (specification exists but was not correctly implemented).
+- For user-facing work, per `docs/decisions/ADR-005-azerbaijani-responsive-user-interface.md` and `docs/technical/ui-requirements.md`: test Azerbaijani content, Azerbaijani special characters, and detect untranslated or mixed-language content.
+- Test long Azerbaijani text (labels/content longer than typical English equivalents) for layout breakage.
+- Verify behavior at mobile, tablet, laptop/desktop, and large-desktop viewport categories.
+- Verify responsive forms, responsive tables, responsive dialogs, and responsive navigation preserve all data and actions.
+- Verify backend validation/error presentation is shown in Azerbaijani, not raw.
+- Verify every business action, status, total, and value remains accessible across supported widths.
+- Verify keyboard and touch usability where relevant to the workflow under test.
 
 ## Forbidden Actions
 
@@ -42,11 +49,15 @@ Verify that completed work behaves correctly against approved business requireme
 - No skipping failed critical scenarios.
 - No testing unrelated modules as part of the current task.
 - No closing defects without evidence.
+- No approving a user-facing task when essential text is not Azerbaijani.
+- No approving a user-facing task when raw technical identifiers are visible.
+- No approving a user-facing task when a core workflow becomes unavailable at a supported viewport.
+- No approving a user-facing task when important totals, states, errors, or actions are inaccessible at any supported viewport.
 
 ## Required Outputs
 
 - Test plan.
-- Test cases executed.
+- Test cases executed, including localization (Azerbaijani content/characters) and viewport-category coverage for any user-facing task.
 - Environment/preconditions used.
 - Results per test case: **Passed**, **Failed**, **Blocked**, or **Not Run**.
 - Defects with reproduction steps.

@@ -119,6 +119,19 @@ These are high-level and framework-independent. They apply to any technology cho
 
 This section deliberately excludes framework-, language-, and library-specific rules; those belong in technical documentation, not in this constitution.
 
+Approved technology choices are recorded as Accepted ADRs and must be followed by every implementation agent: [`ADR-006`](docs/decisions/ADR-006-react-typescript-frontend.md) (React/TypeScript frontend), [`ADR-007`](docs/decisions/ADR-007-nestjs-typescript-backend.md) (NestJS/TypeScript backend), [`ADR-008`](docs/decisions/ADR-008-postgresql-primary-database.md) (PostgreSQL), [`ADR-009`](docs/decisions/ADR-009-ant-design-ui-library.md) (Ant Design), [`ADR-010`](docs/decisions/ADR-010-axios-http-client.md) (Axios), [`ADR-011`](docs/decisions/ADR-011-redux-toolkit-client-state.md) (Redux Toolkit), [`ADR-012`](docs/decisions/ADR-012-yarn-workspaces.md) (Yarn/Yarn Workspaces), [`ADR-013`](docs/decisions/ADR-013-vite-build-system.md) (Vite), [`ADR-014`](docs/decisions/ADR-014-prisma-orm.md) (Prisma ORM), [`ADR-015`](docs/decisions/ADR-015-rest-openapi.md) (REST/OpenAPI), [`ADR-016`](docs/decisions/ADR-016-tanstack-query.md) (TanStack Query), [`ADR-017`](docs/decisions/ADR-017-react-hook-form-zod.md) (React Hook Form/Zod), [`ADR-018`](docs/decisions/ADR-018-testing-strategy.md) (Vitest/Jest/Supertest), [`ADR-019`](docs/decisions/ADR-019-eslint-prettier.md) (ESLint/Prettier), [`ADR-020`](docs/decisions/ADR-020-uuid-identifiers.md) (UUID identifiers), and [`ADR-021`](docs/decisions/ADR-021-prisma-migrate.md) (Prisma Migrate). High-level architecture and logical repository structure are described in [`docs/technical/system-architecture.md`](docs/technical/system-architecture.md) and [`docs/technical/repository-structure.md`](docs/technical/repository-structure.md), which these ADRs do not duplicate.
+
+## User Interface Principles
+
+TOPTANFLOW's user interface is governed by an Accepted, repository-wide decision: [`docs/decisions/ADR-005-azerbaijani-responsive-user-interface.md`](docs/decisions/ADR-005-azerbaijani-responsive-user-interface.md), with detailed implementation-level rules in [`docs/technical/ui-requirements.md`](docs/technical/ui-requirements.md). This section states the principle; it does not restate either document.
+
+- **Azerbaijani-first.** The user-facing interface is Azerbaijani by default; user-facing content is not mixed with other languages.
+- **Mobile-first, fully responsive.** The application is designed mobile-first, but mobile-first is an implementation priority, not a device limitation — it must remain a fully usable, responsive web application on mobile, tablet, laptop, desktop, and large desktop screens.
+- **No internal technical identifiers exposed to users.** Enum keys, permission keys, API field names, database names, and internal status codes are never shown directly; they are always presented behind an Azerbaijani display label.
+- **Canonical terminology only.** Every business term shown in the UI must remain consistent with `docs/business/terminology.md`; the UI does not introduce a parallel or inconsistent vocabulary.
+- **Responsive layouts preserve business functionality.** No business action, status, total, or correction option may be lost or made unreachable purely because of screen size.
+- **Stop when a term is missing.** An agent must stop and request clarification when a required Azerbaijani business term is missing or ambiguous, rather than inventing one, consistent with the "Stop Conditions" below.
+
 ## Review Principles
 
 When reviewing code (its own or another agent's/human's), an agent must check, in order:
@@ -142,6 +155,7 @@ A task is complete only when all of the following are true:
 - No unrelated file, symbol, or behavior has been changed.
 - Every new or changed business-relevant behavior is traceable to a source document or an approved decision.
 - The change is the smallest one that correctly satisfies the task.
+- For a user-facing task specifically: the required Azerbaijani UI content is present, responsive behavior has been verified at the relevant viewport categories, and no internal technical text leaks into the UI, per `docs/decisions/ADR-005-azerbaijani-responsive-user-interface.md` and `docs/technical/ui-requirements.md`.
 
 A task that is "mostly done" or "done except for one edge case" is not done.
 

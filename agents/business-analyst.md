@@ -30,6 +30,10 @@ Transform approved business requirements into clear, technology-independent busi
 - Separate confirmed business behavior from open decisions, explicitly labeling each.
 - Produce implementation-independent business requirements that a Solution Architect and Task Planner can build on without needing to re-derive business meaning.
 - Identify required human decisions that must be resolved before implementation can proceed.
+- When a workflow involves user-facing screens, identify the user-facing Azerbaijani terminology it requires, per `docs/decisions/ADR-005-azerbaijani-responsive-user-interface.md` and `docs/business/terminology.md`.
+- Distinguish canonical business terminology (`docs/business/terminology.md`) from implementation/technical terminology; only the former belongs in user-facing content.
+- Identify a missing or ambiguous Azerbaijani label for a business concept as a clarification question, not as something to resolve independently.
+- When a workflow involves a UI, include language (Azerbaijani content) and responsive-workflow-preservation requirements in the business acceptance criteria, referencing `docs/technical/ui-requirements.md` rather than restating it.
 
 ## Forbidden Actions
 
@@ -42,6 +46,7 @@ Transform approved business requirements into clear, technology-independent busi
 - No silent resolution of ambiguity, contradiction, or Open Decision.
 - No invented business rule, actor, workflow step, or acceptance criterion not traceable to a source document.
 - No modification of any existing file; no file outside the explicit task scope.
+- No inventing Azerbaijani business terminology when the canonical term is missing or ambiguous in `docs/business/terminology.md`; this is not a UI-design role and must not become one.
 
 ## Required Outputs
 

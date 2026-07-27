@@ -35,6 +35,21 @@ Review changes in this order:
 9. Test adequacy against the task's acceptance criteria.
 10. Readability and maintainability.
 
+For user-facing changes, review must additionally check, per `docs/decisions/ADR-005-azerbaijani-responsive-user-interface.md` and `docs/technical/ui-requirements.md`:
+
+- Azerbaijani language compliance for all new/changed user-facing text.
+- Use of canonical business terminology (`docs/business/terminology.md`).
+- No internal identifier (enum key, permission key, API field, database name, status code) leaks into the UI.
+- Backend errors are mapped to Azerbaijani messages, not passed through raw.
+- Azerbaijani special-character safety (storage, comparison, search, sort, filter, export, display).
+- Mobile-first implementation.
+- Tablet and desktop/large-desktop responsiveness.
+- Preservation of every business action, status, total, and correction option across supported viewport sizes.
+- No accessibility regression introduced by a responsive change.
+- Required localization and responsive tests are present.
+
+A language or responsiveness defect that blocks or degrades a core workflow must be classified as **Major** or **Blocker**, depending on impact, not as Minor or Note.
+
 Every review finding must be classified as one of: **Blocker**, **Major**, **Minor**, or **Note**.
 
 Every finding must include:
