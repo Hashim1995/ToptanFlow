@@ -1,7 +1,51 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// TOPTANFLOW — Initial Domain Model
+//
+// Scope: This schema implements ONLY the structural data model for the entities
+// explicitly requested for this task: products, business partners (customers/
+// suppliers), purchases, purchase items, sales, sale items, cash transactions,
+// currencies, units, a minimal user foundation, and audit timestamps.
+//
+// Source of truth: docs/business/invariants.md, docs/business/terminology.md,
+// docs/business/workflow-map.md (per AGENTS.md Source of Truth Hierarchy).
+// No business rule (validation, calculation, permission, or posting behavior)
+// is implemented here — only structural fields, relations, keys, and indexes.
+// The backend application layer remains authoritative (ADR-003).
+//
+// Deliberately NOT modeled in this task (out of explicit scope; each is a
+// distinct future task, not invented here):
+//   - Warehouses / stock movements / inventory balances (Inventory module)
+//   - Receivables, payables, allocations, advances (Settlement module)
+//   - Sales returns, purchase returns, cancMovements as separate documents
+//   - Bundles/components (Bundles and Promotions module)
+//   - Field Sales / Yatı trips, vehicle warehouses, vehicle cash accounts
+//   - Fixed assets
+//   - A full append-only Audit History log entity (docs/business/terminology.md,
+//     "Audit (Audit History)") — only per-record audit timestamps/actors are
+//     included here, per this task's explicit scope ("audit timestamps").
+//   - Authentication and authorization (explicitly forbidden by this task).
+//
+// Money/quantity precision: the exact numeric precision/scale strategy is an
+// unresolved Open Decision (docs/technical/system-architecture.md, "Known Open
+// Decisions" — "Money and decimal implementation"). All monetary and quantity
+// fields therefore use Prisma's `Decimal` type WITHOUT a fixed @db.Decimal(p,s)
+// annotation, leaving the underlying PostgreSQL NUMERIC unconstrained rather
+// than silently deciding a precision/scale.
+//
+// Currency handling (Approved Human Decision, recorded 2026-07-28; see
+// docs/business/invariants.md, "Currency"): currency selection is optional
+// on documents and money accounts; an omitted (null) `currencyId` defaults
+// to AZN and carries no other, undocumented business meaning. Foreign-
+// currency documents/movements MAY additionally record the selected
+// currency, the amount in that foreign currency, and the exchange rate
+// applied; the pre-existing `totalAmount` / `amount` fields remain the
+// authoritative AZN-equivalent value in every case. Remaining unresolved
+// details (e.g., exchange-rate source/timing, whether money accounts may
+// hold a native non-AZN balance) are listed in the task handoff, not decided
+// here.
+//
+// UUID version/storage representation is not decided by ADR-020 ("Future
+// Structure Decisions"). This schema uses Prisma's default `uuid()` (v4) as a
+// working default; revisit if a specific UUID version is later approved.
 
 generator client {
   provider = "prisma-client"
@@ -10,4 +54,573 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+/// Product type classification, independent of product category.
+/// Source: docs/business/invariants.md, "Products" —
+/// "Product type (finished good, raw material, or mixed-use) and product
+/// category are separate, independent classifications."
+enum ProductType {
+  FINISHED_GOOD
+  RAW_MATERIAL
+  MIXED_USE
+}
+
+/// Shared document lifecycle status for transactional documents.
+/// Source: docs/business/invariants.md, "Global Invariants" —
+/// "Drafts have no inventory, cash, receivable, payable, cost, or profit
+/// effect. Posting is the official business event... Posted facts are not
+/// deleted or silently edited... a return, cancellation, reversal,
+/// reallocation, or an authorized adjustment."
+/// A CANCELLED document is retained, never deleted, and its identity/number
+/// is never reused (docs/business/invariants.md, "Sales", "Purchasing").
+enum DocumentStatus {
+  DRAFT
+  POSTED
+  CANCELLED
+}
+
+/// Classification of a money account.
+/// Source: docs/business/invariants.md, "Cash" —
+/// "The main cash account, bank account, vehicle cash accounts, and personal
+/// funds are separate; a movement recorded in one account is never used to
+/// silently increase another."
+/// TODO: VEHICLE_CASH is included for terminology completeness (docs/business/
+/// terminology.md, "Vehicle Cash Account"), but the Field Sales (Yatı) trip
+/// structure that would normally own such an account is out of scope for this
+/// task and is not modeled here.
+enum MoneyAccountType {
+  MAIN_CASH
+  BANK
+  VEHICLE_CASH
+  PERSONAL_FUNDS
+}
+
+/// Classification of a cash movement's business nature.
+/// Source: docs/business/invariants.md, "Cash" — "Every money movement
+/// identifies the account, amount, date, movement type, actor, and business
+/// reason or source," and the specific movement kinds named throughout that
+/// section (opening entry, adjustment, transfer, owner contribution/
+/// withdrawal) and "Sales"/"Purchasing" (receipt/payment against a document).
+/// TODO: Settlement-layer distinctions (e.g., a receipt applied to a specific
+/// document vs. retained as an advance) are not modeled as separate types
+/// here, since Allocation/Advance entities are out of this task's scope
+/// (docs/business/terminology.md, "Allocation", "Customer Advance",
+/// "Supplier Advance").
+enum CashTransactionType {
+  OPENING_BALANCE
+  SALE_RECEIPT
+  PURCHASE_PAYMENT
+  EXPENSE_PAYMENT
+  TRANSFER
+  ADJUSTMENT
+  OWNER_CONTRIBUTION
+  OWNER_WITHDRAWAL
+  REFUND
+}
+
+// ---------------------------------------------------------------------------
+// Identity foundation
+// ---------------------------------------------------------------------------
+
+/// Minimal user foundation, required only because Sales, Purchases, and Cash
+/// Transactions must be attributable to an identifiable actor.
+/// Source: docs/business/invariants.md, "Users & Permissions" —
+/// "every sensitive action must remain attributable to one identifiable user
+/// account," and "User accounts are personal; when employment ends, the
+/// account is deactivated, not deleted."
+/// Authentication and authorization are explicitly out of scope for this task
+/// and are NOT modeled here (no credentials, roles, or permission tables).
+model User {
+  id        String   @id @default(uuid())
+  fullName  String
+  /// TODO: the exact login/identification method (username, email, phone) is
+  /// an implementation detail deferred to a future authentication task,
+  /// which is explicitly out of scope here. `username` is a placeholder,
+  /// unique, human-assignable identifier only.
+  username  String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdSales       Sale[]            @relation("SaleCreatedBy")
+  postedSales        Sale[]            @relation("SalePostedBy")
+  cancelledSales     Sale[]            @relation("SaleCancelledBy")
+  createdPurchases   Purchase[]        @relation("PurchaseCreatedBy")
+  postedPurchases    Purchase[]        @relation("PurchasePostedBy")
+  cancelledPurchases Purchase[]        @relation("PurchaseCancelledBy")
+  createdCashTxns    CashTransaction[] @relation("CashTransactionCreatedBy")
+  postedCashTxns     CashTransaction[] @relation("CashTransactionPostedBy")
+  cancelledCashTxns  CashTransaction[] @relation("CashTransactionCancelledBy")
+
+  @@index([isActive])
+}
+
+// ---------------------------------------------------------------------------
+// Business Partners (Customers & Suppliers)
+// ---------------------------------------------------------------------------
+
+/// A single business-partner record that may act as a customer, a supplier,
+/// or both at once.
+///
+/// IMPORTANT — deliberate deviation from this task's literal "customers" /
+/// "suppliers" wording, required by a higher-priority source per AGENTS.md's
+/// Source of Truth Hierarchy: docs/business/invariants.md, "Business
+/// Partners" states "One partner record represents the same person or
+/// company in both the customer role and the supplier role; the receivable
+/// direction and the payable direction are never merged into a single
+/// balance." Modeling separate `Customer` and `Supplier` tables would make it
+/// impossible to represent one real-world partner acting in both roles
+/// without duplicating the record, which directly violates this invariant.
+/// This single `BusinessPartner` model with independent `isCustomer` /
+/// `isSupplier` flags is therefore the correct structure; per-direction
+/// balances (receivable vs. payable) are not merged anywhere in this schema.
+model BusinessPartner {
+  id         String   @id @default(uuid())
+  name       String
+  isCustomer Boolean  @default(false)
+  isSupplier Boolean  @default(false)
+  /// Source: docs/business/invariants.md, "Business Partners" — "Possible
+  /// duplicate partners are flagged using normalized name, phone, tax
+  /// number, and other identifiers before a new record is created." This is
+  /// a soft, flagged check (not a hard rejection), so `taxNumber`/`phone` are
+  /// indexed for lookup, not declared unique.
+  taxNumber  String?
+  phone      String?
+  /// "A business partner code is globally unique across its entire history
+  /// — including deactivated or deleted partners — and a code is never
+  /// reused after deactivation or deletion." [Approved Human Decision,
+  /// recorded 2026-07-28; see docs/business/invariants.md, "Business
+  /// Partners" — not derived from the BRD/SRS analysis.] A `BusinessPartner`
+  /// row is never physically deleted, only deactivated via `isActive` below
+  /// [Approved Human Decision, recorded 2026-07-28], so this `@unique`
+  /// constraint permanently guarantees the no-reuse rule.
+  code       String   @unique
+  /// Source: docs/business/invariants.md, "Business Partners" — "A partner
+  /// that has been used in transactions is inactivated, not deleted."
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  sales            Sale[]
+  purchases        Purchase[]
+  cashTransactions CashTransaction[]
+
+  @@index([taxNumber])
+  @@index([phone])
+  @@index([isCustomer])
+  @@index([isSupplier])
+  @@index([isActive])
+}
+
+// ---------------------------------------------------------------------------
+// Reference data: Units and Currencies
+// ---------------------------------------------------------------------------
+
+/// A unit of measure. Source: docs/business/invariants.md, "Products" —
+/// "Each product has exactly one primary unit of measure; whether fractional
+/// quantities are allowed follows that unit's configuration."
+model Unit {
+  id                       String   @id @default(uuid())
+  code                     String   @unique
+  name                     String
+  allowsFractionalQuantity Boolean  @default(true)
+  /// TODO: docs do not explicitly state a deactivation rule for Units (unlike
+  /// Products/Partners/Users). `isActive` is added by analogy for referential
+  /// consistency with products that reference a unit; confirm with the
+  /// Business Analyst if this assumption should be removed or adjusted.
+  isActive                 Boolean  @default(true)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  products      Product[]
+  saleItems     SaleItem[]
+  purchaseItems PurchaseItem[]
+}
+
+/// A currency in which a document or money account may be denominated.
+/// Source: docs/business/invariants.md, "Currency" (Approved Human Decision,
+/// recorded 2026-07-28) — currency selection is optional; an omitted
+/// selection defaults to AZN. This entity exists to let a document or
+/// account record an explicitly *different*, foreign currency; AZN itself
+/// does not need a row here to be the default, since a null `currencyId`
+/// elsewhere already means AZN (see the "Currency handling" note at the top
+/// of this file). Whether AZN is enforced as the system's single reporting
+/// base currency, or accounts may hold native non-AZN balances, remains an
+/// unresolved detail — see the task handoff report.
+model Currency {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      String
+  symbol    String?
+  /// TODO: see Unit.isActive TODO above — same reasoning applies here.
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sales            Sale[]
+  purchases        Purchase[]
+  moneyAccounts    MoneyAccount[]
+  cashTransactions CashTransaction[]
+}
+
+// ---------------------------------------------------------------------------
+// Products
+// ---------------------------------------------------------------------------
+
+/// Source: docs/business/invariants.md, "Products".
+model Product {
+  id                     String      @id @default(uuid())
+  /// "A product code is globally unique across its entire history —
+  /// including inactivated products — and a code is never reused after a
+  /// product is deactivated or deleted; a product that has been used is
+  /// inactivated, not deleted." [Approved Human Decision, recorded
+  /// 2026-07-28; see docs/business/invariants.md, "Products" — this
+  /// supersedes the earlier BRD-derived "active codes are unique" wording
+  /// with a stronger, explicitly approved global-uniqueness rule.] A
+  /// `Product` row is never physically deleted, only deactivated via
+  /// `isActive` below [Approved Human Decision, recorded 2026-07-28],
+  /// consistent with ADR-004's immutability principle, so this `@unique`
+  /// constraint permanently guarantees the no-reuse rule.
+  code                   String      @unique
+  name                   String
+  type                   ProductType
+  /// "Product type... and product category are separate, independent
+  /// classifications." Modeled as a plain scalar field rather than a
+  /// dedicated ProductCategory entity, since a category entity was not part
+  /// of this task's explicit scope; revisit if hierarchical/reusable
+  /// categories are later approved.
+  category               String?
+  unitId                 String
+  unit                   Unit        @relation(fields: [unitId], references: [id])
+  /// "Standard sale price and latest purchase price are informational
+  /// defaults only; each posted document line keeps its own price and cost
+  /// as recorded at posting time, regardless of later master-data changes."
+  standardSalePrice      Decimal?
+  latestPurchasePrice    Decimal?
+  /// "A critical (minimum) stock threshold must be capable of being
+  /// evaluated at main-warehouse, specific-warehouse, and company-total
+  /// levels separately."
+  /// TODO: only a single, company-total-level threshold is stored here,
+  /// since per-warehouse thresholds require a Warehouse entity, which is out
+  /// of this task's explicit scope (Inventory module, deferred).
+  criticalStockThreshold Decimal?
+  isActive               Boolean     @default(true)
+  createdAt              DateTime    @default(now())
+  updatedAt              DateTime    @updatedAt
+
+  saleItems     SaleItem[]
+  purchaseItems PurchaseItem[]
+
+  @@index([type])
+  @@index([isActive])
+}
+
+// ---------------------------------------------------------------------------
+// Sales
+// ---------------------------------------------------------------------------
+
+/// Source: docs/business/invariants.md, "Sales"; docs/business/workflow-map.md,
+/// "1. Sale: Draft to Posted Sale".
+model Sale {
+  id                    String          @id @default(uuid())
+  /// A human-facing sale document number, globally unique across all
+  /// history. [Approved Human Decision, recorded 2026-07-28.] Source:
+  /// docs/business/invariants.md, "Global Invariants" — "a cancelled
+  /// document's number is never reused"; a hard, permanent `@unique`
+  /// constraint enforces this, consistent with `Sale` rows never being
+  /// physically deleted (only cancelled).
+  /// TODO: the exact numbering scheme/format (sequential, per-year, per-
+  /// warehouse, etc.) is not decided here — left to a future task.
+  documentNumber        String          @unique
+  partnerId             String
+  partner               BusinessPartner @relation(fields: [partnerId], references: [id])
+  /// Selected foreign currency, if any. [Approved Human Decision, recorded
+  /// 2026-07-28; see docs/business/invariants.md, "Currency".] Optional: a
+  /// null value means AZN was used by default and carries no other,
+  /// undocumented meaning. `totalAmount` below always remains the
+  /// authoritative amount in AZN.
+  currencyId            String?
+  currency              Currency?       @relation(fields: [currencyId], references: [id])
+  /// The amount denominated in `currency`, present only for a foreign-
+  /// currency sale. [Approved Human Decision, recorded 2026-07-28.]
+  foreignCurrencyAmount Decimal?
+  /// The exchange rate applied between `currency` and AZN for this sale.
+  /// [Approved Human Decision, recorded 2026-07-28.] TODO: the rate's
+  /// source (manual entry vs. an external rate feed) and timing (rate at
+  /// draft time vs. at posting time) are not decided — see task handoff.
+  exchangeRate          Decimal?
+  /// The date the sale is considered to have occurred for business purposes,
+  /// distinct from `createdAt` (when it was recorded in the system).
+  /// Source: docs/business/terminology.md, "Business Date".
+  businessDate          DateTime
+  status                DocumentStatus  @default(DRAFT)
+
+  /// "A document's stated total must match the total calculated from its own
+  /// lines; a mismatched total is not accepted as authoritative." Enforcing
+  /// this equality is application-level business logic (ADR-003), not a
+  /// schema-level constraint; `totalAmount` is stored as a structural field
+  /// only.
+  totalAmount    Decimal
+  discountAmount Decimal?
+  /// Source: "A sale may be posted fully paid, partially paid, or unpaid;
+  /// any unpaid remainder becomes an open receivable." Neither a payment-
+  /// status enum nor a `paidAmount` field is stored here: settlement state
+  /// (how much of `totalAmount` has been paid/allocated) belongs to the
+  /// Settlement module (docs/business/terminology.md, "Allocation",
+  /// "Receivable"), which is out of this task's scope and deliberately not
+  /// modeled here, to avoid duplicating data that module will own.
+  /// [Approved Human Decision, recorded 2026-07-28: removed the earlier
+  /// `paidAmount` field for this reason.]
+  notes          String?
+
+  postedAt       DateTime?
+  postedByUserId String?
+  postedBy       User?     @relation("SalePostedBy", fields: [postedByUserId], references: [id])
+
+  /// "Cancelling a posted sale reverses its stock, receivable, and eligible
+  /// cash effects; the original document is retained and marked cancelled,
+  /// its number is never reused."
+  cancelledAt       DateTime?
+  cancelledByUserId String?
+  cancelledBy       User?     @relation("SaleCancelledBy", fields: [cancelledByUserId], references: [id])
+  cancelReason      String?
+
+  /// "any replacement document keeps a reference to the original."
+  originalSaleId  String?
+  originalSale    Sale?   @relation("SaleCorrection", fields: [originalSaleId], references: [id])
+  correctionSales Sale[]  @relation("SaleCorrection")
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdByUserId String
+  createdBy       User     @relation("SaleCreatedBy", fields: [createdByUserId], references: [id])
+
+  items            SaleItem[]
+  cashTransactions CashTransaction[]
+
+  @@index([partnerId, businessDate])
+  @@index([status])
+}
+
+/// Source: docs/business/invariants.md, "Products" — "each posted document
+/// line keeps its own price and cost as recorded at posting time, regardless
+/// of later master-data changes."
+model SaleItem {
+  id        String  @id @default(uuid())
+  saleId    String
+  sale      Sale    @relation(fields: [saleId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  unitId    String
+  unit      Unit    @relation(fields: [unitId], references: [id])
+
+  quantity       Decimal
+  unitPrice      Decimal
+  discountAmount Decimal?
+  lineTotal      Decimal
+  /// Source: docs/business/invariants.md, "Costing" — "A sale's cost is
+  /// recorded (snapshotted) at the cost applicable at the time of posting;
+  /// this snapshot does not change afterward even if the product's cost
+  /// later changes." Nullable because a draft line has no posting-time cost
+  /// yet.
+  costAtPosting  Decimal?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([saleId])
+  @@index([productId])
+}
+
+// ---------------------------------------------------------------------------
+// Purchasing
+// ---------------------------------------------------------------------------
+
+/// Source: docs/business/invariants.md, "Purchasing"; docs/business/workflow-map.md,
+/// "5. Purchase: Draft to Posted Purchase".
+model Purchase {
+  id                    String          @id @default(uuid())
+  /// A human-facing purchase document number, globally unique across all
+  /// history. [Approved Human Decision, recorded 2026-07-28.] See
+  /// `Sale.documentNumber` above for the same reasoning and TODO.
+  documentNumber        String          @unique
+  partnerId             String
+  partner               BusinessPartner @relation(fields: [partnerId], references: [id])
+  /// See `Sale.currencyId` above for the shared Currency-handling rules.
+  /// [Approved Human Decision, recorded 2026-07-28.]
+  currencyId            String?
+  currency              Currency?       @relation(fields: [currencyId], references: [id])
+  /// See `Sale.foreignCurrencyAmount` / `Sale.exchangeRate` above.
+  /// [Approved Human Decision, recorded 2026-07-28.]
+  foreignCurrencyAmount Decimal?
+  exchangeRate          Decimal?
+  businessDate          DateTime
+  status                DocumentStatus  @default(DRAFT)
+
+  /// "Entering the same supplier invoice number more than once triggers a
+  /// duplicate warning." A soft warning, not a hard rejection — therefore
+  /// indexed, not unique.
+  supplierInvoiceNumber String?
+
+  totalAmount    Decimal
+  discountAmount Decimal?
+  /// See `Sale.totalAmount`'s comment above: `paidAmount` was removed for
+  /// the same reason (settlement/payable state belongs to the out-of-scope
+  /// Settlement module). [Approved Human Decision, recorded 2026-07-28.]
+  notes          String?
+
+  postedAt       DateTime?
+  postedByUserId String?
+  postedBy       User?     @relation("PurchasePostedBy", fields: [postedByUserId], references: [id])
+
+  /// "Cancelling a posted purchase reverses its inventory increase and
+  /// payable effect... cancellation is blocked if available stock is
+  /// insufficient to reverse the original receipt." (Stock-sufficiency check
+  /// is application-level; not enforceable at the schema level and out of
+  /// this task's scope since Inventory is not modeled here.)
+  cancelledAt       DateTime?
+  cancelledByUserId String?
+  cancelledBy       User?     @relation("PurchaseCancelledBy", fields: [cancelledByUserId], references: [id])
+  cancelReason      String?
+
+  originalPurchaseId  String?
+  originalPurchase    Purchase?  @relation("PurchaseCorrection", fields: [originalPurchaseId], references: [id])
+  correctionPurchases Purchase[] @relation("PurchaseCorrection")
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdByUserId String
+  createdBy       User     @relation("PurchaseCreatedBy", fields: [createdByUserId], references: [id])
+
+  items            PurchaseItem[]
+  cashTransactions CashTransaction[]
+
+  @@index([partnerId, businessDate])
+  @@index([status])
+  @@index([supplierInvoiceNumber])
+}
+
+/// Source: docs/business/invariants.md, "Purchasing" — "A purchase is posted
+/// based on the quantity actually physically received, not the invoiced
+/// quantity; differences between the two are recorded separately."
+model PurchaseItem {
+  id         String   @id @default(uuid())
+  purchaseId String
+  purchase   Purchase @relation(fields: [purchaseId], references: [id])
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id])
+  unitId     String
+  unit       Unit     @relation(fields: [unitId], references: [id])
+
+  receivedQuantity Decimal
+  invoicedQuantity Decimal?
+  unitCost         Decimal
+  lineTotal        Decimal
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([purchaseId])
+  @@index([productId])
+}
+
+// ---------------------------------------------------------------------------
+// Cash
+// ---------------------------------------------------------------------------
+
+/// Source: docs/business/invariants.md, "Cash" — "The main cash account,
+/// bank account, vehicle cash accounts, and personal funds are separate."
+model MoneyAccount {
+  id         String           @id @default(uuid())
+  name       String
+  type       MoneyAccountType
+  /// Optional; defaults to AZN when omitted, per the shared Currency-
+  /// handling rules. [Approved Human Decision, recorded 2026-07-28; see
+  /// docs/business/invariants.md, "Currency".] TODO: whether an account may
+  /// hold a native non-AZN balance (vs. always being converted/reported in
+  /// AZN) is not decided — see task handoff.
+  currencyId String?
+  currency   Currency?        @relation(fields: [currencyId], references: [id])
+  isActive   Boolean          @default(true)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  cashTransactions CashTransaction[] @relation("CashTransactionAccount")
+
+  @@index([type])
+  @@index([isActive])
+}
+
+/// Source: docs/business/invariants.md, "Cash" — "Every money movement
+/// identifies the account, amount, date, movement type, actor, and business
+/// reason or source." `amount` is signed (positive = increase, negative =
+/// decrease) at the account identified by `moneyAccountId`.
+model CashTransaction {
+  id                    String              @id @default(uuid())
+  moneyAccountId        String
+  moneyAccount          MoneyAccount        @relation("CashTransactionAccount", fields: [moneyAccountId], references: [id])
+  type                  CashTransactionType
+  amount                Decimal
+  transactionDate       DateTime
+  /// See `Sale.currencyId` above for the shared Currency-handling rules
+  /// (optional, defaults to AZN, null carries no other meaning).
+  /// [Approved Human Decision, recorded 2026-07-28.] `amount` above always
+  /// remains the authoritative amount in AZN.
+  currencyId            String?
+  currency              Currency?           @relation(fields: [currencyId], references: [id])
+  /// See `Sale.foreignCurrencyAmount` / `Sale.exchangeRate` above.
+  /// [Approved Human Decision, recorded 2026-07-28.]
+  foreignCurrencyAmount Decimal?
+  exchangeRate          Decimal?
+  reason                String?
+
+  /// Optional counterparty (customer for a sale receipt, supplier for a
+  /// purchase payment). Source: docs/business/invariants.md, "Receivables &
+  /// Payables" / "Cash".
+  partnerId String?
+  partner   BusinessPartner? @relation(fields: [partnerId], references: [id])
+
+  /// Optional links back to the source document, where applicable.
+  saleId     String?
+  sale       Sale?     @relation(fields: [saleId], references: [id])
+  purchaseId String?
+  purchase   Purchase? @relation(fields: [purchaseId], references: [id])
+
+  /// "A transfer between money accounts is a paired decrease/increase that
+  /// does not change company-total cash." `pairedTransactionId` links the
+  /// two legs of a single transfer to each other; the paired leg's own
+  /// `moneyAccountId` (above) already identifies its account, so a separate
+  /// `pairedMoneyAccountId` relation would duplicate that data and has been
+  /// removed. [Approved Human Decision, recorded 2026-07-28.]
+  pairedTransactionId String?          @unique
+  pairedTransaction   CashTransaction? @relation("CashTransactionPair", fields: [pairedTransactionId], references: [id])
+  pairedWith          CashTransaction? @relation("CashTransactionPair")
+
+  status DocumentStatus @default(DRAFT)
+
+  postedAt       DateTime?
+  postedByUserId String?
+  postedBy       User?     @relation("CashTransactionPostedBy", fields: [postedByUserId], references: [id])
+
+  cancelledAt       DateTime?
+  cancelledByUserId String?
+  cancelledBy       User?     @relation("CashTransactionCancelledBy", fields: [cancelledByUserId], references: [id])
+  cancelReason      String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdByUserId String
+  createdBy       User     @relation("CashTransactionCreatedBy", fields: [createdByUserId], references: [id])
+
+  @@index([moneyAccountId, transactionDate])
+  @@index([type])
+  @@index([status])
+  @@index([partnerId])
+  @@index([saleId])
+  @@index([purchaseId])
 }
