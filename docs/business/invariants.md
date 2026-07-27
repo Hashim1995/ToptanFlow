@@ -1,6 +1,8 @@
 # Business Invariants
 
 > Source: `docs/analysis/01-document-analysis.md` (the single source of truth for this document). Each invariant below is a confirmed business truth stated in the Business Requirements Document (BRD) and, where consistent, the Software Requirements & Technical Specification (SRS/TDS). Recommendations, safe defaults, unresolved conflicts, and implementation details are intentionally excluded. Where the source analysis marked an item as an open decision or a conflict between documents, it is omitted here rather than resolved.
+>
+> A small number of entries are explicitly marked **[Approved Human Decision]**. These were recorded directly by a human decision-maker after this document was first created, are not themselves derived from `docs/analysis/01-document-analysis.md`, and rank above this document in the Source of Truth Hierarchy (see `AGENTS.md`). They are included here because they refine or resolve behavior in the same business areas this document covers.
 
 ## Global Invariants
 
@@ -31,10 +33,19 @@
 - Sales-specific and purchasing-specific Yellow Card notes must not be mixed when one partner acts as both customer and supplier.
 - A partner's WhatsApp number, communication consent, preferred language, and sending history are controlled communication data.
 - A business partner statement lists sales, sales returns, purchases, purchase returns, receipts, payments, advances, and approved adjustments chronologically, with source-document links, and shows the receivable and payable closing balances separately rather than netted.
+- A business partner code is globally unique across its entire history — including inactivated or deleted partners — and a code is never reused after deactivation or deletion. [Approved Human Decision — recorded 2026-07-28; not derived from the BRD/SRS analysis.]
+- A business partner is never hard-deleted; it is only ever deactivated (see the invariant above: "A partner that has been used in transactions is inactivated, not deleted"), which is the mechanism that guarantees its code can never be reused. [Approved Human Decision — recorded 2026-07-28; not derived from the BRD/SRS analysis.]
+
+## Currency
+
+- Currency selection is optional on a document or money account; when no currency is explicitly selected, it defaults to AZN (the Azerbaijani manat). [Approved Human Decision — recorded 2026-07-28; not derived from the BRD/SRS analysis.]
+- A foreign-currency transaction may additionally record the selected currency, the amount in that foreign currency, and the exchange rate applied, alongside the transaction's authoritative AZN amount. [Approved Human Decision — recorded 2026-07-28; not derived from the BRD/SRS analysis.]
+- A null (unselected) currency on a document carries no undocumented business meaning beyond "AZN was used by default"; it must never be interpreted as a separate, unspecified business state. [Approved Human Decision — recorded 2026-07-28; not derived from the BRD/SRS analysis.]
 
 ## Products
 
-- An active product code is unique; a product that has been used is inactivated, not deleted.
+- A product code is globally unique across its entire history — including inactivated products — and a code is never reused after a product is deactivated or deleted; a product that has been used is inactivated, not deleted. [Global-uniqueness and no-reuse rule: Approved Human Decision — recorded 2026-07-28; strengthens the BRD-derived "active codes are unique" rule and is not itself derived from the BRD/SRS analysis.]
+- A product is never hard-deleted; it is only ever deactivated, which is the mechanism that guarantees its code can never be reused. [Approved Human Decision — recorded 2026-07-28; not derived from the BRD/SRS analysis.]
 - Product type (finished good, raw material, or mixed-use) and product category are separate, independent classifications.
 - Each product has exactly one primary unit of measure; whether fractional quantities are allowed follows that unit's configuration.
 - Standard sale price and latest purchase price are informational defaults only; each posted document line keeps its own price and cost as recorded at posting time, regardless of later master-data changes.
@@ -154,5 +165,6 @@ The following business-relevant topics are referenced in the analysis but are ex
 - The exact settlement classification (advance, credit, or refund) produced by an over-paid sales return or purchase return.
 - The full fixed-asset status catalog and whether deferred (credit) settlement is allowed on an asset sale.
 - Bundle return/refund allocation policy and whether a "physical bundle" stocking mode exists alongside always-exploding components.
-- Multi-currency scope (single base currency versus per-document/per-account currency).
 - Maker/approver separation as a default (mandatory) versus optional policy.
+
+**Partially resolved by a subsequent Approved Human Decision:** "Multi-currency scope (single base currency versus per-document/per-account currency)" — recorded 2026-07-28 as an Approved Human Decision (see "## Currency" above): currency selection is optional and defaults to AZN, and foreign-currency documents may additionally record the selected currency, foreign amount, and exchange rate. Still unresolved and not decided by this entry: the exchange-rate source and timing, and whether a money account may hold a native non-AZN balance versus always being reported in AZN.
