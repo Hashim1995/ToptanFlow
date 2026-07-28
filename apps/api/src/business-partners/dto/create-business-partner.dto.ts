@@ -94,4 +94,15 @@ export class CreateBusinessPartnerDto {
   @MaxLength(4000)
   @Transform(({ value }: { value: unknown }) => trimOrNull(value))
   notes?: string | null;
+
+  @ApiPropertyOptional({
+    example: false,
+    description:
+      'US-016 soft duplicate acknowledge. When possible duplicates match on ' +
+      'normalized name/phone/taxNumber, create returns 409 unless this is true. ' +
+      'Does not affect uuid/code uniqueness (ADR-024).',
+  })
+  @IsOptional()
+  @IsBoolean()
+  acknowledgeDuplicate?: boolean;
 }

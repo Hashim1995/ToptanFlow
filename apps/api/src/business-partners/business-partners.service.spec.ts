@@ -64,6 +64,7 @@ describe('BusinessPartnersService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     numberSequences.nextCode.mockResolvedValue('0000001');
+    prisma.businessPartner.findMany.mockResolvedValue([]);
     service = new BusinessPartnersService(
       prisma,
       numberSequences as unknown as NumberSequencesService,
@@ -712,6 +713,126 @@ describe('BusinessPartnersService', () => {
       await expect(service.deactivate(partnerId)).rejects.toBeInstanceOf(
         NotFoundException,
       );
+    });
+  });
+
+  describe('soft duplicate flag (US-016)', () => {
+    const otherPartner = {
+      id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      code: '0000002',
+      name: 'Nümunə MMC',
+      phone: '+994 50 123 45 67',
+      taxNumber: '1234567891',
+      isCustomer: true,
+      isSupplier: false,
+      isActive: true,
+    };
+
+    it('rejects create with 409 when possible duplicates match', async () => {
+      prisma.currency.findUnique.mockResolvedValue({
+        id: currencyId,
+        isActive: true,
+      });
+      prisma.businessPartner.findMany.mockResolvedValue([otherPartner]);
+
+      await expect(
+        service.create({
+          name: '  NÜMUNƏ   MMC  ',
+          isCustomer: true,
+          isSupplier: false,
+          defaultCurrencyId: currencyId,
+        }),
+      ).rejects.toMatchObject({
+        response: expect.objectContaining({
+          message: 'Possible duplicate business partners found',
+          code: 'BUSINESS_PARTNER_DUPLICATE_SUSPECTED',
+          candidates: [
+            expect.objectContaining({
+              id: otherPartner.id,
+              matchedFields: ['name'],
+            }),
+          ],
+        }),
+      });
+      expect(prisma.businessPartner.create).not.toHaveBeenCalled();
+    });
+
+    it('creates when acknowledgeDuplicate is true despite matches', async () => {
+      prisma.currency.findUnique.mockResolvedValue({
+        id: currencyId,
+        isActive: true,
+      });
+      prisma.businessPartner.findMany.mockResolvedValue([otherPartner]);
+      prisma.businessPartner.create.mockResolvedValue(basePartner);
+
+      const result = await service.create({
+        name: 'Nümunə MMC',
+        isCustomer: true,
+        isSupplier: false,
+        defaultCurrencyId: currencyId,
+        acknowledgeDuplicate: true,
+      });
+
+      expect(result.code).toBe('0000001');
+      expect(prisma.businessPartner.create).toHaveBeenCalled();
+    });
+
+    it('includes inactive partners in soft-duplicate create check', async () => {
+      prisma.currency.findUnique.mockResolvedValue({
+        id: currencyId,
+        isActive: true,
+      });
+      prisma.businessPartner.findMany.mockResolvedValue([
+        { ...otherPartner, isActive: false },
+      ]);
+
+      await expect(
+        service.create({
+          name: 'Nümunə MMC',
+          isCustomer: true,
+          isSupplier: false,
+          defaultCurrencyId: currencyId,
+        }),
+      ).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it('rejects update with 409 when identity helpers collide with another partner', async () => {
+      prisma.businessPartner.findUnique.mockResolvedValue(basePartner);
+      prisma.businessPartner.findMany.mockResolvedValue([otherPartner]);
+
+      await expect(
+        service.update(partnerId, { name: 'Nümunə MMC' }),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(prisma.businessPartner.update).not.toHaveBeenCalled();
+    });
+
+    it('updates when acknowledgeDuplicate is true', async () => {
+      prisma.businessPartner.findUnique.mockResolvedValue(basePartner);
+      prisma.businessPartner.findMany.mockResolvedValue([otherPartner]);
+      prisma.businessPartner.update.mockResolvedValue({
+        ...basePartner,
+        name: 'Nümunə MMC',
+      });
+
+      const result = await service.update(partnerId, {
+        name: 'Nümunə MMC',
+        acknowledgeDuplicate: true,
+      });
+
+      expect(result.name).toBe('Nümunə MMC');
+      expect(prisma.businessPartner.update).toHaveBeenCalled();
+    });
+
+    it('skips soft-duplicate check on update when identity helpers unchanged', async () => {
+      prisma.businessPartner.findUnique.mockResolvedValue(basePartner);
+      prisma.businessPartner.update.mockResolvedValue({
+        ...basePartner,
+        notes: 'Only notes',
+      });
+
+      await service.update(partnerId, { notes: 'Only notes' });
+
+      expect(prisma.businessPartner.findMany).not.toHaveBeenCalled();
     });
   });
 });

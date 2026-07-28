@@ -11,9 +11,15 @@ import { NumberSequencesService } from '../number-sequences/number-sequences.ser
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBusinessPartnerDto } from './dto/create-business-partner.dto';
 import { UpdateBusinessPartnerDto } from './dto/update-business-partner.dto';
+import {
+  BusinessPartnerDuplicateCandidateDto,
+  BusinessPartnerDuplicateMatchedField,
+} from './dto/check-business-partner-duplicates-response.dto';
 import { ListBusinessPartnersQueryDto } from './dto/list-business-partners-query.dto';
 import { PaginatedBusinessPartnersResponseDto } from './dto/paginated-business-partners-response.dto';
 import { BusinessPartnerResponseDto } from './dto/business-partner-response.dto';
+
+const DUPLICATE_CANDIDATE_FETCH_CAP = 200;
 
 const currencySummarySelect = {
   id: true,
@@ -43,9 +49,30 @@ const businessPartnerSelect = {
   },
 } satisfies Prisma.BusinessPartnerSelect;
 
+const duplicateCandidateSelect = {
+  id: true,
+  code: true,
+  name: true,
+  phone: true,
+  taxNumber: true,
+  isCustomer: true,
+  isSupplier: true,
+  isActive: true,
+} satisfies Prisma.BusinessPartnerSelect;
+
 type BusinessPartnerRecord = Prisma.BusinessPartnerGetPayload<{
   select: typeof businessPartnerSelect;
 }>;
+
+type DuplicateCandidateRecord = Prisma.BusinessPartnerGetPayload<{
+  select: typeof duplicateCandidateSelect;
+}>;
+
+type DuplicateCheckInput = {
+  name?: string | null;
+  phone?: string | null;
+  taxNumber?: string | null;
+};
 
 @Injectable()
 export class BusinessPartnersService {
@@ -63,6 +90,14 @@ export class BusinessPartnersService {
 
     await this.assertCurrencyAssignable(dto.defaultCurrencyId);
 
+    const phone = this.normalizeOptionalText(dto.phone);
+    const taxNumber = this.normalizeOptionalText(dto.taxNumber);
+
+    await this.assertNoUnacknowledgedDuplicates({
+      identifiers: { name, phone, taxNumber },
+      acknowledgeDuplicate: dto.acknowledgeDuplicate === true,
+    });
+
     try {
       const partner = await this.prisma.$transaction(async (tx) => {
         const code = await this.numberSequences.nextCode(
@@ -76,9 +111,9 @@ export class BusinessPartnersService {
             name,
             isCustomer: dto.isCustomer,
             isSupplier: dto.isSupplier,
-            phone: this.normalizeOptionalText(dto.phone),
+            phone,
             email: this.normalizeOptionalText(dto.email),
-            taxNumber: this.normalizeOptionalText(dto.taxNumber),
+            taxNumber,
             address: this.normalizeOptionalText(dto.address),
             notes: this.normalizeOptionalText(dto.notes),
             defaultCurrencyId: dto.defaultCurrencyId,
@@ -217,6 +252,24 @@ export class BusinessPartnersService {
       data.notes = this.normalizeOptionalText(dto.notes);
     }
 
+    const identityFieldsChanging =
+      dto.name !== undefined ||
+      dto.phone !== undefined ||
+      dto.taxNumber !== undefined;
+
+    if (identityFieldsChanging) {
+      await this.assertNoUnacknowledgedDuplicates({
+        identifiers: {
+          name: data.name ?? existing.name,
+          phone: data.phone !== undefined ? data.phone : existing.phone,
+          taxNumber:
+            data.taxNumber !== undefined ? data.taxNumber : existing.taxNumber,
+        },
+        acknowledgeDuplicate: dto.acknowledgeDuplicate === true,
+        excludeId: id,
+      });
+    }
+
     const partner = await this.prisma.businessPartner.update({
       where: { id },
       data,
@@ -245,6 +298,99 @@ export class BusinessPartnersService {
     }
 
     return this.toResponse(existing);
+  }
+
+  private async assertNoUnacknowledgedDuplicates(params: {
+    identifiers: DuplicateCheckInput;
+    acknowledgeDuplicate: boolean;
+    excludeId?: string;
+  }): Promise<void> {
+    if (params.acknowledgeDuplicate) {
+      return;
+    }
+
+    const candidates = await this.findDuplicateCandidates(
+      params.identifiers,
+      params.excludeId,
+    );
+
+    if (candidates.length === 0) {
+      return;
+    }
+
+    throw new ConflictException({
+      message: 'Possible duplicate business partners found',
+      code: 'BUSINESS_PARTNER_DUPLICATE_SUSPECTED',
+      candidates,
+    });
+  }
+
+  /**
+   * Soft duplicate detection (US-016). Identity remains uuid + code (ADR-024);
+   * name/phone/taxNumber are helper fields used only to warn the operator.
+   */
+  private async findDuplicateCandidates(
+    input: DuplicateCheckInput,
+    excludeId?: string,
+  ): Promise<BusinessPartnerDuplicateCandidateDto[]> {
+    const nameNorm = this.normalizeDuplicateName(input.name);
+    const phoneNorm = this.normalizeDuplicatePhone(input.phone);
+    const taxNorm = this.normalizeDuplicateTaxNumber(input.taxNumber);
+
+    if (nameNorm === null && phoneNorm === null && taxNorm === null) {
+      return [];
+    }
+
+    const whereOr = this.buildDuplicateCandidateWhere(
+      nameNorm,
+      phoneNorm,
+      taxNorm,
+      input,
+    );
+
+    if (whereOr.length === 0) {
+      return [];
+    }
+
+    const rows = await this.prisma.businessPartner.findMany({
+      where: {
+        AND: [
+          { OR: whereOr },
+          ...(excludeId ? [{ id: { not: excludeId } }] : []),
+        ],
+      },
+      select: duplicateCandidateSelect,
+      take: DUPLICATE_CANDIDATE_FETCH_CAP,
+      orderBy: [{ code: 'asc' }, { id: 'asc' }],
+    });
+
+    const candidates: BusinessPartnerDuplicateCandidateDto[] = [];
+
+    for (const row of rows) {
+      const matchedFields = this.collectMatchedDuplicateFields(
+        row,
+        nameNorm,
+        phoneNorm,
+        taxNorm,
+      );
+      if (matchedFields.length === 0) {
+        continue;
+      }
+
+      candidates.push({
+        id: row.id,
+        code: row.code,
+        name: row.name,
+        phone: row.phone,
+        taxNumber: row.taxNumber,
+        isCustomer: row.isCustomer,
+        isSupplier: row.isSupplier,
+        isActive: row.isActive,
+        matchedFields,
+      });
+    }
+
+    return candidates;
   }
 
   private async assertCurrencyAssignable(currencyId: string): Promise<void> {
@@ -341,6 +487,149 @@ export class BusinessPartnersService {
     }
     const trimmed = value.trim();
     return trimmed.length === 0 ? null : trimmed;
+  }
+
+  /** US-016: trim, collapse whitespace, Unicode case-fold. */
+  private normalizeDuplicateName(
+    value: string | null | undefined,
+  ): string | null {
+    if (value === undefined || value === null) {
+      return null;
+    }
+    const collapsed = value.trim().replace(/\s+/g, ' ');
+    if (collapsed.length === 0) {
+      return null;
+    }
+    return collapsed.toLocaleLowerCase('en-US');
+  }
+
+  /**
+   * US-016: trim; keep a single leading `+` if present; strip non-digits from
+   * the remainder. Empty after normalize → null (no match).
+   */
+  private normalizeDuplicatePhone(
+    value: string | null | undefined,
+  ): string | null {
+    if (value === undefined || value === null) {
+      return null;
+    }
+    const trimmed = value.trim();
+    if (trimmed.length === 0) {
+      return null;
+    }
+
+    const hasPlus = trimmed.startsWith('+');
+    const digits = trimmed.replace(/\D/g, '');
+    if (digits.length === 0) {
+      return null;
+    }
+    return hasPlus ? `+${digits}` : digits;
+  }
+
+  /** US-016: trim, remove whitespace, Unicode case-fold. */
+  private normalizeDuplicateTaxNumber(
+    value: string | null | undefined,
+  ): string | null {
+    if (value === undefined || value === null) {
+      return null;
+    }
+    const compact = value.trim().replace(/\s+/g, '');
+    if (compact.length === 0) {
+      return null;
+    }
+    return compact.toLocaleLowerCase('en-US');
+  }
+
+  private buildDuplicateCandidateWhere(
+    nameNorm: string | null,
+    phoneNorm: string | null,
+    taxNorm: string | null,
+    input: DuplicateCheckInput,
+  ): Prisma.BusinessPartnerWhereInput[] {
+    const whereOr: Prisma.BusinessPartnerWhereInput[] = [];
+
+    if (nameNorm !== null) {
+      const trimmedName =
+        typeof input.name === 'string' ? input.name.trim() : undefined;
+      if (trimmedName) {
+        whereOr.push({
+          name: { equals: trimmedName, mode: 'insensitive' },
+        });
+        whereOr.push({
+          name: { equals: nameNorm, mode: 'insensitive' },
+        });
+        const token = nameNorm.split(' ')[0];
+        if (token.length >= 2) {
+          whereOr.push({
+            name: { contains: token, mode: 'insensitive' },
+          });
+        }
+      }
+    }
+
+    if (phoneNorm !== null) {
+      const digits = phoneNorm.replace(/\D/g, '');
+      if (typeof input.phone === 'string' && input.phone.trim()) {
+        whereOr.push({ phone: { equals: input.phone.trim() } });
+      }
+      if (digits.length > 0) {
+        const needle = digits.length >= 7 ? digits.slice(-7) : digits;
+        whereOr.push({ phone: { contains: needle } });
+      }
+    }
+
+    if (taxNorm !== null) {
+      if (typeof input.taxNumber === 'string' && input.taxNumber.trim()) {
+        whereOr.push({
+          taxNumber: {
+            equals: input.taxNumber.trim(),
+            mode: 'insensitive',
+          },
+        });
+      }
+      whereOr.push({
+        taxNumber: { equals: taxNorm, mode: 'insensitive' },
+      });
+      if (taxNorm.length >= 4) {
+        whereOr.push({
+          taxNumber: { contains: taxNorm.slice(0, 4), mode: 'insensitive' },
+        });
+      }
+    }
+
+    return whereOr;
+  }
+
+  private collectMatchedDuplicateFields(
+    row: DuplicateCandidateRecord,
+    nameNorm: string | null,
+    phoneNorm: string | null,
+    taxNorm: string | null,
+  ): BusinessPartnerDuplicateMatchedField[] {
+    const matchedFields: BusinessPartnerDuplicateMatchedField[] = [];
+
+    if (
+      nameNorm !== null &&
+      this.normalizeDuplicateName(row.name) === nameNorm
+    ) {
+      matchedFields.push('name');
+    }
+
+    if (
+      phoneNorm !== null &&
+      this.normalizeDuplicatePhone(row.phone) === phoneNorm
+    ) {
+      matchedFields.push('phone');
+    }
+
+    if (
+      taxNorm !== null &&
+      this.normalizeDuplicateTaxNumber(row.taxNumber) === taxNorm
+    ) {
+      matchedFields.push('taxNumber');
+    }
+
+    return matchedFields;
   }
 
   private assertNonEmpty(field: string, value: string): void {

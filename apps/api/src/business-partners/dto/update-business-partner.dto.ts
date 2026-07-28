@@ -131,4 +131,14 @@ export class UpdateBusinessPartnerDto {
   @MaxLength(4000)
   @Transform(({ value }: { value: unknown }) => trimOrNull(value))
   notes?: string | null;
+
+  @ApiPropertyOptional({
+    example: false,
+    description:
+      'US-016 soft duplicate acknowledge. When name/phone/taxNumber change and ' +
+      'possible duplicates match, update returns 409 unless this is true.',
+  })
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsBoolean()
+  acknowledgeDuplicate?: boolean;
 }

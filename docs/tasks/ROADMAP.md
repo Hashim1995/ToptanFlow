@@ -27,7 +27,7 @@ Likely upcoming phase after partner update/deactivate and remaining partner qual
 
 | Epic | Status | Focus |
 | --- | --- | --- |
-| [EPIC-006](epics/EPIC-006-business-partners-backend.md) Business partners backend | In Progress | Next: [US-016](stories/US-016-business-partner-duplicate-soft-flag.md) |
+| [EPIC-006](epics/EPIC-006-business-partners-backend.md) Business partners backend | In Progress | Next: [US-016](stories/US-016-business-partner-duplicate-soft-flag.md) (active) |
 | [EPIC-023](epics/EPIC-023-testing-quality-infrastructure.md) Testing & quality | In Progress | Ongoing harness ([US-041](stories/US-041-quality-harness-expansion.md)) |
 | [EPIC-021](epics/EPIC-021-frontend-application.md) Frontend application | In Progress | Scaffold only today; shell stories still Planned |
 

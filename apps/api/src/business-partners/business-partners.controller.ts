@@ -40,7 +40,9 @@ export class BusinessPartnersController {
     description:
       'Creates a unified counterparty. At least one of isCustomer or isSupplier must be true; both may be true. ' +
       'BusinessPartner.code is allocated by the backend (ADR-024); clients must not supply code. ' +
-      'Code is immutable after creation — UpdateBusinessPartnerDto must not contain code.',
+      'Code is immutable after creation — UpdateBusinessPartnerDto must not contain code. ' +
+      'US-016: possible duplicates on normalized name/phone/taxNumber return 409 with candidates unless ' +
+      'acknowledgeDuplicate is true. Soft flag only — uuid/code uniqueness is separate.',
   })
   @ApiBody({
     type: CreateBusinessPartnerDto,
@@ -63,7 +65,10 @@ export class BusinessPartnersController {
       'Invalid field values, both roles false, empty name, inactive currency, or forbidden properties (e.g. code)',
   })
   @ApiNotFoundResponse({ description: 'Currency not found' })
-  @ApiConflictResponse({ description: 'Business partner code already exists' })
+  @ApiConflictResponse({
+    description:
+      'Business partner code already exists, or possible duplicate partners found (US-016 soft flag; retry with acknowledgeDuplicate)',
+  })
   create(
     @Body() dto: CreateBusinessPartnerDto,
   ): Promise<BusinessPartnerResponseDto> {
@@ -104,7 +109,8 @@ export class BusinessPartnersController {
     description:
       'Inactive partners may be updated for administrative correction. ' +
       'PATCH does not change isActive and cannot reactivate a partner. ' +
-      'BusinessPartner.code is immutable and must not be sent (ADR-024).',
+      'BusinessPartner.code is immutable and must not be sent (ADR-024). ' +
+      'US-016: when name/phone/taxNumber change, possible duplicates return 409 unless acknowledgeDuplicate is true.',
   })
   @ApiBody({ type: UpdateBusinessPartnerDto })
   @ApiParam({ name: 'id', format: 'uuid' })
@@ -115,6 +121,10 @@ export class BusinessPartnersController {
   })
   @ApiNotFoundResponse({
     description: 'Business partner or currency not found',
+  })
+  @ApiConflictResponse({
+    description:
+      'Possible duplicate partners found after identity-helper field change (US-016; retry with acknowledgeDuplicate)',
   })
   update(
     @Param('id', ParseUUIDPipe) id: string,

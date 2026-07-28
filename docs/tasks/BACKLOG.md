@@ -10,19 +10,19 @@ Priority: **H** High · **M** Medium · **L** Low
 
 | ID | Title | Epic | Priority | Depends on | Task elaboration |
 | --- | --- | --- | --- | --- | --- |
-| [US-016](stories/US-016-business-partner-duplicate-soft-flag.md) | Duplicate soft-flag checks | EPIC-006 | M | US-014 | On activation |
+| — | *(none — US-016 is active; see CURRENT.md)* | — | — | — | — |
 
 ## Active (see CURRENT.md)
 
 | ID | Title | Epic | Priority | Status | Next task |
 | --- | --- | --- | --- | --- | --- |
-| — | *(none — activate next story from Ready)* | — | — | — | — |
+| [US-016](stories/US-016-business-partner-duplicate-soft-flag.md) | Duplicate soft-flag checks | EPIC-006 | M | In Progress | [TASK-016-02](tasks/TASK-016-02-extend-business-partner-duplicate-check-e2e.md) |
 
 ## EPIC-006 remaining (after US-015)
 
 | ID | Title | Priority | Depends on | Notes |
 | --- | --- | --- | --- | --- |
-| [US-016](stories/US-016-business-partner-duplicate-soft-flag.md) | Duplicate soft-flag checks | M | US-014 | Planned — next recommended |
+| [US-016](stories/US-016-business-partner-duplicate-soft-flag.md) | Duplicate soft-flag checks | M | US-014 | **Active** |
 | [US-017](stories/US-017-business-partner-statement.md) | Business partner statement | M | EPIC-009–012 | Far; needs postings |
 
 ## Near-term enablers

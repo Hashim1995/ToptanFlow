@@ -4,9 +4,12 @@ Planning-history only. Not a product release-notes replacement.
 
 ## 2026-07-29
 
+- **Design revision (US-016):** Removed standalone `duplicate-check` API; soft flag enforced on create/update via `409` + `acknowledgeDuplicate` (owner decision). TASK-016-01 re-completed under revised design (56 unit tests).
+- **Task completed:** [TASK-016-01](tasks/TASK-016-01-add-business-partner-duplicate-check-api.md) (revised).
+- **Story status:** [US-016](stories/US-016-business-partner-duplicate-soft-flag.md) → In Progress; next [TASK-016-02](tasks/TASK-016-02-extend-business-partner-duplicate-check-e2e.md).
+- **Story activated:** [US-016](stories/US-016-business-partner-duplicate-soft-flag.md); dispositions recorded.
 - **Task completed:** [TASK-015-02](tasks/TASK-015-02-extend-business-partner-update-deactivate-e2e.md) BusinessPartner update/deactivate e2e (14 tests passed).
 - **Story completed:** [US-015](stories/US-015-business-partner-update-deactivate-apis.md) BusinessPartner update/deactivation APIs.
-- **Next:** Activate [US-016](stories/US-016-business-partner-duplicate-soft-flag.md) or prioritize another backlog item.
 
 ## 2026-07-28
 
