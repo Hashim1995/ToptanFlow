@@ -16,6 +16,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
 import { CreateCurrencyDto } from './dto/create-currency.dto';
@@ -51,6 +52,7 @@ export class CurrenciesController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a currency by id' })
+  @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({ type: CurrencyResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid UUID' })
   @ApiNotFoundResponse({ description: 'Currency not found' })
@@ -62,6 +64,7 @@ export class CurrenciesController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update a currency' })
+  @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({ type: CurrencyResponseDto })
   @ApiBadRequestResponse({
     description: 'Invalid values or empty update body',
@@ -77,8 +80,11 @@ export class CurrenciesController {
 
   @Delete(':id')
   @ApiOperation({
-    summary: 'Deactivate a currency (soft delete; sets isActive to false)',
+    summary: 'Deactivate a currency (soft delete)',
+    description:
+      'Sets isActive to false. Idempotent when the currency is already inactive. Does not physically delete the record.',
   })
+  @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({ type: CurrencyResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid UUID' })
   @ApiNotFoundResponse({ description: 'Currency not found' })

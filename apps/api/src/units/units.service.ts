@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { SortOrder } from '../common/sorting/sort-order.enum';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUnitDto } from './dto/create-unit.dto';
 import { ListUnitsQueryDto } from './dto/list-units-query.dto';
@@ -56,7 +57,7 @@ export class UnitsService {
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 20;
     const sortBy = query.sortBy ?? 'code';
-    const sortOrder = query.sortOrder ?? 'asc';
+    const sortOrder = query.sortOrder ?? SortOrder.ASC;
 
     const where = this.buildListWhere(query);
 

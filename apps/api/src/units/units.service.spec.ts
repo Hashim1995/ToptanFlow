@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { SortOrder } from '../common/sorting/sort-order.enum';
 import { PrismaService } from '../prisma/prisma.service';
 import { UnitsService } from './units.service';
 
@@ -92,6 +93,13 @@ describe('UnitsService', () => {
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(prisma.unit.create).not.toHaveBeenCalled();
     });
+
+    it('rejects empty name after trimming', async () => {
+      await expect(
+        service.create({ code: 'KG', name: '   ' }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(prisma.unit.create).not.toHaveBeenCalled();
+    });
   });
 
   describe('list', () => {
@@ -105,14 +113,14 @@ describe('UnitsService', () => {
         search: 'ki',
         isActive: true,
         sortBy: 'name',
-        sortOrder: 'asc',
+        sortOrder: SortOrder.ASC,
       });
 
       expect(prisma.unit.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           skip: 0,
           take: 20,
-          orderBy: { name: 'asc' },
+          orderBy: { name: SortOrder.ASC },
           where: {
             AND: [
               { isActive: true },
@@ -157,6 +165,13 @@ describe('UnitsService', () => {
   });
 
   describe('update', () => {
+    it('rejects an empty update body', async () => {
+      await expect(service.update(unitId, {})).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+      expect(prisma.unit.findUnique).not.toHaveBeenCalled();
+    });
+
     it('updates allowed fields', async () => {
       prisma.unit.findUnique.mockResolvedValue(baseUnit);
       prisma.unit.update.mockResolvedValue({

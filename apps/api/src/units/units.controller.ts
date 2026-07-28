@@ -16,6 +16,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
 import { CreateUnitDto } from './dto/create-unit.dto';
@@ -49,6 +50,7 @@ export class UnitsController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a unit by id' })
+  @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({ type: UnitResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid UUID' })
   @ApiNotFoundResponse({ description: 'Unit not found' })
@@ -58,6 +60,7 @@ export class UnitsController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update a unit' })
+  @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({ type: UnitResponseDto })
   @ApiBadRequestResponse({
     description: 'Invalid values or empty update body',
@@ -73,8 +76,11 @@ export class UnitsController {
 
   @Delete(':id')
   @ApiOperation({
-    summary: 'Deactivate a unit (soft delete; sets isActive to false)',
+    summary: 'Deactivate a unit (soft delete)',
+    description:
+      'Sets isActive to false. Idempotent when the unit is already inactive. Does not physically delete the record.',
   })
+  @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({ type: UnitResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid UUID' })
   @ApiNotFoundResponse({ description: 'Unit not found' })

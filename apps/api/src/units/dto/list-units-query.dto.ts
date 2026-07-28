@@ -1,37 +1,13 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform, Type } from 'class-transformer';
-import {
-  IsBoolean,
-  IsIn,
-  IsInt,
-  IsOptional,
-  IsString,
-  Max,
-  Min,
-} from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsBoolean, IsEnum, IsIn, IsOptional, IsString } from 'class-validator';
+import { PaginationQueryDto } from '../../common/pagination/pagination-query.dto';
+import { SortOrder } from '../../common/sorting/sort-order.enum';
 
 const SORT_BY_FIELDS = ['code', 'name', 'createdAt', 'updatedAt'] as const;
 export type UnitSortByField = (typeof SORT_BY_FIELDS)[number];
 
-const SORT_ORDERS = ['asc', 'desc'] as const;
-export type UnitSortOrder = (typeof SORT_ORDERS)[number];
-
-export class ListUnitsQueryDto {
-  @ApiPropertyOptional({ default: 1, minimum: 1 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  page?: number = 1;
-
-  @ApiPropertyOptional({ default: 20, minimum: 1, maximum: 100 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  pageSize?: number = 20;
-
+export class ListUnitsQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({
     description: 'Case-insensitive match against code or name.',
   })
@@ -57,8 +33,8 @@ export class ListUnitsQueryDto {
   @IsIn(SORT_BY_FIELDS)
   sortBy?: UnitSortByField;
 
-  @ApiPropertyOptional({ enum: SORT_ORDERS, default: 'asc' })
+  @ApiPropertyOptional({ enum: SortOrder, default: SortOrder.ASC })
   @IsOptional()
-  @IsIn(SORT_ORDERS)
-  sortOrder?: UnitSortOrder = 'asc';
+  @IsEnum(SortOrder)
+  sortOrder?: SortOrder = SortOrder.ASC;
 }

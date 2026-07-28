@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class CurrencyResponseDto {
   @ApiProperty({ format: 'uuid' })
@@ -10,7 +10,12 @@ export class CurrencyResponseDto {
   @ApiProperty({ example: 'ABŞ dolları' })
   name: string;
 
-  @ApiPropertyOptional({ example: '$', nullable: true })
+  @ApiProperty({
+    example: '$',
+    nullable: true,
+    type: String,
+    description: 'Display symbol; null when unset.',
+  })
   symbol: string | null;
 
   @ApiProperty({ example: true })

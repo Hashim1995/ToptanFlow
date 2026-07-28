@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { SortOrder } from '../common/sorting/sort-order.enum';
 import { PrismaService } from '../prisma/prisma.service';
 import { CurrenciesService } from './currencies.service';
 
@@ -111,6 +112,13 @@ describe('CurrenciesService', () => {
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(prisma.currency.create).not.toHaveBeenCalled();
     });
+
+    it('rejects empty name after trimming', async () => {
+      await expect(
+        service.create({ code: 'USD', name: '   ' }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(prisma.currency.create).not.toHaveBeenCalled();
+    });
   });
 
   describe('list', () => {
@@ -124,14 +132,14 @@ describe('CurrenciesService', () => {
         search: 'usd',
         isActive: true,
         sortBy: 'name',
-        sortOrder: 'asc',
+        sortOrder: SortOrder.ASC,
       });
 
       expect(prisma.currency.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           skip: 0,
           take: 20,
-          orderBy: { name: 'asc' },
+          orderBy: { name: SortOrder.ASC },
           where: {
             AND: [
               { isActive: true },
@@ -177,6 +185,13 @@ describe('CurrenciesService', () => {
   });
 
   describe('update', () => {
+    it('rejects an empty update body', async () => {
+      await expect(service.update(currencyId, {})).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+      expect(prisma.currency.findUnique).not.toHaveBeenCalled();
+    });
+
     it('updates allowed fields', async () => {
       prisma.currency.findUnique.mockResolvedValue(baseCurrency);
       prisma.currency.update.mockResolvedValue({

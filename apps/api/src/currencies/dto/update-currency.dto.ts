@@ -24,6 +24,7 @@ export class UpdateCurrencyDto {
   @ApiPropertyOptional({
     example: '$',
     nullable: true,
+    type: String,
     description: 'Optional display symbol. Empty string is stored as null.',
   })
   @IsOptional()

@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { SortOrder } from '../common/sorting/sort-order.enum';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCurrencyDto } from './dto/create-currency.dto';
 import { CurrencyResponseDto } from './dto/currency-response.dto';
@@ -60,7 +61,7 @@ export class CurrenciesService {
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 20;
     const sortBy = query.sortBy ?? 'code';
-    const sortOrder = query.sortOrder ?? 'asc';
+    const sortOrder = query.sortOrder ?? SortOrder.ASC;
 
     const where = this.buildListWhere(query);
 
