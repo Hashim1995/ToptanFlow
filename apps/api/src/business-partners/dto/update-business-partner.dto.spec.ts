@@ -14,12 +14,15 @@ describe('UpdateBusinessPartnerDto validation', () => {
     expect(messages).toHaveLength(0);
   });
 
-  it('does not declare code or isActive', () => {
+  it('does not declare a code field', () => {
     expect(new UpdateBusinessPartnerDto()).not.toHaveProperty('code');
-    expect(new UpdateBusinessPartnerDto()).not.toHaveProperty('isActive');
     const sample = plainToInstance(UpdateBusinessPartnerDto, { name: 'x' });
     expect(sample).not.toHaveProperty('code');
-    expect(sample).not.toHaveProperty('isActive');
+  });
+
+  it('accepts isActive for reactivation', async () => {
+    expect(await validateDto({ isActive: true })).toHaveLength(0);
+    expect(await validateDto({ isActive: false })).toHaveLength(0);
   });
 
   it('rejects null for non-nullable fields', async () => {

@@ -60,9 +60,9 @@ describe('ProductCategoriesService', () => {
     it('throws ConflictException when name already exists', async () => {
       prisma.productCategory.findFirst.mockResolvedValue({ id: otherId });
 
-      await expect(
-        service.create({ name: 'Tekstil' }),
-      ).rejects.toBeInstanceOf(ConflictException);
+      await expect(service.create({ name: 'Tekstil' })).rejects.toBeInstanceOf(
+        ConflictException,
+      );
       expect(prisma.productCategory.create).not.toHaveBeenCalled();
     });
 
@@ -75,9 +75,9 @@ describe('ProductCategoriesService', () => {
         }),
       );
 
-      await expect(
-        service.create({ name: 'Tekstil' }),
-      ).rejects.toBeInstanceOf(ConflictException);
+      await expect(service.create({ name: 'Tekstil' })).rejects.toBeInstanceOf(
+        ConflictException,
+      );
     });
 
     it('rejects empty name after trimming', async () => {

@@ -55,9 +55,9 @@ export class EnvironmentVariables {
 
   /**
    * Comma-separated list of allowed CORS origins (e.g.
-   * "https://app.example.com,https://admin.example.com"). Empty by default,
-   * which disables cross-origin requests until explicitly configured — see
-   * `configureApp` in `src/bootstrap/configure-app.ts`.
+   * "https://app.example.com,https://admin.example.com").
+   * Empty in development falls back to Vite local origins in configureApp;
+   * empty in production disables cross-origin requests.
    */
   @IsString()
   CORS_ORIGINS = '';

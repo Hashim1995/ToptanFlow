@@ -706,7 +706,7 @@ describe('ProductsService', () => {
       ).rejects.toBeInstanceOf(BadRequestException);
     });
 
-    it('updates inactive product without reactivating', async () => {
+    it('updates inactive product without reactivating when isActive omitted', async () => {
       prisma.product.findUnique.mockResolvedValue({
         ...baseProduct,
         isActive: false,
@@ -725,6 +725,26 @@ describe('ProductsService', () => {
           data: { name: 'Inactive edit' },
         }),
       );
+    });
+
+    it('reactivates an inactive product via isActive true', async () => {
+      prisma.product.findUnique.mockResolvedValue({
+        ...baseProduct,
+        isActive: false,
+      });
+      prisma.product.update.mockResolvedValue({
+        ...baseProduct,
+        isActive: true,
+      });
+
+      const result = await service.update(productId, { isActive: true });
+
+      expect(prisma.product.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { isActive: true },
+        }),
+      );
+      expect(result.isActive).toBe(true);
     });
 
     it('throws NotFoundException when product is missing', async () => {

@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Alert, Checkbox, Form, Input, Modal, Select, Space, Typography } from 'antd';
+import { Alert, Checkbox, Form, Input, Modal, Select, Space } from 'antd';
 import { useCurrenciesList } from '../api/currencies.hooks';
 import {
   businessPartnerFormSchema,
@@ -9,7 +9,6 @@ import {
 } from '../forms/business-partner.schemas';
 import { MASTER_DATA_LABELS } from './labels';
 
-const { Text } = Typography;
 const { TextArea } = Input;
 
 type BusinessPartnerFormModalProps = {
@@ -113,13 +112,10 @@ export function BusinessPartnerFormModal({
           style={{ marginBottom: 16 }}
         />
       ) : null}
-      <Form layout="vertical">
+      <Form layout="vertical" requiredMark>
         {mode === 'edit' && readOnlyCode ? (
-          <Form.Item label={common.code}>
+          <Form.Item label={common.code} help={labels.codeReadonlyHint}>
             <Input value={readOnlyCode} disabled readOnly />
-            <Text type="secondary" style={{ display: 'block', marginTop: 4 }}>
-              {labels.codeReadonlyHint}
-            </Text>
           </Form.Item>
         ) : null}
 
@@ -132,7 +128,13 @@ export function BusinessPartnerFormModal({
           <Controller
             name="name"
             control={control}
-            render={({ field }) => <Input {...field} autoComplete="off" />}
+            render={({ field }) => (
+              <Input
+                {...field}
+                autoComplete="off"
+                placeholder={common.namePlaceholder}
+              />
+            )}
           />
         </Form.Item>
 
@@ -181,13 +183,15 @@ export function BusinessPartnerFormModal({
             control={control}
             render={({ field }) => (
               <Select
-                {...field}
                 showSearch
                 optionFilterProp="label"
                 loading={currenciesQuery.isLoading}
                 options={currencyOptions}
                 style={{ width: '100%' }}
-                placeholder={labels.defaultCurrency}
+                placeholder={labels.defaultCurrencyPlaceholder}
+                value={field.value || undefined}
+                onChange={(value) => field.onChange(value ?? '')}
+                onBlur={field.onBlur}
               />
             )}
           />
@@ -201,7 +205,14 @@ export function BusinessPartnerFormModal({
           <Controller
             name="phone"
             control={control}
-            render={({ field }) => <Input {...field} autoComplete="tel" />}
+            render={({ field }) => (
+              <Input
+                {...field}
+                autoComplete="tel"
+                inputMode="tel"
+                placeholder={labels.phonePlaceholder}
+              />
+            )}
           />
         </Form.Item>
 
@@ -213,7 +224,14 @@ export function BusinessPartnerFormModal({
           <Controller
             name="email"
             control={control}
-            render={({ field }) => <Input {...field} autoComplete="email" />}
+            render={({ field }) => (
+              <Input
+                {...field}
+                autoComplete="email"
+                type="email"
+                placeholder={labels.emailPlaceholder}
+              />
+            )}
           />
         </Form.Item>
 
@@ -225,7 +243,13 @@ export function BusinessPartnerFormModal({
           <Controller
             name="taxNumber"
             control={control}
-            render={({ field }) => <Input {...field} autoComplete="off" />}
+            render={({ field }) => (
+              <Input
+                {...field}
+                autoComplete="off"
+                placeholder={labels.taxNumberPlaceholder}
+              />
+            )}
           />
         </Form.Item>
 
@@ -237,7 +261,13 @@ export function BusinessPartnerFormModal({
           <Controller
             name="address"
             control={control}
-            render={({ field }) => <TextArea {...field} rows={2} />}
+            render={({ field }) => (
+              <TextArea
+                {...field}
+                rows={2}
+                placeholder={labels.addressPlaceholder}
+              />
+            )}
           />
         </Form.Item>
 
@@ -249,7 +279,13 @@ export function BusinessPartnerFormModal({
           <Controller
             name="notes"
             control={control}
-            render={({ field }) => <TextArea {...field} rows={3} />}
+            render={({ field }) => (
+              <TextArea
+                {...field}
+                rows={3}
+                placeholder={labels.notesPlaceholder}
+              />
+            )}
           />
         </Form.Item>
       </Form>

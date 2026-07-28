@@ -108,7 +108,7 @@ export class BusinessPartnersController {
     summary: 'Update a business partner (partial)',
     description:
       'Inactive partners may be updated for administrative correction. ' +
-      'PATCH does not change isActive and cannot reactivate a partner. ' +
+      'PATCH may set isActive true to reactivate, or false to deactivate. ' +
       'BusinessPartner.code is immutable and must not be sent (ADR-024). ' +
       'US-016: when name/phone/taxNumber change, possible duplicates return 409 unless acknowledgeDuplicate is true.',
   })

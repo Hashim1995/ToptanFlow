@@ -95,7 +95,7 @@ export class ProductsController {
     summary: 'Update a product (partial)',
     description:
       'Inactive products may be updated for administrative correction. ' +
-      'PATCH does not change isActive and cannot reactivate a product. ' +
+      'PATCH may set isActive true to reactivate, or false to deactivate. ' +
       'Product.code is immutable and must not be sent (ADR-024).',
   })
   @ApiBody({ type: UpdateProductDto })

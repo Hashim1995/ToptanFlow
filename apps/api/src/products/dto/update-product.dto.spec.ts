@@ -23,6 +23,11 @@ describe('UpdateProductDto validation', () => {
     expect(sample).not.toHaveProperty('code');
   });
 
+  it('accepts isActive for reactivation', async () => {
+    expect(await validateDto({ isActive: true })).toHaveLength(0);
+    expect(await validateDto({ isActive: false })).toHaveLength(0);
+  });
+
   it('rejects null for non-nullable fields', async () => {
     await expect(validateDto({ name: null })).resolves.not.toHaveLength(0);
     await expect(validateDto({ type: null })).resolves.not.toHaveLength(0);

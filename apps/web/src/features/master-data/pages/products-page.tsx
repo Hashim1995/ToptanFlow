@@ -30,7 +30,7 @@ import {
   type ActiveFilterValue,
 } from '../ui/active-filter';
 import { MASTER_DATA_LABELS, productTypeLabel } from '../ui/labels';
-import { ActiveStatusFilter, FilterBar } from '../ui/list-toolbar';
+import { ActiveStatusFilter, FilterBar, FilterField } from '../ui/list-toolbar';
 import { PageHeader } from '../ui/page-header';
 import { ProductFormModal } from '../ui/product-form-modal';
 
@@ -143,7 +143,11 @@ export function ProductsPage() {
             <Button type="link" danger onClick={() => confirmDeactivate(record)}>
               {common.deactivate}
             </Button>
-          ) : null}
+          ) : (
+            <Button type="link" onClick={() => confirmActivate(record)}>
+              {common.activate}
+            </Button>
+          )}
         </Space>
       ),
     },
@@ -221,6 +225,26 @@ export function ProductsPage() {
     });
   }
 
+  function confirmActivate(product: Product) {
+    Modal.confirm({
+      title: labels.activateConfirm,
+      okText: common.confirm,
+      cancelText: common.cancel,
+      onOk: async () => {
+        try {
+          await updateMutation.mutateAsync({
+            id: product.id,
+            input: { isActive: true },
+          });
+          message.success(common.activateSuccess);
+        } catch (error) {
+          message.error(mapApiError(error).userMessage);
+          throw error;
+        }
+      },
+    });
+  }
+
   const editInitialValues: ProductFormValues | undefined =
     formMode.kind === 'edit'
       ? {
@@ -280,17 +304,19 @@ export function ProductsPage() {
       />
 
       <FilterBar>
-        <Input.Search
-          allowClear
-          placeholder={common.searchPlaceholder}
-          value={searchInput}
-          onChange={(event) => setSearchInput(event.target.value)}
-          onSearch={(value) => {
-            setSearch(value.trim());
-            setPage(1);
-          }}
-          style={{ minWidth: 220, maxWidth: 320 }}
-        />
+        <FilterField label={common.search}>
+          <Input.Search
+            allowClear
+            placeholder={common.searchPlaceholder}
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            onSearch={(value) => {
+              setSearch(value.trim());
+              setPage(1);
+            }}
+            style={{ minWidth: 220, maxWidth: 320 }}
+          />
+        </FilterField>
         <ActiveStatusFilter
           value={activeFilter}
           onChange={(value) => {
@@ -298,30 +324,32 @@ export function ProductsPage() {
             setPage(1);
           }}
         />
-        <Select
-          value={typeFilter}
-          onChange={(value: TypeFilterValue) => {
-            setTypeFilter(value);
-            setPage(1);
-          }}
-          style={{ minWidth: 180 }}
-          aria-label={labels.filterType}
-          placeholder={labels.filterType}
-          options={typeFilterOptions}
-        />
-        <Select
-          value={categoryFilter}
-          onChange={(value: string) => {
-            setCategoryFilter(value);
-            setPage(1);
-          }}
-          style={{ minWidth: 180 }}
-          showSearch
-          optionFilterProp="label"
-          aria-label={labels.filterCategory}
-          placeholder={labels.filterCategory}
-          options={categoryFilterOptions}
-        />
+        <FilterField label={labels.filterType}>
+          <Select
+            value={typeFilter}
+            onChange={(value: TypeFilterValue) => {
+              setTypeFilter(value);
+              setPage(1);
+            }}
+            style={{ minWidth: 180 }}
+            aria-label={labels.filterType}
+            options={typeFilterOptions}
+          />
+        </FilterField>
+        <FilterField label={labels.filterCategory}>
+          <Select
+            value={categoryFilter}
+            onChange={(value: string) => {
+              setCategoryFilter(value);
+              setPage(1);
+            }}
+            style={{ minWidth: 180 }}
+            showSearch
+            optionFilterProp="label"
+            aria-label={labels.filterCategory}
+            options={categoryFilterOptions}
+          />
+        </FilterField>
       </FilterBar>
 
       {list.isError ? (
@@ -382,7 +410,11 @@ export function ProductsPage() {
                     <Button danger onClick={() => confirmDeactivate(product)}>
                       {common.deactivate}
                     </Button>
-                  ) : null}
+                  ) : (
+                    <Button onClick={() => confirmActivate(product)}>
+                      {common.activate}
+                    </Button>
+                  )}
                 </Space>
               </Space>
             </Card>

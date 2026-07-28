@@ -22,6 +22,7 @@ export type UpdateCurrencyInput = {
   code?: string;
   name?: string;
   symbol?: string | null;
+  isActive?: boolean;
 };
 
 export async function listCurrencies(

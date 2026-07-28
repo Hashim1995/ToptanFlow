@@ -24,8 +24,8 @@ function trimOrNull(value: unknown): unknown {
  * A PATCH body containing `code` is rejected by the global ValidationPipe
  * (forbidNonWhitelisted), not silently ignored.
  *
- * isActive is not updatable here — use DELETE to deactivate. PATCH must not
- * reactivate (Product parity / US-015).
+ * isActive may be set via PATCH to reactivate (or deactivate). DELETE remains
+ * the dedicated soft-deactivate shortcut (owner decision 2026-07-29).
  */
 export class UpdateBusinessPartnerDto {
   @ApiPropertyOptional({
@@ -131,6 +131,15 @@ export class UpdateBusinessPartnerDto {
   @MaxLength(4000)
   @Transform(({ value }: { value: unknown }) => trimOrNull(value))
   notes?: string | null;
+
+  @ApiPropertyOptional({
+    example: true,
+    description:
+      'Set true to reactivate an inactive partner. Set false to deactivate (DELETE also deactivates).',
+  })
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsBoolean()
+  isActive?: boolean;
 
   @ApiPropertyOptional({
     example: false,

@@ -28,7 +28,7 @@ import {
   type ActiveFilterValue,
 } from '../ui/active-filter';
 import { MASTER_DATA_LABELS } from '../ui/labels';
-import { ActiveStatusFilter, FilterBar } from '../ui/list-toolbar';
+import { ActiveStatusFilter, FilterBar, FilterField } from '../ui/list-toolbar';
 import { PageHeader } from '../ui/page-header';
 import { UnitFormModal } from '../ui/reference-form-modals';
 
@@ -99,7 +99,11 @@ export function UnitsPage() {
             <Button type="link" danger onClick={() => confirmDeactivate(record)}>
               {common.deactivate}
             </Button>
-          ) : null}
+          ) : (
+            <Button type="link" onClick={() => confirmActivate(record)}>
+              {common.activate}
+            </Button>
+          )}
         </Space>
       ),
     },
@@ -163,6 +167,26 @@ export function UnitsPage() {
     });
   }
 
+  function confirmActivate(unit: Unit) {
+    Modal.confirm({
+      title: labels.activateConfirm,
+      okText: common.confirm,
+      cancelText: common.cancel,
+      onOk: async () => {
+        try {
+          await updateMutation.mutateAsync({
+            id: unit.id,
+            input: { isActive: true },
+          });
+          message.success(common.activateSuccess);
+        } catch (error) {
+          message.error(mapApiError(error).userMessage);
+          throw error;
+        }
+      },
+    });
+  }
+
   const editInitialValues =
     formMode.kind === 'edit'
       ? {
@@ -185,17 +209,19 @@ export function UnitsPage() {
       />
 
       <FilterBar>
-        <Input.Search
-          allowClear
-          placeholder={common.searchPlaceholder}
-          value={searchInput}
-          onChange={(event) => setSearchInput(event.target.value)}
-          onSearch={(value) => {
-            setSearch(value.trim());
-            setPage(1);
-          }}
-          style={{ minWidth: 220, maxWidth: 320 }}
-        />
+        <FilterField label={common.search}>
+          <Input.Search
+            allowClear
+            placeholder={common.searchPlaceholder}
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            onSearch={(value) => {
+              setSearch(value.trim());
+              setPage(1);
+            }}
+            style={{ minWidth: 220, maxWidth: 320 }}
+          />
+        </FilterField>
         <ActiveStatusFilter
           value={activeFilter}
           onChange={(value) => {
@@ -251,7 +277,11 @@ export function UnitsPage() {
                     <Button danger onClick={() => confirmDeactivate(unit)}>
                       {common.deactivate}
                     </Button>
-                  ) : null}
+                  ) : (
+                    <Button onClick={() => confirmActivate(unit)}>
+                      {common.activate}
+                    </Button>
+                  )}
                 </Space>
               </Space>
             </Card>

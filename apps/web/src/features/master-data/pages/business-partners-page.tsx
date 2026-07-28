@@ -36,7 +36,7 @@ import {
 import { BusinessPartnerFormModal } from '../ui/business-partner-form-modal';
 import { DuplicateReviewModal } from '../ui/duplicate-review-modal';
 import { MASTER_DATA_LABELS } from '../ui/labels';
-import { ActiveStatusFilter, FilterBar } from '../ui/list-toolbar';
+import { ActiveStatusFilter, FilterBar, FilterField } from '../ui/list-toolbar';
 import { PageHeader } from '../ui/page-header';
 
 const { Text } = Typography;
@@ -191,7 +191,11 @@ export function BusinessPartnersPage() {
             <Button type="link" danger onClick={() => confirmDeactivate(record)}>
               {common.deactivate}
             </Button>
-          ) : null}
+          ) : (
+            <Button type="link" onClick={() => confirmActivate(record)}>
+              {common.activate}
+            </Button>
+          )}
         </Space>
       ),
     },
@@ -293,6 +297,26 @@ export function BusinessPartnersPage() {
     });
   }
 
+  function confirmActivate(partner: BusinessPartner) {
+    Modal.confirm({
+      title: labels.activateConfirm,
+      okText: common.confirm,
+      cancelText: common.cancel,
+      onOk: async () => {
+        try {
+          await updateMutation.mutateAsync({
+            id: partner.id,
+            input: { isActive: true },
+          });
+          message.success(common.activateSuccess);
+        } catch (error) {
+          message.error(mapApiError(error).userMessage);
+          throw error;
+        }
+      },
+    });
+  }
+
   const editInitialValues: BusinessPartnerFormValues | undefined =
     formMode.kind === 'edit'
       ? {
@@ -329,17 +353,19 @@ export function BusinessPartnersPage() {
       />
 
       <FilterBar>
-        <Input.Search
-          allowClear
-          placeholder={common.searchPlaceholder}
-          value={searchInput}
-          onChange={(event) => setSearchInput(event.target.value)}
-          onSearch={(value) => {
-            setSearch(value.trim());
-            setPage(1);
-          }}
-          style={{ minWidth: 220, maxWidth: 320 }}
-        />
+        <FilterField label={common.search}>
+          <Input.Search
+            allowClear
+            placeholder={common.searchPlaceholder}
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            onSearch={(value) => {
+              setSearch(value.trim());
+              setPage(1);
+            }}
+            style={{ minWidth: 220, maxWidth: 320 }}
+          />
+        </FilterField>
         <ActiveStatusFilter
           value={activeFilter}
           onChange={(value) => {
@@ -347,22 +373,23 @@ export function BusinessPartnersPage() {
             setPage(1);
           }}
         />
-        <Select
-          value={roleFilter}
-          onChange={(value: RoleFilterValue) => {
-            setRoleFilter(value);
-            setPage(1);
-          }}
-          style={{ minWidth: 160 }}
-          aria-label={labels.filterRole}
-          placeholder={labels.filterRole}
-          options={[
-            { value: 'all', label: common.all },
-            { value: 'customer', label: labels.customer },
-            { value: 'supplier', label: labels.supplier },
-            { value: 'both', label: labels.bothRoles },
-          ]}
-        />
+        <FilterField label={labels.filterRole}>
+          <Select
+            value={roleFilter}
+            onChange={(value: RoleFilterValue) => {
+              setRoleFilter(value);
+              setPage(1);
+            }}
+            style={{ minWidth: 160 }}
+            aria-label={labels.filterRole}
+            options={[
+              { value: 'all', label: common.all },
+              { value: 'customer', label: labels.customer },
+              { value: 'supplier', label: labels.supplier },
+              { value: 'both', label: labels.bothRoles },
+            ]}
+          />
+        </FilterField>
       </FilterBar>
 
       {list.isError ? (
@@ -420,7 +447,11 @@ export function BusinessPartnersPage() {
                     <Button danger onClick={() => confirmDeactivate(partner)}>
                       {common.deactivate}
                     </Button>
-                  ) : null}
+                  ) : (
+                    <Button onClick={() => confirmActivate(partner)}>
+                      {common.activate}
+                    </Button>
+                  )}
                 </Space>
               </Space>
             </Card>

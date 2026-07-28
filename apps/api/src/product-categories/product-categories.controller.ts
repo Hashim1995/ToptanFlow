@@ -45,7 +45,9 @@ export class ProductCategoriesController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List product categories with pagination and filters' })
+  @ApiOperation({
+    summary: 'List product categories with pagination and filters',
+  })
   @ApiOkResponse({ type: PaginatedProductCategoriesResponseDto })
   list(
     @Query() query: ListProductCategoriesQueryDto,

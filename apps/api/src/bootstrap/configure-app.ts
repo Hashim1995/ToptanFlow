@@ -25,6 +25,7 @@ export function configureApp(app: INestApplication): AppBootstrapSettings {
 
   const apiPrefix = configService.get<string>('API_PREFIX', 'api');
   const port = configService.get<number>('PORT', 3000);
+  const nodeEnv = configService.get<string>('NODE_ENV', 'development');
   const corsOrigins = configService.get<string>('CORS_ORIGINS', '');
 
   app.setGlobalPrefix(apiPrefix);
@@ -43,9 +44,19 @@ export function configureApp(app: INestApplication): AppBootstrapSettings {
     .map((origin) => origin.trim())
     .filter((origin) => origin.length > 0);
 
+  // Development: reflect any Origin so local Vite / [::1] / alternate ports work.
+  // Production: explicit CORS_ORIGINS allow-list only (empty = deny).
+  const isDevelopment = nodeEnv === 'development';
+
   app.enableCors({
-    origin: allowedOrigins.length > 0 ? allowedOrigins : false,
+    origin: isDevelopment
+      ? true
+      : allowedOrigins.length > 0
+        ? allowedOrigins
+        : false,
     credentials: true,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Accept', 'Authorization'],
   });
 
   return { apiPrefix, port };

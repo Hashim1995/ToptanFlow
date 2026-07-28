@@ -211,6 +211,7 @@ export class BusinessPartnersService {
       taxNumber?: string | null;
       address?: string | null;
       notes?: string | null;
+      isActive?: boolean;
     } = {};
 
     if (dto.name !== undefined) {
@@ -250,6 +251,10 @@ export class BusinessPartnersService {
 
     if (dto.notes !== undefined) {
       data.notes = this.normalizeOptionalText(dto.notes);
+    }
+
+    if (dto.isActive !== undefined) {
+      data.isActive = dto.isActive;
     }
 
     const identityFieldsChanging =
@@ -426,7 +431,8 @@ export class BusinessPartnersService {
       dto.email !== undefined ||
       dto.taxNumber !== undefined ||
       dto.address !== undefined ||
-      dto.notes !== undefined
+      dto.notes !== undefined ||
+      dto.isActive !== undefined
     );
   }
 

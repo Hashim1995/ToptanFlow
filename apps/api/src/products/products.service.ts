@@ -154,6 +154,7 @@ export class ProductsService {
       standardSalePrice?: Decimal | null;
       latestPurchasePrice?: Decimal | null;
       criticalStockThreshold?: Decimal | null;
+      isActive?: boolean;
     } = {};
 
     if (dto.name !== undefined) {
@@ -185,6 +186,9 @@ export class ProductsService {
       data.criticalStockThreshold = this.toPrismaDecimalOrNull(
         dto.criticalStockThreshold,
       );
+    }
+    if (dto.isActive !== undefined) {
+      data.isActive = dto.isActive;
     }
 
     try {
@@ -317,7 +321,8 @@ export class ProductsService {
       dto.unitId !== undefined ||
       dto.standardSalePrice !== undefined ||
       dto.latestPurchasePrice !== undefined ||
-      dto.criticalStockThreshold !== undefined
+      dto.criticalStockThreshold !== undefined ||
+      dto.isActive !== undefined
     );
   }
 

@@ -28,8 +28,7 @@ export type ProductSortByField = (typeof SORT_BY_FIELDS)[number];
 
 export class ListProductsQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({
-    description:
-      'Case-insensitive match against code, name, or category name.',
+    description: 'Case-insensitive match against code, name, or category name.',
   })
   @IsOptional()
   @IsString()

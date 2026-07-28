@@ -28,7 +28,7 @@ import {
   type ActiveFilterValue,
 } from '../ui/active-filter';
 import { MASTER_DATA_LABELS } from '../ui/labels';
-import { ActiveStatusFilter, FilterBar } from '../ui/list-toolbar';
+import { ActiveStatusFilter, FilterBar, FilterField } from '../ui/list-toolbar';
 import { PageHeader } from '../ui/page-header';
 import { CurrencyFormModal } from '../ui/reference-form-modals';
 
@@ -103,7 +103,11 @@ export function CurrenciesPage() {
             >
               {common.deactivate}
             </Button>
-          ) : null}
+          ) : (
+            <Button type="link" onClick={() => confirmActivate(record)}>
+              {common.activate}
+            </Button>
+          )}
         </Space>
       ),
     },
@@ -167,6 +171,26 @@ export function CurrenciesPage() {
     });
   }
 
+  function confirmActivate(currency: Currency) {
+    Modal.confirm({
+      title: labels.activateConfirm,
+      okText: common.confirm,
+      cancelText: common.cancel,
+      onOk: async () => {
+        try {
+          await updateMutation.mutateAsync({
+            id: currency.id,
+            input: { isActive: true },
+          });
+          message.success(common.activateSuccess);
+        } catch (error) {
+          message.error(mapApiError(error).userMessage);
+          throw error;
+        }
+      },
+    });
+  }
+
   const editInitialValues =
     formMode.kind === 'edit'
       ? {
@@ -189,17 +213,19 @@ export function CurrenciesPage() {
       />
 
       <FilterBar>
-        <Input.Search
-          allowClear
-          placeholder={common.searchPlaceholder}
-          value={searchInput}
-          onChange={(event) => setSearchInput(event.target.value)}
-          onSearch={(value) => {
-            setSearch(value.trim());
-            setPage(1);
-          }}
-          style={{ minWidth: 220, maxWidth: 320 }}
-        />
+        <FilterField label={common.search}>
+          <Input.Search
+            allowClear
+            placeholder={common.searchPlaceholder}
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            onSearch={(value) => {
+              setSearch(value.trim());
+              setPage(1);
+            }}
+            style={{ minWidth: 220, maxWidth: 320 }}
+          />
+        </FilterField>
         <ActiveStatusFilter
           value={activeFilter}
           onChange={(value) => {
@@ -256,7 +282,11 @@ export function CurrenciesPage() {
                     <Button danger onClick={() => confirmDeactivate(currency)}>
                       {common.deactivate}
                     </Button>
-                  ) : null}
+                  ) : (
+                    <Button onClick={() => confirmActivate(currency)}>
+                      {common.activate}
+                    </Button>
+                  )}
                 </Space>
               </Space>
             </Card>

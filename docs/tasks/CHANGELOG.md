@@ -4,6 +4,12 @@ Planning-history only. Not a product release-notes replacement.
 
 ## 2026-07-29
 
+- **Approved Human Decision:** Soft-deactivated master-data entities may be
+  reactivated via PATCH `isActive: true` (currencies, units, categories,
+  products, business partners). Operator UI must expose **Aktiv et**. Prior
+  US-015/US-038 “no reactivation” exclusions superseded for this operational
+  completeness gap. Cursor rule `operational-completeness.mdc` records the
+  process: fill obvious user/business workflow gaps even when task docs omit them.
 - **Unplanned CHANGE completed:** [CHANGE-001](unplanned/CHANGE-001-product-category-and-frontend-ux-uplift.md) ProductCategory flat reference + frontend UX quality bar; [US-042](stories/US-042-product-category-and-frontend-ux-uplift.md) **Done** (TASK-042-01..05).
 - **Unplanned CHANGE:** [CHANGE-001](unplanned/CHANGE-001-product-category-and-frontend-ux-uplift.md) ProductCategory flat reference + frontend UX quality bar (owner).
 - **Story activated:** [US-042](stories/US-042-product-category-and-frontend-ux-uplift.md); TASK-042-01 docs/gates Done; US-041 further work paused.

@@ -57,6 +57,7 @@ export type UpdateBusinessPartnerInput = {
   taxNumber?: string | null;
   address?: string | null;
   notes?: string | null;
+  isActive?: boolean;
   acknowledgeDuplicate?: boolean;
 };
 

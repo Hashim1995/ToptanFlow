@@ -82,7 +82,10 @@ task that adds or changes screens must meet all of the following:
   (`Input`, `Input.TextArea`, `Input.Password`, `Select` with `showSearch` for
   long lists, `Switch`/`Checkbox` for booleans, `inputMode`/`type`/`autoComplete`
   where they improve mobile entry). Decimal money/quantity fields stay
-  string-safe (ADR-023) with `inputMode="decimal"`.
+  string-safe (ADR-023) with `inputMode="decimal"` **and must reject non-numeric
+  keystrokes** (sanitize to digits + optional `.`, max 4 fractional digits) —
+  `inputMode` alone is not enough. Empty Select values must be `undefined` so
+  placeholders remain visible.
 - **Required marks:** required fields are visibly marked; optional fields are
   not implied required.
 - **Read-only business codes:** backend-generated codes (ADR-024) are visible,
@@ -90,6 +93,8 @@ task that adds or changes screens must meet all of the following:
 - **List FilterBar:** every list screen has a usable filter row (at least
   search + active status when the API supports them, plus domain filters such
   as type/role/category/currency). Filters must reset pagination to page 1.
+  Every filter control has a **visible label** above it (`FilterField`) — do not
+  rely on Select placeholders alone when a value is always selected (e.g. “all”).
 - **Tables:** desktop tables may use column sort when the API `sortBy` allows
   it; dense tables use `scroll.x` and/or mobile cards so no action/value is lost
   (see Tables section).

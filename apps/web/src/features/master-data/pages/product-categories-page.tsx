@@ -28,7 +28,7 @@ import {
   type ActiveFilterValue,
 } from '../ui/active-filter';
 import { MASTER_DATA_LABELS } from '../ui/labels';
-import { ActiveStatusFilter, FilterBar } from '../ui/list-toolbar';
+import { ActiveStatusFilter, FilterBar, FilterField } from '../ui/list-toolbar';
 import { PageHeader } from '../ui/page-header';
 import { ProductCategoryFormModal } from '../ui/reference-form-modals';
 
@@ -100,7 +100,11 @@ export function ProductCategoriesPage() {
             >
               {common.deactivate}
             </Button>
-          ) : null}
+          ) : (
+            <Button type="link" onClick={() => confirmActivate(record)}>
+              {common.activate}
+            </Button>
+          )}
         </Space>
       ),
     },
@@ -160,6 +164,26 @@ export function ProductCategoriesPage() {
     });
   }
 
+  function confirmActivate(category: ProductCategory) {
+    Modal.confirm({
+      title: labels.activateConfirm,
+      okText: common.confirm,
+      cancelText: common.cancel,
+      onOk: async () => {
+        try {
+          await updateMutation.mutateAsync({
+            id: category.id,
+            input: { isActive: true },
+          });
+          message.success(common.activateSuccess);
+        } catch (error) {
+          message.error(mapApiError(error).userMessage);
+          throw error;
+        }
+      },
+    });
+  }
+
   const editInitialValues =
     formMode.kind === 'edit'
       ? { name: formMode.category.name }
@@ -178,17 +202,19 @@ export function ProductCategoriesPage() {
       />
 
       <FilterBar>
-        <Input.Search
-          allowClear
-          placeholder={common.searchPlaceholder}
-          value={searchInput}
-          onChange={(event) => setSearchInput(event.target.value)}
-          onSearch={(value) => {
-            setSearch(value.trim());
-            setPage(1);
-          }}
-          style={{ minWidth: 220, maxWidth: 320 }}
-        />
+        <FilterField label={common.search}>
+          <Input.Search
+            allowClear
+            placeholder={common.searchPlaceholder}
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            onSearch={(value) => {
+              setSearch(value.trim());
+              setPage(1);
+            }}
+            style={{ minWidth: 220, maxWidth: 320 }}
+          />
+        </FilterField>
         <ActiveStatusFilter
           value={activeFilter}
           onChange={(value) => {
@@ -240,7 +266,11 @@ export function ProductCategoriesPage() {
                     <Button danger onClick={() => confirmDeactivate(category)}>
                       {common.deactivate}
                     </Button>
-                  ) : null}
+                  ) : (
+                    <Button onClick={() => confirmActivate(category)}>
+                      {common.activate}
+                    </Button>
+                  )}
                 </Space>
               </Space>
             </Card>

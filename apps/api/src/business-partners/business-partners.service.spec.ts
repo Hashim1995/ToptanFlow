@@ -481,7 +481,7 @@ describe('BusinessPartnersService', () => {
       expect(prisma.businessPartner.update).not.toHaveBeenCalled();
     });
 
-    it('never maps code or isActive into Prisma update data', async () => {
+    it('never maps code into Prisma update data unless reactivation requested', async () => {
       prisma.businessPartner.update.mockResolvedValue({
         ...basePartner,
         name: 'Only name',
@@ -495,6 +495,26 @@ describe('BusinessPartnersService', () => {
       expect(updateCalls[0][0].data).not.toHaveProperty('code');
       expect(updateCalls[0][0].data).not.toHaveProperty('isActive');
       expect(updateCalls[0][0].data).toEqual({ name: 'Only name' });
+    });
+
+    it('reactivates an inactive partner via isActive true', async () => {
+      prisma.businessPartner.findUnique.mockResolvedValue({
+        ...basePartner,
+        isActive: false,
+      });
+      prisma.businessPartner.update.mockResolvedValue({
+        ...basePartner,
+        isActive: true,
+      });
+
+      const result = await service.update(partnerId, { isActive: true });
+
+      expect(prisma.businessPartner.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { isActive: true },
+        }),
+      );
+      expect(result.isActive).toBe(true);
     });
 
     it('updates trimmed name and rejects blank name', async () => {

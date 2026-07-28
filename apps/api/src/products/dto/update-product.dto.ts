@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
+  IsBoolean,
   IsEnum,
   IsNotEmpty,
   IsString,
@@ -42,7 +43,8 @@ export class UpdateProductDto {
     format: 'uuid',
     nullable: true,
     type: String,
-    description: 'Send null to clear. Omit to leave unchanged. Must be active when set.',
+    description:
+      'Send null to clear. Omit to leave unchanged. Must be active when set.',
   })
   @ValidateIf((_object, value) => value !== undefined)
   @ValidateIf((_object, value) => value !== null)
@@ -95,4 +97,13 @@ export class UpdateProductDto {
   @IsString()
   @IsNumericDecimal18_4()
   criticalStockThreshold?: string | null;
+
+  @ApiPropertyOptional({
+    example: true,
+    description:
+      'Set true to reactivate an inactive product. Set false to deactivate (DELETE also deactivates).',
+  })
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsBoolean()
+  isActive?: boolean;
 }

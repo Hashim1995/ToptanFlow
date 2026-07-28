@@ -59,6 +59,7 @@ export type UpdateProductInput = {
   standardSalePrice?: string | null;
   latestPurchasePrice?: string | null;
   criticalStockThreshold?: string | null;
+  isActive?: boolean;
 };
 
 export async function listProducts(

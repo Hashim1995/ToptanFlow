@@ -9,6 +9,7 @@ import {
 import { useProductCategoriesList } from '../api/product-categories.hooks';
 import { useUnitsList } from '../api/units.hooks';
 import type { ProductType } from '../api/products.api';
+import { DecimalInput } from './decimal-input';
 import { MASTER_DATA_LABELS, productTypeLabel } from './labels';
 
 type ProductFormModalProps = {
@@ -145,10 +146,7 @@ export function ProductFormModal({
       ) : null}
       <Form layout="vertical" requiredMark>
         {mode === 'edit' && readOnlyCode ? (
-          <Form.Item
-            label={common.code}
-            help={labels.codeReadonlyHint}
-          >
+          <Form.Item label={common.code} help={labels.codeReadonlyHint}>
             <Input value={readOnlyCode} disabled readOnly />
           </Form.Item>
         ) : null}
@@ -186,7 +184,7 @@ export function ProductFormModal({
                 {...field}
                 options={typeOptions}
                 style={{ width: '100%' }}
-                placeholder={labels.type}
+                placeholder={labels.typePlaceholder}
               />
             )}
           />
@@ -202,7 +200,6 @@ export function ProductFormModal({
             control={control}
             render={({ field }) => (
               <Select
-                {...field}
                 allowClear
                 showSearch
                 optionFilterProp="label"
@@ -212,6 +209,7 @@ export function ProductFormModal({
                 placeholder={labels.categoryPlaceholder}
                 value={field.value || undefined}
                 onChange={(value) => field.onChange(value ?? '')}
+                onBlur={field.onBlur}
               />
             )}
           />
@@ -228,13 +226,15 @@ export function ProductFormModal({
             control={control}
             render={({ field }) => (
               <Select
-                {...field}
                 showSearch
                 optionFilterProp="label"
                 loading={unitsQuery.isLoading}
                 options={unitOptions}
                 style={{ width: '100%' }}
-                placeholder={labels.unit}
+                placeholder={labels.unitPlaceholder}
+                value={field.value || undefined}
+                onChange={(value) => field.onChange(value ?? '')}
+                onBlur={field.onBlur}
               />
             )}
           />
@@ -249,7 +249,12 @@ export function ProductFormModal({
             name="standardSalePrice"
             control={control}
             render={({ field }) => (
-              <Input {...field} inputMode="decimal" placeholder="0.0000" />
+              <DecimalInput
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder={labels.decimalPlaceholder}
+              />
             )}
           />
         </Form.Item>
@@ -263,7 +268,12 @@ export function ProductFormModal({
             name="latestPurchasePrice"
             control={control}
             render={({ field }) => (
-              <Input {...field} inputMode="decimal" placeholder="0.0000" />
+              <DecimalInput
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder={labels.decimalPlaceholder}
+              />
             )}
           />
         </Form.Item>
@@ -277,7 +287,12 @@ export function ProductFormModal({
             name="criticalStockThreshold"
             control={control}
             render={({ field }) => (
-              <Input {...field} inputMode="decimal" placeholder="0.0000" />
+              <DecimalInput
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder={labels.decimalPlaceholder}
+              />
             )}
           />
         </Form.Item>

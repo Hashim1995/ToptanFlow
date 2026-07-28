@@ -22,6 +22,7 @@ export type UpdateUnitInput = {
   code?: string;
   name?: string;
   allowsFractionalQuantity?: boolean;
+  isActive?: boolean;
 };
 
 export async function listUnits(
