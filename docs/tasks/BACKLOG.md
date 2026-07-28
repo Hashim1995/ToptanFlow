@@ -10,13 +10,15 @@ Priority: **H** High · **M** Medium · **L** Low
 
 | ID | Title | Epic | Priority | Depends on | Task elaboration |
 | --- | --- | --- | --- | --- | --- |
-| — | *(none — US-038 is active; see CURRENT.md)* | — | — | — | — |
+| [US-020](stories/US-020-warehouse-master-data.md) | Warehouse master data | EPIC-008 | H | BRD-OD-02 | Not elaborated; gate open decisions first |
+| [US-041](stories/US-041-quality-harness-expansion.md) | Quality harness expansion | EPIC-023 | M | — | See story |
+| [US-018](stories/US-018-user-account-foundation.md) | User account foundation | EPIC-007 | H | — | Before US-019 |
 
 ## Active (see CURRENT.md)
 
 | ID | Title | Epic | Priority | Status | Next task |
 | --- | --- | --- | --- | --- | --- |
-| [US-038](stories/US-038-frontend-master-data-screens.md) | Master-data UI screens | EPIC-021 | H | In Progress | [TASK-038-05](tasks/TASK-038-05-verify-master-data-ui-responsive-states.md) |
+| — | *(none — US-038 Done)* | — | — | — | — |
 
 ## EPIC-006 remaining (after US-016)
 
@@ -28,8 +30,8 @@ Priority: **H** High · **M** Medium · **L** Low
 
 | ID | Title | Epic | Priority | Notes |
 | --- | --- | --- | --- | --- |
-| [US-037](stories/US-037-frontend-shell-foundation.md) | Frontend shell foundation | EPIC-021 | H | Scaffold exists; shell not Done |
-| [US-038](stories/US-038-frontend-master-data-screens.md) | Master-data UI screens | EPIC-021 | H | After US-037 + backend readiness |
+| [US-037](stories/US-037-frontend-shell-foundation.md) | Frontend shell foundation | EPIC-021 | H | **Done** |
+| [US-038](stories/US-038-frontend-master-data-screens.md) | Master-data UI screens | EPIC-021 | H | **Done** |
 | [US-041](stories/US-041-quality-harness-expansion.md) | Quality harness expansion | EPIC-023 | M | Ongoing |
 | [US-018](stories/US-018-user-account-foundation.md) | User account foundation | EPIC-007 | H | Placeholder User model only today |
 | [US-019](stories/US-019-authentication-authorization.md) | Authentication & authorization | EPIC-007 | H | **Draft** — open decisions |

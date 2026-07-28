@@ -47,5 +47,5 @@ Exact screen inventory per milestone not fully listed.
 
 ## Repository evidence
 
-Web app: US-037 Done; US-038 In Progress (shared master-data API/query
-foundation Done; vertical screens pending).
+Web app: US-037 Done; US-038 Done (currencies, units, products, partners,
+soft-duplicate UI, responsive verification).

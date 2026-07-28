@@ -3,7 +3,7 @@
 - **ID:** US-038
 - **Title:** Frontend master-data screens for delivered APIs
 - **Parent Epic:** [EPIC-021](../epics/EPIC-021-frontend-application.md)
-- **Status:** In Progress
+- **Status:** Done
 - **Priority:** High
 - **Business actor:** Master-data maintainer
 
@@ -87,4 +87,4 @@ Elaborated:
 - [TASK-038-02](../tasks/TASK-038-02-add-currency-unit-screens.md) — **Done**
 - [TASK-038-03](../tasks/TASK-038-03-add-product-screens.md) — **Done**
 - [TASK-038-04](../tasks/TASK-038-04-add-business-partner-screens.md) — **Done**
-- [TASK-038-05](../tasks/TASK-038-05-verify-master-data-ui-responsive-states.md) — Ready after 038-02..04
+- [TASK-038-05](../tasks/TASK-038-05-verify-master-data-ui-responsive-states.md) — **Done**

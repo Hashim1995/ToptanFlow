@@ -6,9 +6,9 @@
 
 ## Current phase
 
-**Master-data backend (Business Partners)** — [EPIC-006](epics/EPIC-006-business-partners-backend.md) In Progress.
+**Post–master-data UI** — [US-038](stories/US-038-frontend-master-data-screens.md) Done. Resume dependency spine (warehouses/inventory) or quality/identity enablers; do not invent open decisions.
 
-Likely upcoming phase after partner update/deactivate and remaining partner quality stories: either frontend master-data shell ([EPIC-021](epics/EPIC-021-frontend-application.md)) in parallel slices, or identity ([EPIC-007](epics/EPIC-007-identity-authz.md)) before transactional posting — **identity remains an open technical decision** and must not be invented.
+Likely next: [US-020](stories/US-020-warehouse-master-data.md) after BRD-OD-02 clarity, and/or [US-041](stories/US-041-quality-harness-expansion.md) / [US-018](stories/US-018-user-account-foundation.md). Identity ([EPIC-007](epics/EPIC-007-identity-authz.md)) remains blocked on auth open decisions for [US-019](stories/US-019-authentication-authorization.md).
 
 ## Phase map
 
@@ -29,16 +29,17 @@ Likely upcoming phase after partner update/deactivate and remaining partner qual
 | --- | --- | --- |
 | [EPIC-006](epics/EPIC-006-business-partners-backend.md) Business partners backend | In Progress | US-014–016 Done; remaining [US-017](stories/US-017-business-partner-statement.md) (deferred) |
 | [EPIC-023](epics/EPIC-023-testing-quality-infrastructure.md) Testing & quality | In Progress | Ongoing harness ([US-041](stories/US-041-quality-harness-expansion.md)) |
-| [EPIC-021](epics/EPIC-021-frontend-application.md) Frontend application | In Progress | US-037 Done; [US-038](stories/US-038-frontend-master-data-screens.md) active |
+| [EPIC-021](epics/EPIC-021-frontend-application.md) Frontend application | In Progress | US-037/038 Done; further screens as backends land |
 
 ### Horizon C — Next (near-term)
 
 Ordered by dependency/value after current partner work:
 
 1. EPIC-006 master-data slice largely complete (US-014–016 Done); [US-017](stories/US-017-business-partner-statement.md) waits on postings.
-2. [US-037](stories/US-037-frontend-shell-foundation.md) / [US-038](stories/US-038-frontend-master-data-screens.md) when UI work is prioritized (**inference:** valuable once APIs exist; not mandated by a dated plan).
-3. [EPIC-007](epics/EPIC-007-identity-authz.md) before production posting — **blocked on auth open decisions** for [US-019](stories/US-019-authentication-authorization.md).
-4. [US-034](stories/US-034-append-only-audit-log.md) audit interface ideally before heavy posting (analysis M0 note) — elaborate when activated.
+2. [US-037](stories/US-037-frontend-shell-foundation.md) / [US-038](stories/US-038-frontend-master-data-screens.md) **Done**.
+3. [EPIC-008](epics/EPIC-008-inventory-warehouses.md) / [US-020](stories/US-020-warehouse-master-data.md) next on transactional spine — **gated by BRD-OD-02**.
+4. [EPIC-007](epics/EPIC-007-identity-authz.md) before production posting — **blocked on auth open decisions** for [US-019](stories/US-019-authentication-authorization.md).
+5. [US-034](stories/US-034-append-only-audit-log.md) audit interface ideally before heavy posting (analysis M0 note) — elaborate when activated.
 
 Estimate for near-term stories: deferred until each story activation.
 
