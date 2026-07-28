@@ -12,6 +12,7 @@
     "start:dev": "nest start --watch --exec \"node scripts/run-patched-main.cjs\"",
     "start:debug": "nest start --debug --watch --exec \"node scripts/run-patched-main.cjs\"",
     "start:prod": "node dist/src/main.js",
+    "swagger": "yarn start:dev",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",

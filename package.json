@@ -8,7 +8,8 @@
     "packages/*"
   ],
   "scripts": {
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "swagger": "yarn workspace api swagger"
   },
   "devDependencies": {
     "prettier": "^3.4.2"

@@ -15,10 +15,12 @@ async function bootstrap() {
   app.enableShutdownHooks();
 
   await app.listen(port);
+  const swaggerUrl = `http://localhost:${port}/${apiPrefix}/docs`;
   Logger.log(
     `TOPTANFLOW API listening on port ${port}, prefix "/${apiPrefix}"`,
     'Bootstrap',
   );
+  Logger.log(`Swagger UI: ${swaggerUrl}`, 'Bootstrap');
 }
 
 void bootstrap();

@@ -10,13 +10,13 @@ Priority: **H** High · **M** Medium · **L** Low
 
 | ID | Title | Epic | Priority | Depends on | Task elaboration |
 | --- | --- | --- | --- | --- | --- |
-| [US-037](stories/US-037-frontend-shell-foundation.md) | Frontend shell foundation | EPIC-021 | H | Scaffold exists | On activation |
+| — | *(none — US-037 is active; see CURRENT.md)* | — | — | — | — |
 
 ## Active (see CURRENT.md)
 
 | ID | Title | Epic | Priority | Status | Next task |
 | --- | --- | --- | --- | --- | --- |
-| — | *(none — activate next story from Ready)* | — | — | — | — |
+| [US-037](stories/US-037-frontend-shell-foundation.md) | Frontend shell foundation | EPIC-021 | H | In Progress | [TASK-037-02](tasks/TASK-037-02-add-axios-http-client-foundation.md) |
 
 ## EPIC-006 remaining (after US-016)
 

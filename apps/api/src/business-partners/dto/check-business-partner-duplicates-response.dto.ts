@@ -1,9 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export type BusinessPartnerDuplicateMatchedField =
-  | 'name'
-  | 'phone'
-  | 'taxNumber';
+  'name' | 'phone' | 'taxNumber';
 
 export class BusinessPartnerDuplicateCandidateDto {
   @ApiProperty({ format: 'uuid' })
