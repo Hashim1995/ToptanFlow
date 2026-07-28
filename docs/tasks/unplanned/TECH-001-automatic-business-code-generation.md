@@ -1,0 +1,32 @@
+# TECH-001: Automatic business code generation (Product & BusinessPartner)
+
+- **ID:** TECH-001
+- **Type:** TECH
+- **Title:** Automatic backend business code generation for Product and BusinessPartner
+- **Status:** Done
+- **Trigger:** Approved Human Decision during BusinessPartner/Product work requiring backend-generated sequential codes (not client-supplied).
+- **Urgency:** High (blocks correct create-contract for partners/products)
+- **Affected epics / stories / tasks:** EPIC-005, EPIC-006; US-010, US-011, US-014; Product/Partner create paths; shared NumberSequence infrastructure
+- **Why not in the original plan:** Original create APIs accepted client-supplied `code`. Decision and ADR-024 arrived as a cross-cutting correction during partner work.
+- **Scope:** NumberSequence model + migration; NumberSequencesService atomic allocation; Product/BusinessPartner create transaction integration; DTOs omit `code`; tests including concurrency; ADR-024; invariants/terminology updates
+- **Out of scope:** Document numbering; Unit/Currency codes; prefixes/resets/tenant scoping; preview/reservation endpoints (ADR-024 exclusions)
+- **Risks:** Historical non-numeric codes fail migration by design; environment migrate/apply must be performed operationally
+- **Acceptance criteria:**
+  - [x] Independent PRODUCT and BUSINESS_PARTNER sequences
+  - [x] Allocation inside same DB transaction as create
+  - [x] Seven-digit zero-padded format with overflow without truncation
+  - [x] No HTTP exposure of NumberSequence
+  - [x] Create DTOs reject client `code`
+  - [x] Unit/e2e/concurrency tests present
+- **Impact on current work:** Interrupted BusinessPartner roadmap after US-014; Product create contract changed retrospectively
+- **Roadmap impact:** Resume EPIC-006 at US-015 (update/deactivate; legacy Step 16.3)
+- **Result:** Implemented and committed on `feat/business-partners` as `c3619ba`
+- **Follow-up actions:** Activate US-015; ensure migration applied in each environment before relying on creates
+- **Evidence:**
+  - ADR-024 `docs/decisions/ADR-024-automatic-business-code-generation.md`
+  - Migration `20260728190433_add_automatic_business_code_sequences`
+  - `apps/api/src/number-sequences/*`
+  - Product/BusinessPartner services allocate via `NumberSequencesService.nextCode`
+  - Tests: `number-sequences.service.spec.ts`, `business-code.formatter.spec.ts`, `business-code-sequences.concurrency-spec.ts`, updated products/partners e2e
+  - Commit `c3619ba`
+  - **Classification note:** Formal separate Review/QA verdict not recorded in planning history; Done based on repository implementation + tests + Accepted ADR. Environment migration apply status is operational/Unknown from repo alone.

@@ -32,10 +32,13 @@ Business Knowledge Documents
     docs/business/workflow-map.md)
         ↓
 Technical Specification (SRS/TDS) — authoritative for implementation
-   approach only, never for business behavior
-        ↓
+ approach only, never for business behavior
+ ↓
+Task Management (`docs/tasks/`) — roadmap, epics, user stories,
+ implementation tasks, and unplanned work; never invents business behavior
+ ↓
 The Current Task Instructions
-        ↓
+ ↓
 Implementation (code, schema, configuration)
 ```
 
@@ -45,16 +48,31 @@ Notes on this hierarchy:
 - The SRS/TDS is authoritative only for *how* something is built once the business behavior it builds is already approved. It is never authoritative for *what* the business behavior is.
 - A "recommendation" or "safe default" found in any document is not an approved decision. It becomes usable only after it is confirmed as an Approved Human Decision.
 
+## Task Management
+
+Repository-owned planning lives under [`docs/tasks/`](docs/tasks/README.md). It is the source of truth for roadmap, epics, user stories, implementation tasks, dependencies, current/blocked/completed work, hotfixes, and unplanned changes.
+
+Before implementing, agents must:
+
+1. Read [`docs/tasks/README.md`](docs/tasks/README.md) and [`docs/tasks/CURRENT.md`](docs/tasks/CURRENT.md).
+2. Read the active Epic, User Story, and assigned Task (or Unplanned item) by ID.
+3. Follow that item’s scope and acceptance criteria; update status, evidence, and `CURRENT.md` honestly when active work changes.
+4. Elaborate detailed tasks for a future story **only when that story is activated** (progressive elaboration).
+5. Report planning conflicts instead of silently rewriting the roadmap.
+
+Canonical ownership and prompt patterns are defined in `docs/tasks/README.md`. Do not invent a parallel tracker.
+
 ## AI Operating Principles
 
 Before making any change, an agent must:
 
 1. **Identify the business behavior involved.** Locate the relevant rule(s) in `docs/business/invariants.md`, the relevant term(s) in `docs/business/terminology.md`, and the relevant workflow(s) in `docs/business/workflow-map.md`.
 2. **Check alignment status.** Consult `docs/analysis/01-document-analysis.md` for whether this area is Covered, Partially covered, Not covered, a Conflict, or an Open Decision.
-3. **Reason before acting.** State, even briefly, which business rule and which source justify the intended change. If no rule justifies it, do not invent one.
-4. **Prefer the narrowest correct action.** Do not expand the task to "while I'm here" improvements.
-5. **Verify against invariants after the change.** A change that appears to satisfy the task but violates a stated invariant is not acceptable, regardless of how it was requested.
-6. **Never resolve ambiguity by guessing.** If two valid interpretations exist, treat the situation as an Open Decision and stop.
+3. **Consult task management.** Identify the Epic / User Story / Task (or Unplanned item) that authorizes the change via `docs/tasks/CURRENT.md` and the linked files.
+4. **Reason before acting.** State, even briefly, which business rule and which source justify the intended change. If no rule justifies it, do not invent one.
+5. **Prefer the narrowest correct action.** Do not expand the task to "while I'm here" improvements.
+6. **Verify against invariants after the change.** A change that appears to satisfy the task but violates a stated invariant is not acceptable, regardless of how it was requested.
+7. **Never resolve ambiguity by guessing.** If two valid interpretations exist, treat the situation as an Open Decision and stop.
 
 ## Business Invariants
 

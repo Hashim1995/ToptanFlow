@@ -10,7 +10,7 @@ To give every agent and human a single, consistent, logical reference for where 
 
 - The repository is a single monorepo (ADR-001), containing independently deployable frontend and backend applications (ADR-002).
 - Structure follows business and application boundaries, not arbitrary technical convenience, consistent with `AGENTS.md` ("Coding Principles").
-- Documentation, business knowledge, technical decisions, and task specifications remain under `docs/`, already established by prior tasks (`docs/business/`, `docs/analysis/`, `docs/decisions/`, `docs/technical/`, `docs/tasks/`).
+- Documentation, business knowledge, technical decisions, and repository-owned task management remain under `docs/`, already established by prior tasks (`docs/business/`, `docs/analysis/`, `docs/decisions/`, `docs/technical/`, `docs/tasks/` — see `docs/tasks/README.md`).
 - Agent role instructions remain under `agents/`, already established.
 - This document does not introduce, rename, or move any existing file or directory.
 
@@ -43,7 +43,7 @@ This is a **logical target structure**, describing where future application code
 
 ## Documentation Boundaries
 
-- `docs/` remains the source for business analysis (`docs/analysis/`), business knowledge (`docs/business/`), technical documents (`docs/technical/`), architecture decisions (`docs/decisions/`), and task specifications (`docs/tasks/`).
+- `docs/` remains the source for business analysis (`docs/analysis/`), business knowledge (`docs/business/`), technical documents (`docs/technical/`), architecture decisions (`docs/decisions/`), and task management (`docs/tasks/`).
 - Application code must not duplicate the content of these documents; it implements what they specify and references them where traceability is needed (e.g., in code comments citing a task ID), consistent with `AGENTS.md`.
 
 ## Dependency Direction

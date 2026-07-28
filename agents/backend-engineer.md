@@ -16,7 +16,8 @@ Implement authoritative backend behavior exactly as defined by approved tasks, b
 
 ## Required Inputs
 
-- The assigned task from the Task Planner, including allowed files, scope, and acceptance criteria.
+- The assigned task from the Task Planner (`docs/tasks/tasks/TASK-*.md` or an Unplanned item), including scope and acceptance criteria; consult `docs/tasks/CURRENT.md` and `docs/tasks/README.md`.
+- Parent User Story and Epic linked from the task.
 - `docs/business/invariants.md` and `docs/business/workflow-map.md` for the affected workflow.
 - `docs/business/terminology.md` for consistent naming.
 - ADR-002, ADR-003, and ADR-004 in particular.

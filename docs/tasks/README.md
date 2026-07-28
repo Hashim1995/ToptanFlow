@@ -1,140 +1,230 @@
-# TOPTANFLOW Task Specification System
+# TOPTANFLOW Task Management System
 
-## Why Task Specifications Exist
+> Canonical, repository-owned source of truth for roadmap, epics, user stories, implementation tasks, unplanned work, and delivery history.
+> This system supersedes the earlier task-*specification-only* layout. Preserved history: [`archive/`](archive/).
 
-A task specification is the single, written boundary between "what is approved" and "what an implementation agent is allowed to build." Per `AGENTS.md` ("Project Philosophy" and "AI Operating Principles"), no business behavior is implemented before it is written down, approved, and traceable to a source document, and every agent must reason from a specific rule and source before acting. A task specification is where that reasoning is captured once, so that the Backend Engineer, Frontend Engineer, Database Engineer, Code Reviewer, QA Engineer, and Git Release agent (see `agents/`) can all work from the same, unambiguous instruction instead of re-deriving business intent independently.
+## Purpose
 
-Without a task specification, an implementation agent would have to infer scope, correctness, and intent from a large request, which directly risks the failure modes `AGENTS.md` forbids: inventing a requirement, silently resolving an Open Decision, or expanding a task beyond what was asked.
+TOPTANFLOW is a business-critical ERP. Planning must live in version control with the code so any agent or human can answer:
 
-## Why Large, Vague Requests Must Be Decomposed
+- what has been completed
+- what is active now
+- what comes next
+- why work exists
+- what depends on what
+- which user story owns a task
+- whether a change was planned or unplanned
 
-`AGENTS.md` ("Project Philosophy") requires small, incremental changes and one completed task at a time. A large request (for example, "build the Sales module") spans multiple workflows, multiple invariant groups, and multiple roles (`docs/business/workflow-map.md` lists Sales-related workflows alone across Sales, Inventory, Settlement, Costing, and Bundles). Attempting it as one task makes correctness unverifiable: a reviewer or QA engineer cannot confirm business correctness (`AGENTS.md`, "Review Principles") against a scope that is too broad to check line by line. The Task Planner's role (`agents/task-planner.md`) exists specifically to decompose such requests into work a single agent can complete and a single reviewer can safely verify.
+This system is **lightweight but disciplined**: useful for a solo developer today, suitable for a larger team later. It does **not** require Jira/Trello/GitHub Projects to understand project state.
 
-## The One-Vertical-Slice-at-a-Time Rule
-
-Each task specification must correspond to **one vertical slice**: one workflow, or one clearly bounded part of one workflow (as named in `docs/business/workflow-map.md`), carried through whichever layers it actually touches (business rule, backend, frontend, database) — not one technical layer across many workflows. A task is not "add a database table" or "build the API layer"; it is "implement Workflow X's posting effect," scoped to the files that workflow requires. This keeps every task traceable to one business event and reviewable as a complete, coherent change, consistent with `AGENTS.md`'s "Definition of Done" (the change is the smallest one that correctly satisfies the task).
-
-## Relationship Between Business Requirements, Architecture Decisions, Task Specifications, Implementation, Review, QA, and Release
-
-This system sits inside the Source of Truth Hierarchy defined in `AGENTS.md`:
-
-```
-Business Requirements Document (BRD)
-        ↓
-Approved Human Decisions
-        ↓
-Business Knowledge Documents (docs/business/)
-        ↓
-Technical Specification (SRS/TDS) + Accepted ADRs (docs/decisions/)
-        ↓
-Task Specification (docs/tasks/)
-        ↓
-Implementation → Review → QA → Release
-```
-
-- **Business requirements** (BRD, `docs/business/invariants.md`, `docs/business/terminology.md`, `docs/business/workflow-map.md`) define *what* must be true. A task specification never redefines this; it only references it.
-- **Architecture decisions** (`docs/decisions/`) define *how* the system is structured to satisfy those requirements. A task specification must stay inside Accepted ADRs, or it is not ready.
-- **Task specifications** (this system) translate approved business behavior and architecture into a scoped, executable, verifiable unit of work, per `agents/task-planner.md`.
-- **Implementation** (`agents/backend-engineer.md`, `agents/frontend-engineer.md`, `agents/database-engineer.md`) builds exactly what the task specifies, nothing more.
-- **Review** (`agents/code-reviewer.md`) checks the implementation against the task, the invariants, and the ADRs, in that order.
-- **QA** (`agents/qa-engineer.md`) verifies the implementation behaves correctly against the task's acceptance criteria and the underlying invariants.
-- **Release** (`agents/git-release.md`) packages only reviewed, QA-passed work traceable to the task.
-
-A task specification is the pivot point of this chain: everything above it must already be approved before the task is written; everything below it must be traceable back to it.
-
-## Who May Create a Task
-
-Only the Task Planner (`agents/task-planner.md`) creates a task specification, and only from an already-approved business specification (Business Analyst, `agents/business-analyst.md`) and, where architecture is involved, an already-approved technical design (Solution Architect, `agents/solution-architect.md`). A task must not be created directly from a raw, undecomposed request.
-
-## Who May Execute a Task
-
-Only the role named in the task's `Assigned Role` metadata field may implement it (Backend Engineer, Frontend Engineer, or Database Engineer, per `agents/`). An implementation agent may only touch the files listed under `Allowed Files` in the task.
-
-## When a Task Is Ready
-
-A task is **Ready** only when:
-- Its business behavior is approved and traceable to the BRD, an Approved Human Decision, or `docs/business/invariants.md` / `docs/business/workflow-map.md`.
-- Its technical approach does not conflict with any Accepted ADR.
-- It does not depend on an unresolved Open Decision.
-- Its scope, allowed files, and acceptance criteria are fully specified using `docs/tasks/TASK-TEMPLATE.md`.
-
-## When a Task Is Blocked
-
-A task is **Blocked** when it depends on:
-- A missing business rule.
-- A conflict between source documents.
-- An unresolved Open Decision.
-- An unapproved architecture decision.
-- Another task that has not reached `Done`.
-
-A blocked task must state the exact blocking reason and what is needed to unblock it, consistent with `AGENTS.md`'s "File Modification Policy" refusal rule.
-
-## Task Status Lifecycle
+## Hierarchy
 
 ```
-Draft
-  ↓
-Needs Business Decision  (only if a business gap or Open Decision is found)
-  ↓
-Ready
-  ↓
-In Progress
-  ↓
-In Review
-  ↓
-In QA
-  ↓
-Ready for Release
-  ↓
-Done
+Roadmap (ROADMAP.md)
+  └── Epic (EPIC-xxx)
+        └── User Story (US-xxx)
+              └── Task (TASK-xxx-nn)   ← detailed only when story is active/completed/next
+Unplanned work (BUG / HOTFIX / CHANGE / TECH)
+  └── may pause stories, create dependencies, or become technical-enabler stories
 ```
 
-Two statuses exist outside this line and may apply at any point:
+Canonical ownership:
 
-- **Blocked** — the task cannot currently proceed for a stated reason; it returns to the lifecycle once the reason is resolved.
-- **Cancelled** — the task will not proceed at all; the file is retained for traceability, never deleted.
+| File / folder | Owns |
+| --- | --- |
+| [`ROADMAP.md`](ROADMAP.md) | High-level delivery order and phases |
+| [`CURRENT.md`](CURRENT.md) | Active operational state (keep short) |
+| [`BACKLOG.md`](BACKLOG.md) | Upcoming stories not yet active |
+| [`CHANGELOG.md`](CHANGELOG.md) | Planning history (not product release notes) |
+| [`epics/`](epics/) | Epic scope, exclusions, risks |
+| [`stories/`](stories/) | Business acceptance and readiness |
+| [`tasks/`](tasks/) | Implementation acceptance, results, evidence |
+| [`unplanned/`](unplanned/) | Interruptions and approved scope changes |
 
-A task only advances forward through the lifecycle; it never skips a stage, and a return to an earlier stage (e.g., `In Review` → `In Progress` after review findings) is a normal handoff, not a lifecycle violation.
+Do **not** duplicate status across many files. Update the owning file; other files link.
 
-## Task ID and Filename Convention
+## ID conventions
 
+| Kind | Pattern | Example |
+| --- | --- | --- |
+| Epic | `EPIC-NNN` | `EPIC-006` |
+| User Story | `US-NNN` | `US-015` |
+| Task | `TASK-NNN-nn` | `TASK-014-01` (parent story `US-014`) |
+| Bug | `BUG-NNN` | `BUG-001` |
+| Hotfix | `HOTFIX-NNN` | `HOTFIX-001` |
+| Unplanned change | `CHANGE-NNN` | `CHANGE-001` |
+| Technical intervention | `TECH-NNN` | `TECH-001` |
+
+Rules:
+
+- IDs are **stable** and **never reused**, even if Cancelled.
+- Filenames include the ID: `EPIC-006-business-partners-backend.md`.
+- Parent–child links are explicit in each file.
+- Conversational “Step 16.x” labels are **legacy references** only, not permanent IDs.
+
+## Statuses
+
+| Status | Meaning |
+| --- | --- |
+| **Draft** | Requirement incomplete or unresolved. |
+| **Planned** | Understood at high level; not ready to start. |
+| **Ready** | Dependencies and acceptance criteria sufficient for implementation. |
+| **In Progress** | Implementation is active. |
+| **Blocked** | Cannot proceed; blocker must be documented. |
+| **Review** | Implementation complete; awaiting review/acceptance. |
+| **Done** | Accepted and validated with evidence. |
+| **Cancelled** | Intentionally abandoned; file retained. |
+| **Deferred** | Intentionally postponed; not abandoned. |
+
+Do not use vague statuses (“almost done”, “pending-ish”).
+
+Honest completion rules:
+
+- **Confirmed Done** — implementation + tests + repository evidence support completion.
+- **Partially Done** — some pieces exist; acceptance incomplete (record on the story, not as a fake Done).
+- **Planned** — documentation/placeholders only.
+- **Unknown** — evidence insufficient.
+
+A Prisma model, empty module, or single endpoint alone does **not** make a story Done.
+
+## Estimates
+
+Use relative sizes (no invented calendar dates/hours):
+
+| Size | Meaning |
+| --- | --- |
+| **XS** | Less than one normal session |
+| **S** | About one session |
+| **M** | Two to three sessions |
+| **L** | Several sessions |
+| **XL** | Must be decomposed before implementation |
+
+Where unknown: `Estimate deferred until story activation.`
+
+## Progressive elaboration
+
+Do **not** fully decompose every future story today.
+
+| Story state | Task elaboration |
+| --- | --- |
+| Draft / Planned / far future | `Deferred until activation` |
+| Active, next, partially implemented, or completed | Detailed `TASK-*` files exist |
+
+### Activate a user story
+
+1. Read the story and parent Epic.
+2. Inspect current code, ADRs, and business docs.
+3. Resolve or report open questions (`AGENTS.md` Stop Conditions).
+4. Create implementation tasks under `docs/tasks/tasks/`.
+5. Define dependencies and acceptance criteria.
+6. Update [`CURRENT.md`](CURRENT.md) and [`CHANGELOG.md`](CHANGELOG.md).
+7. Set story to Ready or In Progress.
+8. Begin implementation only after planning is coherent.
+
+### Close work
+
+1. Mark task Done only with evidence (paths, migrations, tests, commits if known).
+2. When all story tasks Done and acceptance met → story Done.
+3. Update CURRENT.md; append CHANGELOG.md.
+4. Never delete Done/Cancelled files.
+
+## Unplanned work, hotfixes, and cross-cutting changes
+
+See [`unplanned/README.md`](unplanned/README.md).
+
+Summary:
+
+- **BUG** — confirmed defect in expected behavior.
+- **HOTFIX** — urgent production/delivery-critical correction.
+- **CHANGE** — approved unplanned scope change.
+- **TECH** — unplanned technical/architectural intervention.
+
+An unplanned item may pause the active story, become a child task, become a technical-enabler story, or reorder the roadmap. Classification depends on impact — do not force every small bug into a new Epic.
+
+Paused work representation (example):
+
+```text
+CURRENT.md:
+- Active story US-014 temporarily Paused
+- TECH-001 In Progress
+- Resume target: US-015 after TECH-001 Done
 ```
-TASK-<MODULE>-<NUMBER>-<short-kebab-title>.md
+
+Cross-cutting architecture work is tracked as:
+
+1. a technical-enabler user story under a foundation epic, **or**
+2. an unplanned TECH item, **or**
+3. a task shared by multiple stories — choose by scope; never hide major architecture inside a tiny feature task.
+
+## Agent usage
+
+Before implementing:
+
+1. Read this README.
+2. Read [`CURRENT.md`](CURRENT.md).
+3. Read the active Epic, User Story, and assigned Task (or Unplanned item).
+4. Read relevant ADRs and `docs/business/*`.
+5. Follow task scope and acceptance criteria exactly.
+6. Update status/result/evidence honestly after validation.
+7. Update CURRENT.md when active work changes.
+8. Elaborate future story tasks **only** when the story is activated.
+9. Report planning conflicts; do not silently rewrite the roadmap.
+
+Role agents (`agents/*`) still apply. Detailed agent handoff order (BA → Architect → Planner → implement → review → QA → release) is preserved in [`WORKFLOW.md`](WORKFLOW.md) as the **agent execution path**, subordinate to this planning hierarchy.
+
+Primary planning role: [`agents/task-planner.md`](../../agents/task-planner.md).
+
+## Prompt patterns (minimal)
+
+```text
+Activate US-xxx.
+Read its Epic, repository state, ADRs and architecture docs.
+Resolve or report open questions, create implementation tasks,
+update CURRENT.md, prepare the first Ready task. Do not implement yet.
 ```
 
-- `<MODULE>` is the business module name in upper case, consistent with the module names used in `docs/analysis/01-document-analysis.md` (Section 3, "Business Modules") and `docs/business/workflow-map.md` (e.g., `USERS`, `PARTNERS`, `PRODUCTS`, `SALES`, `PURCHASING`, `INVENTORY`, `CASH`, `SETTLEMENT`, `EXPENSES`, `ASSETS`, `YATI`, `MESSAGING`, `ATTACHMENTS`, `ALERTS`, `AUDIT`, `REPORTING`, `MIGRATION`).
-- `<NUMBER>` is a zero-padded, sequential, per-module number (`001`, `002`, ...), never reused, even if a task is cancelled.
-- `<short-kebab-title>` is a concise, lowercase, hyphenated summary of the task's single vertical slice.
+```text
+Implement TASK-xxx-nn.
+Read its User Story, Epic, ADRs, agents and conventions.
+Follow scope and acceptance criteria. Update result and evidence after validation.
+```
 
-Examples:
-- `TASK-USERS-001-create-user-foundation.md`
-- `TASK-PARTNERS-001-create-partner-foundation.md`
-- `TASK-SALES-001-create-sale-draft.md`
+```text
+Register and plan an urgent hotfix for [problem].
+Create HOTFIX-xxx, link affected work, update CURRENT.md,
+define minimum safe acceptance criteria before implementation.
+```
 
-## Where Completed Tasks Remain Stored
+```text
+Register this approved unplanned change: [change].
+Classify as CHANGE, TECH, task, or new User Story.
+Record impact on current work and update the roadmap.
+```
 
-All task files, regardless of status, remain permanently in `docs/tasks/`, organized as one file per task. A task reaching `Done` or `Cancelled` is never deleted or moved; its file is the historical record of what was decided, built, reviewed, and released, consistent with the immutability principle in `docs/business/invariants.md` ("Global Invariants") and ADR-004.
+```text
+Resume US-xxx after completion of TECH-xxx.
+Verify dependencies, update statuses and CURRENT.md, identify next Ready task.
+```
 
-## Rules for Changing an Approved Task
+The repository documents contain the full rules — prompts only reference IDs.
 
-- A task's business behavior, scope, or acceptance criteria may only be changed by returning it to the Task Planner; an implementation agent must not silently reinterpret scope.
-- Any scope change to a task already `Ready` or later must be recorded in the task file itself (not overwritten silently), including who requested it and why.
-- A scope change that would require resolving an Open Decision is not permitted; the task instead moves to `Needs Business Decision` or `Blocked`.
-- A scope change that materially changes the vertical slice (e.g., adding an unrelated workflow) is not an edit — it requires a new task.
+## Relationship to AGENTS.md
 
-## Rules for UI Tasks
+This system sits under the Source of Truth Hierarchy in `AGENTS.md`. Task files never invent business behavior; they reference `docs/business/*`, Approved Human Decisions, and Accepted ADRs.
 
-Per `docs/decisions/ADR-005-azerbaijani-responsive-user-interface.md` and `docs/technical/ui-requirements.md`:
+## Templates
 
-- Every task involving a user interface must reference ADR-005 and `docs/technical/ui-requirements.md` in its Source References.
-- Every UI task must explicitly define its Azerbaijani user-facing content requirements.
-- Every UI task must explicitly define the relevant responsive viewport categories it must satisfy (e.g., mobile, tablet, laptop/desktop, large desktop).
-- "Make it responsive" is not sufficient task scope; the specific viewport categories and preserved behaviors must be named.
-- Language (Azerbaijani content) and responsive acceptance criteria are part of a UI task's Definition of Done, per `AGENTS.md`.
+- [`templates/EPIC-TEMPLATE.md`](templates/EPIC-TEMPLATE.md)
+- [`templates/USER-STORY-TEMPLATE.md`](templates/USER-STORY-TEMPLATE.md)
+- [`templates/TASK-TEMPLATE.md`](templates/TASK-TEMPLATE.md)
+- [`templates/UNPLANNED-TEMPLATE.md`](templates/UNPLANNED-TEMPLATE.md)
 
-## Rules Preventing Scope Creep
+## Superseded material
 
-- Every task must state explicit `Out of Scope` and `Forbidden Files` sections (see `docs/tasks/TASK-TEMPLATE.md`); anything not explicitly allowed is forbidden.
-- An implementation agent encountering an unrelated issue must report it, not fix it, per `AGENTS.md` ("Scope Rules").
-- A task must not be combined with another task's scope to save effort; one task remains one vertical slice.
-- A reviewer or QA engineer finding scope creep in a submitted change must treat it as a review finding (per `agents/code-reviewer.md`), not silently accept it.
+| Former file | Status |
+| --- | --- |
+| Pre-2026-07-28 `docs/tasks/README.md` (task-spec philosophy only) | Archived → [`archive/LEGACY-task-specification-README.md`](archive/LEGACY-task-specification-README.md) |
+| Old `TASK-TEMPLATE.md` at folder root | Replaced by [`templates/TASK-TEMPLATE.md`](templates/TASK-TEMPLATE.md); archive copy retained |
+| Agent handoff phases | Still live as [`WORKFLOW.md`](WORKFLOW.md); archive snapshot also kept |
+
+There must be **one** active roadmap: [`ROADMAP.md`](ROADMAP.md).

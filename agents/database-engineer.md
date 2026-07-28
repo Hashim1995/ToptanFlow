@@ -15,7 +15,8 @@ Design and review persistent data structures that preserve TOPTANFLOW business i
 
 ## Required Inputs
 
-- The assigned task from the Task Planner, including allowed files, scope, and acceptance criteria.
+- The assigned task from the Task Planner (`docs/tasks/tasks/TASK-*.md` or an Unplanned item); consult `docs/tasks/CURRENT.md` and `docs/tasks/README.md`.
+- Parent User Story and Epic linked from the task.
 - The approved technical design from the Solution Architect, where schema work is involved.
 - `docs/business/invariants.md`, especially the Inventory, Costing, Cash, Receivables & Payables, and Audit sections.
 - ADR-004 (immutability) and ADR-003 (backend as source of truth) in particular.

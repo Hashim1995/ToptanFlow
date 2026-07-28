@@ -15,7 +15,8 @@ Implement an Azerbaijani-first, mobile-first, and fully responsive user interfac
 
 ## Required Inputs
 
-- The assigned task from the Task Planner, including allowed files, scope, and acceptance criteria.
+- The assigned task from the Task Planner (`docs/tasks/tasks/TASK-*.md` or an Unplanned item); consult `docs/tasks/CURRENT.md` and `docs/tasks/README.md`.
+- Parent User Story and Epic linked from the task.
 - `docs/business/workflow-map.md` for the workflow(s) being presented.
 - `docs/business/terminology.md` for consistent naming and labeling.
 - ADR-002, ADR-003, and ADR-005 in particular.
