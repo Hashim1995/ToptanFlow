@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { validateEnv } from './config/env.validation';
 import { PrismaModule } from './prisma/prisma.module';
 import { HealthModule } from './health/health.module';
+import { UnitsModule } from './units/units.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 @Module({
@@ -16,6 +17,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
     }),
     PrismaModule,
     HealthModule,
+    UnitsModule,
   ],
   controllers: [AppController],
   providers: [
