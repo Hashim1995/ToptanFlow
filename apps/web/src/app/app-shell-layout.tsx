@@ -10,6 +10,7 @@ import {
   theme,
 } from 'antd';
 import { MenuOutlined } from '@ant-design/icons';
+import { MASTER_DATA_LABELS } from '../features/master-data/ui/labels';
 
 const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
@@ -19,12 +20,22 @@ const NAV_ITEMS = [
     key: '/',
     label: <Link to="/">Ana səhifə</Link>,
   },
+  {
+    key: '/currencies',
+    label: (
+      <Link to="/currencies">{MASTER_DATA_LABELS.currencies.nav}</Link>
+    ),
+  },
+  {
+    key: '/units',
+    label: <Link to="/units">{MASTER_DATA_LABELS.units.nav}</Link>,
+  },
 ];
 
 /**
  * Responsive app chrome (US-037 / TASK-037-03).
  * Desktop: sider. Mobile: header button + drawer (no hover-only nav).
- * Domain module links deferred to US-038+.
+ * Master-data nav entries added with US-038 screens.
  */
 export function AppShellLayout() {
   const location = useLocation();

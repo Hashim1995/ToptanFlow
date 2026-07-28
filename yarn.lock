@@ -592,6 +592,13 @@
     "@eslint/core" "^1.2.1"
     levn "^0.4.1"
 
+"@hookform/resolvers@^5.5.7":
+  version "5.5.7"
+  resolved "https://registry.yarnpkg.com/@hookform/resolvers/-/resolvers-5.5.7.tgz#03cf4283686490c0747c828afb94d3cfc63b2d4d"
+  integrity sha512-CyPCYV8/KlXfEXLWj8HHHhVsR/IZ6Ckm3b/a4fWtO/lRnRK1huqncb8LlAWrmpPRsse5glF5aVuDRMHEr3UGag==
+  dependencies:
+    "@standard-schema/utils" "^0.3.0"
+
 "@humanfs/core@^0.19.2":
   version "0.19.2"
   resolved "https://registry.yarnpkg.com/@humanfs/core/-/core-0.19.2.tgz#a8272ca03b2acf492670222b2320b6c421bfde60"

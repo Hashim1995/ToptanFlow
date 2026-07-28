@@ -12,4 +12,19 @@ export type MappedApiError = {
   statusCode?: number;
   /** Optional machine code from backend (e.g. soft-duplicate). */
   code?: string;
+  /**
+   * Structured conflict candidates for feature-level handling.
+   * They must be rendered behind approved labels, never dumped directly.
+   */
+  candidates?: unknown[];
+};
+
+export type ApiErrorResponse = {
+  statusCode: number;
+  error: string;
+  message: string | string[];
+  path: string;
+  timestamp: string;
+  code?: string;
+  candidates?: unknown[];
 };

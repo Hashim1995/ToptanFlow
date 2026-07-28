@@ -10,13 +10,13 @@ Priority: **H** High · **M** Medium · **L** Low
 
 | ID | Title | Epic | Priority | Depends on | Task elaboration |
 | --- | --- | --- | --- | --- | --- |
-| [US-038](stories/US-038-frontend-master-data-screens.md) | Master-data UI screens | EPIC-021 | H | US-037 Done; backend readiness | On activation |
+| — | *(none — US-038 is active; see CURRENT.md)* | — | — | — | — |
 
 ## Active (see CURRENT.md)
 
 | ID | Title | Epic | Priority | Status | Next task |
 | --- | --- | --- | --- | --- | --- |
-| — | *(none — activate next story from Ready)* | — | — | — | — |
+| [US-038](stories/US-038-frontend-master-data-screens.md) | Master-data UI screens | EPIC-021 | H | In Progress | [TASK-038-03](tasks/TASK-038-03-add-product-screens.md) |
 
 ## EPIC-006 remaining (after US-016)
 

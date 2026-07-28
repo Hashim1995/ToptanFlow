@@ -47,4 +47,5 @@ Exact screen inventory per milestone not fully listed.
 
 ## Repository evidence
 
-Web app: US-037 Done (providers, Axios, routing + responsive shell). Next: US-038 master-data screens.
+Web app: US-037 Done; US-038 In Progress (shared master-data API/query
+foundation Done; vertical screens pending).

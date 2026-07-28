@@ -17,4 +17,8 @@ export const httpClient = axios.create({
 });
 
 export { mapApiError } from './map-api-error';
-export type { ApiErrorKind, MappedApiError } from './api-error.types';
+export type {
+  ApiErrorKind,
+  ApiErrorResponse,
+  MappedApiError,
+} from './api-error.types';

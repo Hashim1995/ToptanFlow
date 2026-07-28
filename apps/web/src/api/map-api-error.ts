@@ -42,11 +42,19 @@ function mapAxiosError(error: AxiosError): MappedApiError {
     typeof (data as { code?: unknown }).code === 'string'
       ? (data as { code: string }).code
       : undefined;
+  const candidates =
+    typeof data === 'object' &&
+    data !== null &&
+    'candidates' in data &&
+    Array.isArray((data as { candidates?: unknown }).candidates)
+      ? (data as { candidates: unknown[] }).candidates
+      : undefined;
 
   return {
     kind: 'http',
     statusCode,
     code,
+    candidates,
     userMessage: mapHttpStatusToAz(statusCode),
   };
 }

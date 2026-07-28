@@ -4,6 +4,10 @@ Planning-history only. Not a product release-notes replacement.
 
 ## 2026-07-29
 
+- **Task completed:** [TASK-038-02](tasks/TASK-038-02-add-currency-unit-screens.md) currency/unit screens; labels approved `Valyutalar` / `Ölçü vahidləri` (`web` build + lint green).
+- **Story activated:** [US-038](stories/US-038-frontend-master-data-screens.md) frontend master-data screens.
+- **Tasks elaborated:** TASK-038-01 through TASK-038-05 (shared API foundation, reference-data UI, product UI, partner UI, responsive verification).
+- **Task completed:** [TASK-038-01](tasks/TASK-038-01-add-master-data-frontend-api-foundation.md) typed pagination/query keys/error contracts (`web` build + lint green).
 - **Task completed:** [TASK-037-03](tasks/TASK-037-03-add-routing-and-responsive-app-shell.md) routing + responsive shell; [US-037](stories/US-037-frontend-shell-foundation.md) **Done**.
 - **Task completed:** [TASK-037-02](tasks/TASK-037-02-add-axios-http-client-foundation.md) Axios HTTP client + stub AZ error mapper (`web` build green).
 - **Story activated:** [US-037](stories/US-037-frontend-shell-foundation.md) Frontend shell foundation; router choice `react-router-dom` recorded.
