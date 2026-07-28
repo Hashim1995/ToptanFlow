@@ -111,8 +111,6 @@ The following technical decisions remain unresolved and are not decided by this 
 - Authentication implementation.
 - Authorization implementation details.
 - OpenAPI contract-generation tooling (e.g., automatic client generation) — the API style itself is resolved by ADR-015.
-- Backend validation library inside NestJS — resolved for the frontend boundary by ADR-017 (Zod), but the backend's own authoritative validation library is not yet selected.
-- Money and decimal implementation (exact numeric type/library strategy).
 - UUID version and column storage representation — the identifier strategy itself is resolved by ADR-020.
 - Exact migration workflow/process (branching, review, deployment order) — the migration tool itself is resolved by ADR-021.
 - Logging and monitoring approach.
