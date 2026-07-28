@@ -10,6 +10,7 @@ import { BusinessCodeSequenceKey } from '../number-sequences/business-code-seque
 import { NumberSequencesService } from '../number-sequences/number-sequences.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBusinessPartnerDto } from './dto/create-business-partner.dto';
+import { UpdateBusinessPartnerDto } from './dto/update-business-partner.dto';
 import { ListBusinessPartnersQueryDto } from './dto/list-business-partners-query.dto';
 import { PaginatedBusinessPartnersResponseDto } from './dto/paginated-business-partners-response.dto';
 import { BusinessPartnerResponseDto } from './dto/business-partner-response.dto';
@@ -140,6 +141,112 @@ export class BusinessPartnersService {
     return this.toResponse(partner);
   }
 
+  async update(
+    id: string,
+    dto: UpdateBusinessPartnerDto,
+  ): Promise<BusinessPartnerResponseDto> {
+    if (!this.hasAtLeastOneUpdateField(dto)) {
+      throw new BadRequestException('At least one field must be provided');
+    }
+
+    const existing = await this.prisma.businessPartner.findUnique({
+      where: { id },
+      select: businessPartnerSelect,
+    });
+
+    if (!existing) {
+      throw new NotFoundException('Business partner not found');
+    }
+
+    if (dto.isCustomer !== undefined || dto.isSupplier !== undefined) {
+      const resultingCustomer =
+        dto.isCustomer !== undefined ? dto.isCustomer : existing.isCustomer;
+      const resultingSupplier =
+        dto.isSupplier !== undefined ? dto.isSupplier : existing.isSupplier;
+      this.assertAtLeastOneRole(resultingCustomer, resultingSupplier);
+    }
+
+    const data: {
+      name?: string;
+      isCustomer?: boolean;
+      isSupplier?: boolean;
+      defaultCurrencyId?: string;
+      phone?: string | null;
+      email?: string | null;
+      taxNumber?: string | null;
+      address?: string | null;
+      notes?: string | null;
+    } = {};
+
+    if (dto.name !== undefined) {
+      const name = this.normalizeName(dto.name);
+      this.assertNonEmpty('name', name);
+      data.name = name;
+    }
+
+    if (dto.isCustomer !== undefined) {
+      data.isCustomer = dto.isCustomer;
+    }
+
+    if (dto.isSupplier !== undefined) {
+      data.isSupplier = dto.isSupplier;
+    }
+
+    if (dto.defaultCurrencyId !== undefined) {
+      await this.assertCurrencyAssignable(dto.defaultCurrencyId);
+      data.defaultCurrencyId = dto.defaultCurrencyId;
+    }
+
+    if (dto.phone !== undefined) {
+      data.phone = this.normalizeOptionalText(dto.phone);
+    }
+
+    if (dto.email !== undefined) {
+      data.email = this.normalizeOptionalText(dto.email);
+    }
+
+    if (dto.taxNumber !== undefined) {
+      data.taxNumber = this.normalizeOptionalText(dto.taxNumber);
+    }
+
+    if (dto.address !== undefined) {
+      data.address = this.normalizeOptionalText(dto.address);
+    }
+
+    if (dto.notes !== undefined) {
+      data.notes = this.normalizeOptionalText(dto.notes);
+    }
+
+    const partner = await this.prisma.businessPartner.update({
+      where: { id },
+      data,
+      select: businessPartnerSelect,
+    });
+    return this.toResponse(partner);
+  }
+
+  async deactivate(id: string): Promise<BusinessPartnerResponseDto> {
+    const existing = await this.prisma.businessPartner.findUnique({
+      where: { id },
+      select: businessPartnerSelect,
+    });
+
+    if (!existing) {
+      throw new NotFoundException('Business partner not found');
+    }
+
+    if (existing.isActive) {
+      const partner = await this.prisma.businessPartner.update({
+        where: { id },
+        data: { isActive: false },
+        select: businessPartnerSelect,
+      });
+      return this.toResponse(partner);
+    }
+
+    return this.toResponse(existing);
+  }
+
   private async assertCurrencyAssignable(currencyId: string): Promise<void> {
     const currency = await this.prisma.currency.findUnique({
       where: { id: currencyId },
@@ -161,6 +268,20 @@ export class BusinessPartnersService {
         'Business partner must have at least one role',
       );
     }
+  }
+
+  private hasAtLeastOneUpdateField(dto: UpdateBusinessPartnerDto): boolean {
+    return (
+      dto.name !== undefined ||
+      dto.isCustomer !== undefined ||
+      dto.isSupplier !== undefined ||
+      dto.defaultCurrencyId !== undefined ||
+      dto.phone !== undefined ||
+      dto.email !== undefined ||
+      dto.taxNumber !== undefined ||
+      dto.address !== undefined ||
+      dto.notes !== undefined
+    );
   }
 
   private buildListWhere(

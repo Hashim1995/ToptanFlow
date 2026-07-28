@@ -10,13 +10,19 @@ Priority: **H** High · **M** Medium · **L** Low
 
 | ID | Title | Epic | Priority | Depends on | Task elaboration |
 | --- | --- | --- | --- | --- | --- |
-| [US-015](stories/US-015-business-partner-update-deactivate-apis.md) | BusinessPartner update & deactivation | EPIC-006 | H | US-014, TECH-001 | Deferred until activation (legacy Step 16.3) |
+| [US-016](stories/US-016-business-partner-duplicate-soft-flag.md) | Duplicate soft-flag checks | EPIC-006 | M | US-014 | On activation |
+
+## Active (see CURRENT.md)
+
+| ID | Title | Epic | Priority | Status | Next task |
+| --- | --- | --- | --- | --- | --- |
+| — | *(none — activate next story from Ready)* | — | — | — | — |
 
 ## EPIC-006 remaining (after US-015)
 
 | ID | Title | Priority | Depends on | Notes |
 | --- | --- | --- | --- | --- |
-| [US-016](stories/US-016-business-partner-duplicate-soft-flag.md) | Duplicate soft-flag checks | M | US-014 | Planned |
+| [US-016](stories/US-016-business-partner-duplicate-soft-flag.md) | Duplicate soft-flag checks | M | US-014 | Planned — next recommended |
 | [US-017](stories/US-017-business-partner-statement.md) | Business partner statement | M | EPIC-009–012 | Far; needs postings |
 
 ## Near-term enablers
@@ -60,4 +66,4 @@ Priority: **H** High · **M** Medium · **L** Low
 
 ## Completed (index only)
 
-See story files marked Done (US-001–US-014) and [`CHANGELOG.md`](CHANGELOG.md). Do not re-list full detail here.
+See story files marked Done (US-001–US-015) and [`CHANGELOG.md`](CHANGELOG.md). Do not re-list full detail here.

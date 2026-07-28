@@ -1,0 +1,23 @@
+---
+description: Append a Conventional Commit recommendation when repository files change
+alwaysApply: true
+---
+
+# Commit Recommendation
+
+Whenever repository files were changed, append **exactly one** recommended Conventional Commit as the **final section** of the response (after the Azerbaijani summary).
+
+**Format:**
+
+```text
+Recommended commit:
+`type: concise description`
+```
+
+**Rules:**
+
+- Follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat`, `fix`, `docs`, `chore`, `refactor`, `test`, etc.).
+- Prefer a single commit. If multiple commits are genuinely needed, explain why and recommend each one.
+- Never recommend a commit when no repository files changed.
+- Never claim a commit was created unless it was actually created.
+- Do not create a git commit unless the user explicitly asks.

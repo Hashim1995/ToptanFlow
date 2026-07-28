@@ -1,9 +1,11 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
@@ -20,6 +22,7 @@ import {
 } from '@nestjs/swagger';
 import { BusinessPartnersService } from './business-partners.service';
 import { CreateBusinessPartnerDto } from './dto/create-business-partner.dto';
+import { UpdateBusinessPartnerDto } from './dto/update-business-partner.dto';
 import { ListBusinessPartnersQueryDto } from './dto/list-business-partners-query.dto';
 import { PaginatedBusinessPartnersResponseDto } from './dto/paginated-business-partners-response.dto';
 import { BusinessPartnerResponseDto } from './dto/business-partner-response.dto';
@@ -37,7 +40,7 @@ export class BusinessPartnersController {
     description:
       'Creates a unified counterparty. At least one of isCustomer or isSupplier must be true; both may be true. ' +
       'BusinessPartner.code is allocated by the backend (ADR-024); clients must not supply code. ' +
-      'Step 16.3 (not in this task): UpdateBusinessPartnerDto must not contain code — code is immutable.',
+      'Code is immutable after creation — UpdateBusinessPartnerDto must not contain code.',
   })
   @ApiBody({
     type: CreateBusinessPartnerDto,
@@ -93,5 +96,48 @@ export class BusinessPartnersController {
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<BusinessPartnerResponseDto> {
     return this.businessPartnersService.findOne(id);
+  }
+
+  @Patch(':id')
+  @ApiOperation({
+    summary: 'Update a business partner (partial)',
+    description:
+      'Inactive partners may be updated for administrative correction. ' +
+      'PATCH does not change isActive and cannot reactivate a partner. ' +
+      'BusinessPartner.code is immutable and must not be sent (ADR-024).',
+  })
+  @ApiBody({ type: UpdateBusinessPartnerDto })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOkResponse({ type: BusinessPartnerResponseDto })
+  @ApiBadRequestResponse({
+    description:
+      'Invalid UUID, empty update body, invalid field values, both roles false, inactive currency, or forbidden properties (e.g. code)',
+  })
+  @ApiNotFoundResponse({
+    description: 'Business partner or currency not found',
+  })
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateBusinessPartnerDto,
+  ): Promise<BusinessPartnerResponseDto> {
+    return this.businessPartnersService.update(id, dto);
+  }
+
+  @Delete(':id')
+  @ApiOperation({
+    summary: 'Deactivate a business partner (soft delete)',
+    description:
+      'Sets isActive to false without physically deleting the record. ' +
+      'Idempotent when the partner is already inactive. ' +
+      'Business partner code remains reserved and historical relations stay intact.',
+  })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOkResponse({ type: BusinessPartnerResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid UUID' })
+  @ApiNotFoundResponse({ description: 'Business partner not found' })
+  deactivate(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<BusinessPartnerResponseDto> {
+    return this.businessPartnersService.deactivate(id);
   }
 }

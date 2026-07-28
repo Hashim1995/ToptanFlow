@@ -1,0 +1,46 @@
+---
+description: English repository work language and final response structure with Azerbaijani summary
+alwaysApply: true
+---
+
+# Working Language and Final Response Format
+
+## Working language
+
+Regardless of the language used by the user:
+
+- Perform all repository work in **English** (think, analyze, plan, review, implement).
+- Write technical explanations and reports in English.
+- Create documentation in English unless repository documentation explicitly requires another language.
+- Preserve Azerbaijani user-facing UI exactly as required by [ADR-005](../../docs/decisions/ADR-005-azerbaijani-responsive-user-interface.md).
+- Never translate business identifiers, filenames, database names, API fields, enum names, or code identifiers.
+
+## Final response structure
+
+Every final response must follow this order:
+
+### 1. Main response (English)
+
+Implementation, analysis, planning, reviews, documentation, architecture, and technical reasoning — in English.
+
+### 2. Azerbaijani Summary
+
+Before any commit recommendation, end with a short Azerbaijani summary:
+
+**Heading (exact):**
+
+```text
+Azərbaycan dilində qısa xülasə
+```
+
+**Rules:**
+
+- Minimum 3 sentences; maximum 10 sentences.
+- Explain only what actually happened.
+- Focus on completed work, important decisions, blockers, and next step.
+- Readable in under 30 seconds; avoid technical detail unless important.
+- Must let the repository owner understand the work without reading the full English response.
+
+### 3. Commit recommendation
+
+When repository files changed, append the Conventional Commit recommendation last — see [`commit-recommendation.mdc`](commit-recommendation.mdc). When nothing changed, omit that section.

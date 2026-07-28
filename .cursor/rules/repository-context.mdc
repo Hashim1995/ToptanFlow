@@ -1,0 +1,17 @@
+---
+description: Progressive repository context discovery for every agent session
+alwaysApply: true
+---
+
+# Repository Context Discovery
+
+For repository-related questions, planning, reviews, or changes:
+
+1. **Read [`AGENTS.md`](../../AGENTS.md) first.** Treat it as the repository constitution and routing layer. Do not re-derive process rules that it already defines.
+2. **For active planning or implementation**, also read:
+   - [`docs/tasks/README.md`](../../docs/tasks/README.md)
+   - [`docs/tasks/CURRENT.md`](../../docs/tasks/CURRENT.md)
+   - the applicable Epic, User Story, and Task or Unplanned item (when one exists)
+3. **Load documentation progressively** — only files relevant to the requested scope. Do not blindly read every Markdown file.
+4. **Before changing implementation**, inspect relevant existing code, nearby conventions, tests, Prisma schema, migrations, configuration, and dependent modules.
+5. **Treat repository documentation and accepted ADRs as the source of truth.** Report ambiguity instead of guessing; never invent business behavior or resolve open decisions silently.

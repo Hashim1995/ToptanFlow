@@ -72,6 +72,8 @@ describe('BusinessPartners (e2e)', () => {
       findMany: jest.fn(),
       count: jest.fn(),
       findUnique: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
     },
     currency: {
       findUnique: jest.fn(),
@@ -357,6 +359,139 @@ describe('BusinessPartners (e2e)', () => {
         .expect(200);
 
       expect(response.body as PartnerJson).toEqual(expectedPartnerBody);
+    });
+
+    it('returns inactive partner after soft deactivation', async () => {
+      prisma.businessPartner.findUnique.mockResolvedValue({
+        ...basePartner,
+        isActive: false,
+      });
+
+      const response = await request(app.getHttpServer())
+        .get(`/api/v1/business-partners/${partnerId}`)
+        .expect(200);
+
+      expect(response.body as PartnerJson).toEqual({
+        ...expectedPartnerBody,
+        isActive: false,
+      });
+    });
+  });
+
+  describe('PATCH /api/v1/business-partners/:id', () => {
+    beforeEach(() => {
+      prisma.businessPartner.findUnique.mockResolvedValue(basePartner);
+    });
+
+    it('applies partial update and preserves immutable code', async () => {
+      prisma.businessPartner.update.mockResolvedValue({
+        ...basePartner,
+        name: 'Yenilənmiş',
+        phone: null,
+        isSupplier: true,
+      });
+
+      const response = await request(app.getHttpServer())
+        .patch(`/api/v1/business-partners/${partnerId}`)
+        .send({
+          name: ' Yenilənmiş ',
+          phone: null,
+          isSupplier: true,
+        })
+        .expect(200);
+
+      const body = response.body as PartnerJson;
+      expect(body).toEqual(
+        expect.objectContaining({
+          code: '0000001',
+          name: 'Yenilənmiş',
+          phone: null,
+          isCustomer: true,
+          isSupplier: true,
+        }),
+      );
+      expect(prisma.businessPartner.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.not.objectContaining({ code: expect.anything() }),
+        }),
+      );
+      assertNoInternalLeak(response.body);
+    });
+
+    it('rejects empty body and client-supplied code with 400', async () => {
+      const empty = await request(app.getHttpServer())
+        .patch(`/api/v1/business-partners/${partnerId}`)
+        .send({})
+        .expect(400);
+
+      expect(empty.body).toEqual(
+        expect.objectContaining({
+          message: 'At least one field must be provided',
+        }),
+      );
+
+      await request(app.getHttpServer())
+        .patch(`/api/v1/business-partners/${partnerId}`)
+        .send({ code: 'BP-999' })
+        .expect(400);
+
+      expect(prisma.businessPartner.update).not.toHaveBeenCalled();
+    });
+
+    it('maps missing partner to 404', async () => {
+      prisma.businessPartner.findUnique.mockResolvedValue(null);
+
+      const response = await request(app.getHttpServer())
+        .patch(`/api/v1/business-partners/${partnerId}`)
+        .send({ name: 'X' })
+        .expect(404);
+
+      expect(response.body).toEqual(
+        expect.objectContaining({
+          message: 'Business partner not found',
+        }),
+      );
+      expect(prisma.businessPartner.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('DELETE /api/v1/business-partners/:id', () => {
+    it('soft-deactivates active partner and is idempotent', async () => {
+      prisma.businessPartner.findUnique.mockResolvedValue(basePartner);
+      prisma.businessPartner.update.mockResolvedValue({
+        ...basePartner,
+        isActive: false,
+      });
+
+      const first = await request(app.getHttpServer())
+        .delete(`/api/v1/business-partners/${partnerId}`)
+        .expect(200);
+
+      const firstBody = first.body as PartnerJson;
+      expect(firstBody).toEqual({
+        ...expectedPartnerBody,
+        isActive: false,
+      });
+      expect(prisma.businessPartner.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { isActive: false },
+        }),
+      );
+      expect(prisma.businessPartner.delete).not.toHaveBeenCalled();
+
+      prisma.businessPartner.findUnique.mockResolvedValue({
+        ...basePartner,
+        isActive: false,
+      });
+      prisma.businessPartner.update.mockClear();
+
+      const second = await request(app.getHttpServer())
+        .delete(`/api/v1/business-partners/${partnerId}`)
+        .expect(200);
+
+      expect((second.body as PartnerJson).isActive).toBe(false);
+      expect((second.body as PartnerJson).code).toBe('0000001');
+      expect(prisma.businessPartner.update).not.toHaveBeenCalled();
     });
   });
 });

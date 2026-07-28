@@ -8,6 +8,14 @@ AGENTS.md does not describe *what* the system does. It describes *how any agent 
 
 Every agent must read and follow this document before performing any task in this repository, regardless of the size of the task.
 
+## Cursor Project Rules
+
+Cursor rules under [`.cursor/rules/`](.cursor/rules/) are **mandatory** for every agent and every new chat (`alwaysApply: true`). They do not replace this constitution; they operationalize session behavior:
+
+- **Repository context** is loaded progressively (start here, then task docs and scope-relevant sources only) — see `repository-context.mdc`.
+- **Repository work** (analysis, planning, implementation, technical writing) is performed in **English**; Azerbaijani user-facing UI remains as required by ADR-005 — see `response-language.mdc`.
+- **Every final response** ends with a short Azerbaijani summary; when repository files changed, a Conventional Commit recommendation is the last section — see `response-language.mdc` and `commit-recommendation.mdc`.
+
 ## Project Philosophy
 
 - **Business-first.** The business reality described in the Business Requirements Document (BRD) always outranks technical convenience.
