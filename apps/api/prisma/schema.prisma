@@ -273,6 +273,19 @@ model Currency {
 // ---------------------------------------------------------------------------
 
 /// Source: docs/business/invariants.md, "Products".
+///
+/// Persistence notes (this task):
+/// - Code uniqueness is global (including inactive rows); soft-delete via
+///   `isActive` only — never physical delete [Approved Human Decision,
+///   recorded 2026-07-28]. Application-layer code normalization is
+///   trim + uppercase (same pattern as Unit/Currency); the DB stores the
+///   normalized value under `@unique`.
+/// - Decimal scales follow ADR-023 (unit prices / stock thresholds:
+///   `NUMERIC(18, 4)`). No stock balance is stored here — inventory is the
+///   sum of future stock movements (docs/business/invariants.md, "Inventory").
+/// - No Product-owned currency: master prices are informational defaults in
+///   the system’s AZN reporting context; document-line currency lives on
+///   Sale/Purchase (docs/business/invariants.md, "Currency").
 model Product {
   id                     String      @id @default(uuid())
   /// "A product code is globally unique across its entire history —
@@ -292,23 +305,31 @@ model Product {
   /// "Product type... and product category are separate, independent
   /// classifications." Modeled as a plain scalar field rather than a
   /// dedicated ProductCategory entity, since a category entity was not part
-  /// of this task's explicit scope; revisit if hierarchical/reusable
+  /// of the initial domain-model scope; revisit if hierarchical/reusable
   /// categories are later approved.
   category               String?
   unitId                 String
-  unit                   Unit        @relation(fields: [unitId], references: [id])
+  /// Required primary unit of measure. `onDelete: Restrict` so a Unit
+  /// cannot be removed while Products reference it. Referencing an
+  /// *inactive* Unit remains allowed at the DB layer so historical
+  /// products stay intact; blocking inactive Units on *new* product
+  /// create/update is application policy (future Product module).
+  unit                   Unit        @relation(fields: [unitId], references: [id], onDelete: Restrict)
   /// "Standard sale price and latest purchase price are informational
   /// defaults only; each posted document line keeps its own price and cost
   /// as recorded at posting time, regardless of later master-data changes."
-  standardSalePrice      Decimal?
-  latestPurchasePrice    Decimal?
+  /// Scale: ADR-023 unit prices → `Decimal(18, 4)` / PostgreSQL `NUMERIC(18, 4)`.
+  standardSalePrice      Decimal?    @db.Decimal(18, 4)
+  /// Scale: ADR-023 unit prices → `Decimal(18, 4)` / PostgreSQL `NUMERIC(18, 4)`.
+  latestPurchasePrice    Decimal?    @db.Decimal(18, 4)
   /// "A critical (minimum) stock threshold must be capable of being
   /// evaluated at main-warehouse, specific-warehouse, and company-total
   /// levels separately."
   /// TODO: only a single, company-total-level threshold is stored here,
   /// since per-warehouse thresholds require a Warehouse entity, which is out
-  /// of this task's explicit scope (Inventory module, deferred).
-  criticalStockThreshold Decimal?
+  /// of Product-persistence scope (Inventory module, deferred).
+  /// Scale: ADR-023 stock thresholds → `Decimal(18, 4)` / PostgreSQL `NUMERIC(18, 4)`.
+  criticalStockThreshold Decimal?    @db.Decimal(18, 4)
   isActive               Boolean     @default(true)
   createdAt              DateTime    @default(now())
   updatedAt              DateTime    @updatedAt
@@ -316,6 +337,7 @@ model Product {
   saleItems     SaleItem[]
   purchaseItems PurchaseItem[]
 
+  @@index([unitId])
   @@index([type])
   @@index([isActive])
 }
