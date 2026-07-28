@@ -119,7 +119,12 @@ export class CurrenciesService {
       throw new NotFoundException('Currency not found');
     }
 
-    const data: Prisma.CurrencyUpdateInput = {};
+    const data: {
+      code?: string;
+      name?: string;
+      symbol?: string | null;
+      isActive?: boolean;
+    } = {};
 
     if (dto.code !== undefined) {
       const code = this.normalizeCode(dto.code);

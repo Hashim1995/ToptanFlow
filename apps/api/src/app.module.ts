@@ -9,6 +9,7 @@ import { HealthModule } from './health/health.module';
 import { UnitsModule } from './units/units.module';
 import { CurrenciesModule } from './currencies/currencies.module';
 import { ProductsModule } from './products/products.module';
+import { BusinessPartnersModule } from './business-partners/business-partners.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 @Module({
@@ -22,6 +23,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
     UnitsModule,
     CurrenciesModule,
     ProductsModule,
+    BusinessPartnersModule,
   ],
   controllers: [AppController],
   providers: [
