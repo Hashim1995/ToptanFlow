@@ -86,5 +86,5 @@ Elaborated:
 - [TASK-038-01](../tasks/TASK-038-01-add-master-data-frontend-api-foundation.md) — **Done**
 - [TASK-038-02](../tasks/TASK-038-02-add-currency-unit-screens.md) — **Done**
 - [TASK-038-03](../tasks/TASK-038-03-add-product-screens.md) — **Done**
-- [TASK-038-04](../tasks/TASK-038-04-add-business-partner-screens.md) — Ready
+- [TASK-038-04](../tasks/TASK-038-04-add-business-partner-screens.md) — **Done**
 - [TASK-038-05](../tasks/TASK-038-05-verify-master-data-ui-responsive-states.md) — Ready after 038-02..04

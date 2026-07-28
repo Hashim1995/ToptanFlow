@@ -16,7 +16,7 @@ Priority: **H** High · **M** Medium · **L** Low
 
 | ID | Title | Epic | Priority | Status | Next task |
 | --- | --- | --- | --- | --- | --- |
-| [US-038](stories/US-038-frontend-master-data-screens.md) | Master-data UI screens | EPIC-021 | H | In Progress | [TASK-038-04](tasks/TASK-038-04-add-business-partner-screens.md) |
+| [US-038](stories/US-038-frontend-master-data-screens.md) | Master-data UI screens | EPIC-021 | H | In Progress | [TASK-038-05](tasks/TASK-038-05-verify-master-data-ui-responsive-states.md) |
 
 ## EPIC-006 remaining (after US-016)
 

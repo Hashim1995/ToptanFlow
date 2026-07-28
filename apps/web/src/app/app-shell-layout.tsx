@@ -34,6 +34,12 @@ const NAV_ITEMS = [
     key: '/products',
     label: <Link to="/products">{MASTER_DATA_LABELS.products.nav}</Link>,
   },
+  {
+    key: '/business-partners',
+    label: (
+      <Link to="/business-partners">{MASTER_DATA_LABELS.partners.nav}</Link>
+    ),
+  },
 ];
 
 /**

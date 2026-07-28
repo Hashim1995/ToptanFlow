@@ -55,11 +55,14 @@ function mapAxiosError(error: AxiosError): MappedApiError {
     statusCode,
     code,
     candidates,
-    userMessage: mapHttpStatusToAz(statusCode),
+    userMessage: mapHttpStatusToAz(statusCode, code),
   };
 }
 
-function mapHttpStatusToAz(statusCode: number): string {
+function mapHttpStatusToAz(statusCode: number, code?: string): string {
+  if (code === 'BUSINESS_PARTNER_DUPLICATE_SUSPECTED') {
+    return 'Oxşar biznes tərəfdaşları tapıldı. Namizədləri yoxlayın.';
+  }
   if (statusCode === 400) {
     return 'Göndərilən məlumatlar yanlışdır. Yoxlayıb yenidən cəhd edin.';
   }

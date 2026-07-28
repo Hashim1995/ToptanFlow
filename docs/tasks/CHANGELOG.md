@@ -4,6 +4,7 @@ Planning-history only. Not a product release-notes replacement.
 
 ## 2026-07-29
 
+- **Task completed:** [TASK-038-04](tasks/TASK-038-04-add-business-partner-screens.md) partner screens + soft-duplicate acknowledge UI (`web` build + lint green).
 - **Task completed:** [TASK-038-03](tasks/TASK-038-03-add-product-screens.md) product screens (`Məhsullar`; type labels Hazır məhsul / Xammal / Qarışıq təyinatlı); owner guidance: do not stop for routine AZ UI labels.
 - **Task completed:** [TASK-038-02](tasks/TASK-038-02-add-currency-unit-screens.md) currency/unit screens; labels approved `Valyutalar` / `Ölçü vahidləri` (`web` build + lint green).
 - **Story activated:** [US-038](stories/US-038-frontend-master-data-screens.md) frontend master-data screens.

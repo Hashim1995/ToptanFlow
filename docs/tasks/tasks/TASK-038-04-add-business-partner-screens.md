@@ -6,7 +6,7 @@
 - **Title:** Add business-partner screens
 - **Parent User Story:** [US-038](../stories/US-038-frontend-master-data-screens.md)
 - **Parent Epic:** [EPIC-021](../epics/EPIC-021-frontend-application.md)
-- **Status:** Ready
+- **Status:** Done
 - **Type:** Frontend
 - **Priority:** High
 - **Estimate:** L
@@ -33,12 +33,12 @@ including the approved soft-duplicate acknowledgement flow.
 
 ## Acceptance criteria
 
-- [ ] Delivered partner operations are usable
-- [ ] Code is never editable or client-supplied
-- [ ] At least one role is guided in UI and remains backend-authoritative
-- [ ] Duplicate candidates are shown without exposing technical identifiers
-- [ ] Acknowledge retry occurs only after explicit user action
-- [ ] Build/lint and responsive checks pass
+- [x] Delivered partner operations are usable
+- [x] Code is never editable or client-supplied
+- [x] At least one role is guided in UI and remains backend-authoritative
+- [x] Duplicate candidates are shown without exposing technical identifiers
+- [x] Acknowledge retry occurs only after explicit user action
+- [x] Build/lint and responsive checks pass
 
 ## Testing expectations
 
@@ -46,8 +46,16 @@ Build/lint plus manual viewport and duplicate-flow verification.
 
 ## Evidence
 
-(To be filled when Done.)
+- `yarn workspace web build` — pass
+- `yarn workspace web lint` — pass
+- Route `/business-partners`; nav `Biznes tərəfdaşları`
+- List: search, active filter, role filter, pagination; desktop table / mobile cards
+- Form: roles checkboxes, active currencies, read-only code on edit
+- Soft-duplicate: candidates modal (code/name/phone/tax/roles/status/matched
+  fields — no UUID); explicit “Buna baxmayaraq yadda saxla” retries with
+  `acknowledgeDuplicate: true`
+- Full viewport-matrix verification remains on TASK-038-05
 
 ## Result
 
-(To be filled when Done.)
+Done. Business Partner screens and soft-duplicate acknowledgement UI delivered.
