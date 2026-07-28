@@ -11,17 +11,6 @@ import { IsNumericDecimal18_4 } from './decimal-string.validator';
 import { ProductTypeApi } from './product-type.enum';
 
 export class CreateProductDto {
-  @ApiProperty({
-    example: 'tx-001',
-    description: 'Stored uppercase after normalization.',
-  })
-  @IsString()
-  @MaxLength(255)
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim() : value,
-  )
-  code: string;
-
   @ApiProperty({ example: 'Parça məhsul' })
   @IsString()
   @MaxLength(255)

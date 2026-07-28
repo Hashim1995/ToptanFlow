@@ -3,10 +3,11 @@ import {
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/client';
 import { SortOrder } from '../common/sorting/sort-order.enum';
+import { BusinessCodeSequenceKey } from '../number-sequences/business-code-sequence-key';
+import { NumberSequencesService } from '../number-sequences/number-sequences.service';
 import { ProductTypeApi } from './dto/product-type.enum';
-import { PrismaService } from '../prisma/prisma.service';
 import { ProductsService } from './products.service';
 
 describe('ProductsService', () => {
@@ -23,13 +24,13 @@ describe('ProductsService', () => {
 
   const baseProduct = {
     id: productId,
-    code: 'TX-001',
+    code: '0000001',
     name: 'Parça məhsul',
     type: ProductTypeApi.FINISHED_GOOD,
     category: 'Tekstil',
     unitId,
-    standardSalePrice: new Prisma.Decimal('12.5000'),
-    latestPurchasePrice: new Prisma.Decimal('10'),
+    standardSalePrice: new Decimal('12.5000'),
+    latestPurchasePrice: new Decimal('10'),
     criticalStockThreshold: null,
     isActive: true,
     createdAt: new Date('2026-07-28T00:00:00.000Z'),
@@ -37,7 +38,14 @@ describe('ProductsService', () => {
     unit: unitSummary,
   };
 
+  const numberSequences = {
+    nextCode: jest.fn(),
+  };
+
   const prisma = {
+    $transaction: jest.fn((fn: (tx: typeof prisma) => unknown) =>
+      Promise.resolve(fn(prisma)),
+    ),
     product: {
       create: jest.fn(),
       findMany: jest.fn(),
@@ -56,25 +64,33 @@ describe('ProductsService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new ProductsService(prisma as unknown as PrismaService);
+    numberSequences.nextCode.mockResolvedValue('0000001');
+    service = new ProductsService(
+      prisma,
+      numberSequences as unknown as NumberSequencesService,
+    );
   });
 
   describe('create', () => {
-    it('normalizes code to uppercase and trims name', async () => {
+    it('allocates backend code inside transaction and trims name', async () => {
       prisma.unit.findUnique.mockResolvedValue({ id: unitId, isActive: true });
       prisma.product.create.mockResolvedValue(baseProduct);
 
       await service.create({
-        code: ' tx-001 ',
         name: ' Parça məhsul ',
         type: ProductTypeApi.FINISHED_GOOD,
         unitId,
       });
 
+      expect(prisma.$transaction).toHaveBeenCalled();
+      expect(numberSequences.nextCode).toHaveBeenCalledWith(
+        prisma,
+        BusinessCodeSequenceKey.PRODUCT,
+      );
       expect(prisma.product.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            code: 'TX-001',
+            code: '0000001',
             name: 'Parça məhsul',
             isActive: true,
           }) as object,
@@ -90,7 +106,6 @@ describe('ProductsService', () => {
       });
 
       await service.create({
-        code: 'TX-002',
         name: 'Test',
         type: ProductTypeApi.RAW_MATERIAL,
         unitId,
@@ -109,7 +124,6 @@ describe('ProductsService', () => {
       prisma.product.create.mockResolvedValue(baseProduct);
 
       await service.create({
-        code: 'TX-003',
         name: 'Test',
         type: ProductTypeApi.MIXED_USE,
         unitId,
@@ -122,23 +136,23 @@ describe('ProductsService', () => {
         [
           {
             data: {
-              standardSalePrice: Prisma.Decimal;
-              latestPurchasePrice: Prisma.Decimal;
-              criticalStockThreshold: Prisma.Decimal;
+              standardSalePrice: Decimal;
+              latestPurchasePrice: Decimal;
+              criticalStockThreshold: Decimal;
             };
           },
         ]
       >;
       const createArg = calls[0][0];
       expect(
-        createArg.data.standardSalePrice.equals(new Prisma.Decimal('12.5000')),
+        createArg.data.standardSalePrice.equals(new Decimal('12.5000')),
       ).toBe(true);
-      expect(
-        createArg.data.latestPurchasePrice.equals(new Prisma.Decimal('0')),
-      ).toBe(true);
+      expect(createArg.data.latestPurchasePrice.equals(new Decimal('0'))).toBe(
+        true,
+      );
       expect(
         createArg.data.criticalStockThreshold.equals(
-          new Prisma.Decimal('99999999999999.9999'),
+          new Decimal('99999999999999.9999'),
         ),
       ).toBe(true);
     });
@@ -148,7 +162,6 @@ describe('ProductsService', () => {
 
       await expect(
         service.create({
-          code: 'TX-004',
           name: 'Test',
           type: ProductTypeApi.FINISHED_GOOD,
           unitId,
@@ -162,7 +175,6 @@ describe('ProductsService', () => {
 
       await expect(
         service.create({
-          code: 'TX-005',
           name: 'Test',
           type: ProductTypeApi.FINISHED_GOOD,
           unitId,
@@ -173,16 +185,13 @@ describe('ProductsService', () => {
 
     it('throws ConflictException on duplicate code from Prisma', async () => {
       prisma.unit.findUnique.mockResolvedValue({ id: unitId, isActive: true });
-      prisma.product.create.mockRejectedValue(
-        new Prisma.PrismaClientKnownRequestError('Unique constraint', {
-          code: 'P2002',
-          clientVersion: '7.9.1',
-        }),
-      );
+      prisma.product.create.mockRejectedValue({
+        code: 'P2002',
+        clientVersion: '7.9.1',
+      });
 
       await expect(
         service.create({
-          code: 'TX-001',
           name: 'Duplicate',
           type: ProductTypeApi.FINISHED_GOOD,
           unitId,
@@ -195,7 +204,6 @@ describe('ProductsService', () => {
       prisma.product.create.mockResolvedValue(baseProduct);
 
       const result = await service.create({
-        code: 'TX-001',
         name: 'Parça məhsul',
         type: ProductTypeApi.FINISHED_GOOD,
         unitId,
@@ -352,46 +360,26 @@ describe('ProductsService', () => {
       expect(prisma.product.update).not.toHaveBeenCalled();
     });
 
-    it('updates code with trim and uppercase', async () => {
+    it('never maps code into Prisma update data', async () => {
       prisma.product.update.mockResolvedValue({
         ...baseProduct,
-        code: 'TX-002',
+        name: 'Only name',
       });
 
-      await service.update(productId, { code: ' tx-002 ' });
+      await service.update(productId, { name: 'Only name' });
 
-      expect(prisma.product.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({ code: 'TX-002' }) as object,
-        }),
-      );
-    });
-
-    it('allows same normalized current code', async () => {
-      prisma.product.update.mockResolvedValue(baseProduct);
-
-      await service.update(productId, { code: 'tx-001' });
-
-      expect(prisma.product.findFirst).not.toHaveBeenCalled();
-      expect(prisma.product.update).toHaveBeenCalled();
-    });
-
-    it('throws ConflictException on duplicate code pre-check', async () => {
-      prisma.product.findFirst.mockResolvedValue({ id: 'other-id' });
-
-      await expect(
-        service.update(productId, { code: 'TX-999' }),
-      ).rejects.toBeInstanceOf(ConflictException);
-      expect(prisma.product.update).not.toHaveBeenCalled();
+      const updateCalls = prisma.product.update.mock.calls as Array<
+        [{ data: Record<string, unknown> }]
+      >;
+      expect(updateCalls[0][0].data).not.toHaveProperty('code');
+      expect(updateCalls[0][0].data).toEqual({ name: 'Only name' });
     });
 
     it('maps Prisma P2002 to ConflictException', async () => {
-      prisma.product.update.mockRejectedValue(
-        new Prisma.PrismaClientKnownRequestError('Unique constraint', {
-          code: 'P2002',
-          clientVersion: '7.9.1',
-        }),
-      );
+      prisma.product.update.mockRejectedValue({
+        code: 'P2002',
+        clientVersion: '7.9.1',
+      });
 
       await expect(
         service.update(productId, { name: 'Updated name' }),
@@ -467,9 +455,9 @@ describe('ProductsService', () => {
         [
           {
             data: {
-              standardSalePrice: Prisma.Decimal | null;
-              latestPurchasePrice: Prisma.Decimal | null;
-              criticalStockThreshold: Prisma.Decimal | null;
+              standardSalePrice: Decimal | null;
+              latestPurchasePrice: Decimal | null;
+              criticalStockThreshold: Decimal | null;
             };
           },
         ]
@@ -477,9 +465,7 @@ describe('ProductsService', () => {
       const data = updateCalls[0][0].data;
       expect(data.standardSalePrice).toBeNull();
       expect(data.criticalStockThreshold).toBeNull();
-      expect(data.latestPurchasePrice?.equals(new Prisma.Decimal('0'))).toBe(
-        true,
-      );
+      expect(data.latestPurchasePrice?.equals(new Decimal('0'))).toBe(true);
     });
 
     it('omits unchanged fields from Prisma update data', async () => {
@@ -662,6 +648,19 @@ describe('ProductsService', () => {
       await service.deactivate(productId);
 
       expect(prisma.product.delete).not.toHaveBeenCalled();
+    });
+
+    it('does not allocate a new business code on deactivate', async () => {
+      prisma.product.findUnique.mockResolvedValue(baseProduct);
+      prisma.product.update.mockResolvedValue({
+        ...baseProduct,
+        isActive: false,
+      });
+      numberSequences.nextCode.mockClear();
+
+      await service.deactivate(productId);
+
+      expect(numberSequences.nextCode).not.toHaveBeenCalled();
     });
   });
 });

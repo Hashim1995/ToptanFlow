@@ -19,18 +19,14 @@ function trimOrNull(value: unknown): unknown {
   return value;
 }
 
+/**
+ * BusinessPartner.code is backend-generated (ADR-024). Clients must not
+ * supply `code`; forbidNonWhitelisted rejects it with 400.
+ *
+ * Step 16.3 invariant (not implemented in this task): UpdateBusinessPartnerDto
+ * must not contain code — BusinessPartner code is immutable after creation.
+ */
 export class CreateBusinessPartnerDto {
-  @ApiProperty({
-    example: 'bp-001',
-    description: 'Stored uppercase after normalization.',
-  })
-  @IsString()
-  @MaxLength(255)
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim() : value,
-  )
-  code!: string;
-
   @ApiProperty({ example: 'Nümunə MMC' })
   @IsString()
   @MaxLength(255)

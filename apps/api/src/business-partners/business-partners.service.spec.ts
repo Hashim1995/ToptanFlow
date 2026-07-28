@@ -5,7 +5,8 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { SortOrder } from '../common/sorting/sort-order.enum';
-import { PrismaService } from '../prisma/prisma.service';
+import { BusinessCodeSequenceKey } from '../number-sequences/business-code-sequence-key';
+import { NumberSequencesService } from '../number-sequences/number-sequences.service';
 import { BusinessPartnersService } from './business-partners.service';
 
 describe('BusinessPartnersService', () => {
@@ -22,7 +23,7 @@ describe('BusinessPartnersService', () => {
 
   const basePartner = {
     id: partnerId,
-    code: 'BP-001',
+    code: '0000001',
     name: 'Nümunə MMC',
     isCustomer: true,
     isSupplier: false,
@@ -38,7 +39,14 @@ describe('BusinessPartnersService', () => {
     defaultCurrency: currencySummary,
   };
 
+  const numberSequences = {
+    nextCode: jest.fn(),
+  };
+
   const prisma = {
+    $transaction: jest.fn((fn: (tx: typeof prisma) => unknown) =>
+      Promise.resolve(fn(prisma)),
+    ),
     businessPartner: {
       create: jest.fn(),
       findMany: jest.fn(),
@@ -54,11 +62,15 @@ describe('BusinessPartnersService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new BusinessPartnersService(prisma as unknown as PrismaService);
+    numberSequences.nextCode.mockResolvedValue('0000001');
+    service = new BusinessPartnersService(
+      prisma,
+      numberSequences as unknown as NumberSequencesService,
+    );
   });
 
   describe('create', () => {
-    it('creates a customer-only partner', async () => {
+    it('allocates backend code inside transaction for customer-only partner', async () => {
       prisma.currency.findUnique.mockResolvedValue({
         id: currencyId,
         isActive: true,
@@ -66,13 +78,26 @@ describe('BusinessPartnersService', () => {
       prisma.businessPartner.create.mockResolvedValue(basePartner);
 
       const result = await service.create({
-        code: 'bp-001',
         name: 'Nümunə MMC',
         isCustomer: true,
         isSupplier: false,
         defaultCurrencyId: currencyId,
       });
 
+      expect(prisma.$transaction).toHaveBeenCalled();
+      expect(numberSequences.nextCode).toHaveBeenCalledWith(
+        prisma,
+        BusinessCodeSequenceKey.BUSINESS_PARTNER,
+      );
+      expect(prisma.businessPartner.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            code: '0000001',
+            name: 'Nümunə MMC',
+            isActive: true,
+          }) as object,
+        }),
+      );
       expect(result.isCustomer).toBe(true);
       expect(result.isSupplier).toBe(false);
       expect(result.defaultCurrency).toEqual(currencySummary);
@@ -94,7 +119,6 @@ describe('BusinessPartnersService', () => {
       });
 
       const result = await service.create({
-        code: 'BP-002',
         name: 'Təchizatçı',
         isCustomer: false,
         isSupplier: true,
@@ -117,7 +141,6 @@ describe('BusinessPartnersService', () => {
       });
 
       const result = await service.create({
-        code: 'BP-003',
         name: 'Hər iki rol',
         isCustomer: true,
         isSupplier: true,
@@ -131,7 +154,6 @@ describe('BusinessPartnersService', () => {
     it('rejects both roles false', async () => {
       await expect(
         service.create({
-          code: 'BP-004',
           name: 'Invalid',
           isCustomer: false,
           isSupplier: false,
@@ -141,7 +163,7 @@ describe('BusinessPartnersService', () => {
       expect(prisma.businessPartner.create).not.toHaveBeenCalled();
     });
 
-    it('normalizes code to uppercase and trims name', async () => {
+    it('trims name on create', async () => {
       prisma.currency.findUnique.mockResolvedValue({
         id: currencyId,
         isActive: true,
@@ -149,7 +171,6 @@ describe('BusinessPartnersService', () => {
       prisma.businessPartner.create.mockResolvedValue(basePartner);
 
       await service.create({
-        code: ' bp-001 ',
         name: ' Nümunə MMC ',
         isCustomer: true,
         isSupplier: false,
@@ -159,28 +180,15 @@ describe('BusinessPartnersService', () => {
       expect(prisma.businessPartner.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            code: 'BP-001',
             name: 'Nümunə MMC',
-            isActive: true,
           }) as object,
         }),
       );
     });
 
-    it('rejects blank code and name', async () => {
+    it('rejects blank name', async () => {
       await expect(
         service.create({
-          code: '   ',
-          name: 'Valid',
-          isCustomer: true,
-          isSupplier: false,
-          defaultCurrencyId: currencyId,
-        }),
-      ).rejects.toThrow(BadRequestException);
-
-      await expect(
-        service.create({
-          code: 'BP-005',
           name: '   ',
           isCustomer: true,
           isSupplier: false,
@@ -204,7 +212,6 @@ describe('BusinessPartnersService', () => {
       });
 
       await service.create({
-        code: 'BP-006',
         name: 'Test',
         isCustomer: true,
         isSupplier: false,
@@ -237,7 +244,6 @@ describe('BusinessPartnersService', () => {
       prisma.businessPartner.create.mockResolvedValue(basePartner);
 
       await service.create({
-        code: 'BP-007',
         name: 'Test',
         isCustomer: true,
         isSupplier: false,
@@ -259,7 +265,6 @@ describe('BusinessPartnersService', () => {
 
       await expect(
         service.create({
-          code: 'BP-008',
           name: 'Test',
           isCustomer: true,
           isSupplier: false,
@@ -277,7 +282,6 @@ describe('BusinessPartnersService', () => {
 
       await expect(
         service.create({
-          code: 'BP-009',
           name: 'Test',
           isCustomer: true,
           isSupplier: false,
@@ -301,7 +305,6 @@ describe('BusinessPartnersService', () => {
 
       await expect(
         service.create({
-          code: 'BP-001',
           name: 'Duplicate',
           isCustomer: true,
           isSupplier: false,
@@ -318,7 +321,6 @@ describe('BusinessPartnersService', () => {
       prisma.businessPartner.create.mockResolvedValue(basePartner);
 
       await service.create({
-        code: 'BP-010',
         name: 'Test',
         isCustomer: true,
         isSupplier: false,
@@ -334,6 +336,7 @@ describe('BusinessPartnersService', () => {
       expect(data).not.toHaveProperty('updatedAt');
       expect(data).not.toHaveProperty('sales');
       expect(data.isActive).toBe(true);
+      expect(data.code).toBe('0000001');
     });
   });
 

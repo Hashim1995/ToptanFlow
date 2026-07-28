@@ -35,14 +35,15 @@ export class BusinessPartnersController {
   @ApiOperation({
     summary: 'Create a business partner',
     description:
-      'Creates a unified counterparty. At least one of isCustomer or isSupplier must be true; both may be true.',
+      'Creates a unified counterparty. At least one of isCustomer or isSupplier must be true; both may be true. ' +
+      'BusinessPartner.code is allocated by the backend (ADR-024); clients must not supply code. ' +
+      'Step 16.3 (not in this task): UpdateBusinessPartnerDto must not contain code — code is immutable.',
   })
   @ApiBody({
     type: CreateBusinessPartnerDto,
     examples: {
       customerOnly: {
         value: {
-          code: 'bp-001',
           name: 'Nümunə MMC',
           isCustomer: true,
           isSupplier: false,
@@ -56,7 +57,7 @@ export class BusinessPartnersController {
   @ApiCreatedResponse({ type: BusinessPartnerResponseDto })
   @ApiBadRequestResponse({
     description:
-      'Invalid field values, both roles false, empty code/name, or inactive currency',
+      'Invalid field values, both roles false, empty name, inactive currency, or forbidden properties (e.g. code)',
   })
   @ApiNotFoundResponse({ description: 'Currency not found' })
   @ApiConflictResponse({ description: 'Business partner code already exists' })

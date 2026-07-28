@@ -10,7 +10,6 @@ describe('CreateProductDto decimal validation', () => {
     partial: Partial<CreateProductDto>,
   ): Promise<string[]> {
     const dto = plainToInstance(CreateProductDto, {
-      code: 'TX-001',
       name: 'Test',
       type: ProductTypeApi.FINISHED_GOOD,
       unitId,
@@ -19,6 +18,22 @@ describe('CreateProductDto decimal validation', () => {
     const errors = await validate(dto);
     return errors.flatMap((error) => Object.values(error.constraints ?? {}));
   }
+
+  it('CreateProductDto does not declare code', () => {
+    expect(new CreateProductDto()).not.toHaveProperty('code');
+    expect(
+      Object.getOwnPropertyNames(CreateProductDto.prototype),
+    ).not.toContain('code');
+  });
+
+  it('validates successfully without code (whitelist rejection is e2e)', async () => {
+    const dto = plainToInstance(CreateProductDto, {
+      name: 'Test',
+      type: ProductTypeApi.FINISHED_GOOD,
+      unitId,
+    });
+    expect(await validate(dto)).toHaveLength(0);
+  });
 
   it('accepts valid decimal strings', async () => {
     const messages = await validateDto({

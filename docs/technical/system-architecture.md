@@ -111,7 +111,7 @@ The following technical decisions remain unresolved and are not decided by this 
 - Authentication implementation.
 - Authorization implementation details.
 - OpenAPI contract-generation tooling (e.g., automatic client generation) — the API style itself is resolved by ADR-015.
-- UUID version and column storage representation — the identifier strategy itself is resolved by ADR-020.
+- UUID version and column storage representation — the identifier strategy itself is resolved by ADR-020. Human-readable Product and BusinessPartner business codes are a separate concern resolved by ADR-024 (backend-generated sequential codes via internal `NumberSequence`); they are not technical primary identifiers.
 - Exact migration workflow/process (branching, review, deployment order) — the migration tool itself is resolved by ADR-021.
 - Logging and monitoring approach.
 - Deployment providers.

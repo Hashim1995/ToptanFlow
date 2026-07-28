@@ -5,7 +5,11 @@ export class BusinessPartnerResponseDto {
   @ApiProperty({ format: 'uuid' })
   id!: string;
 
-  @ApiProperty({ example: 'BP-001' })
+  @ApiProperty({
+    example: '0000001',
+    description:
+      'Backend-generated immutable business code (ADR-024). Not accepted on create.',
+  })
   code!: string;
 
   @ApiProperty({ example: 'Nümunə MMC' })

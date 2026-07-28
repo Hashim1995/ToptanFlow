@@ -25,6 +25,7 @@ Implement authoritative backend behavior exactly as defined by approved tasks, b
 
 - Enforce business validation on the backend, per ADR-003.
 - Recalculate authoritative totals and values on the backend rather than trusting any client-supplied value.
+- For Product and BusinessPartner create (ADR-024): never accept client-supplied business codes; allocate codes only through shared `NumberSequencesService` inside the entity-creation Prisma transaction; treat codes as immutable after creation.
 - Enforce permissions server-side for every protected action.
 - Preserve transaction atomicity: a workflow's effects (inventory, cash, receivable/payable, audit) commit together or not at all, per `docs/business/invariants.md` ("Global Invariants").
 - Preserve posting and immutability rules, per ADR-004: no posted fact is edited or deleted in place.

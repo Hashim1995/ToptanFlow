@@ -112,7 +112,12 @@ export class UnitsService {
       throw new NotFoundException('Unit not found');
     }
 
-    const data: Prisma.UnitUpdateInput = {};
+    const data: {
+      code?: string;
+      name?: string;
+      allowsFractionalQuantity?: boolean;
+      isActive?: boolean;
+    } = {};
 
     if (dto.code !== undefined) {
       const code = this.normalizeCode(dto.code);

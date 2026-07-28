@@ -34,13 +34,16 @@ export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Create a product' })
+  @ApiOperation({
+    summary: 'Create a product',
+    description:
+      'Product.code is allocated by the backend (ADR-024). Clients must not supply code.',
+  })
   @ApiBody({
     type: CreateProductDto,
     examples: {
       default: {
         value: {
-          code: 'tx-001',
           name: 'Parça məhsul',
           type: ProductTypeApi.FINISHED_GOOD,
           unitId: '22222222-2222-4222-8222-222222222222',
@@ -52,7 +55,8 @@ export class ProductsController {
   })
   @ApiCreatedResponse({ type: ProductResponseDto })
   @ApiBadRequestResponse({
-    description: 'Invalid field values, inactive unit, or invalid decimals',
+    description:
+      'Invalid field values, inactive unit, invalid decimals, or forbidden properties (e.g. code)',
   })
   @ApiNotFoundResponse({ description: 'Unit not found' })
   @ApiConflictResponse({ description: 'Product code already exists' })
@@ -91,17 +95,17 @@ export class ProductsController {
     summary: 'Update a product (partial)',
     description:
       'Inactive products may be updated for administrative correction. ' +
-      'PATCH does not change isActive and cannot reactivate a product.',
+      'PATCH does not change isActive and cannot reactivate a product. ' +
+      'Product.code is immutable and must not be sent (ADR-024).',
   })
   @ApiBody({ type: UpdateProductDto })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({ type: ProductResponseDto })
   @ApiBadRequestResponse({
     description:
-      'Invalid UUID, empty update body, invalid field values, or inactive unit assignment',
+      'Invalid UUID, empty update body, invalid field values, inactive unit assignment, or forbidden properties (e.g. code)',
   })
   @ApiNotFoundResponse({ description: 'Product or unit not found' })
-  @ApiConflictResponse({ description: 'Product code already exists' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateProductDto,

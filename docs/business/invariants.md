@@ -33,7 +33,8 @@
 - Sales-specific and purchasing-specific Yellow Card notes must not be mixed when one partner acts as both customer and supplier.
 - A partner's WhatsApp number, communication consent, preferred language, and sending history are controlled communication data.
 - A business partner statement lists sales, sales returns, purchases, purchase returns, receipts, payments, advances, and approved adjustments chronologically, with source-document links, and shows the receivable and payable closing balances separately rather than netted.
-- A business partner code is globally unique across its entire history — including inactivated or deleted partners — and a code is never reused after deactivation or deletion. [Approved Human Decision — recorded 2026-07-28; not derived from the BRD/SRS analysis.]
+- A business partner code is generated automatically by the backend as an independent sequential business code (initial seven-digit zero-padded decimal text; continues beyond seven digits without truncation or reset). Clients must not supply, preview, reserve, or override the code. [Approved Human Decision — recorded 2026-07-28; see ADR-024.]
+- A business partner code is globally unique across its entire history — including inactivated or deleted partners — and a code is never reused after deactivation or deletion. The code is immutable after creation. [Approved Human Decision — recorded 2026-07-28; not derived from the BRD/SRS analysis.]
 - A business partner is never hard-deleted; it is only ever deactivated (see the invariant above: "A partner that has been used in transactions is inactivated, not deleted"), which is the mechanism that guarantees its code can never be reused. [Approved Human Decision — recorded 2026-07-28; not derived from the BRD/SRS analysis.]
 
 ## Currency
@@ -44,7 +45,8 @@
 
 ## Products
 
-- A product code is globally unique across its entire history — including inactivated products — and a code is never reused after a product is deactivated or deleted; a product that has been used is inactivated, not deleted. [Global-uniqueness and no-reuse rule: Approved Human Decision — recorded 2026-07-28; strengthens the BRD-derived "active codes are unique" rule and is not itself derived from the BRD/SRS analysis.]
+- A product code is generated automatically by the backend as an independent sequential business code (initial seven-digit zero-padded decimal text; continues beyond seven digits without truncation or reset). Clients must not supply, preview, reserve, or override the code. [Approved Human Decision — recorded 2026-07-28; see ADR-024.]
+- A product code is globally unique across its entire history — including inactivated products — and a code is never reused after a product is deactivated or deleted; a product that has been used is inactivated, not deleted. The code is immutable after creation. [Global-uniqueness and no-reuse rule: Approved Human Decision — recorded 2026-07-28; strengthens the BRD-derived "active codes are unique" rule and is not itself derived from the BRD/SRS analysis.]
 - A product is never hard-deleted; it is only ever deactivated, which is the mechanism that guarantees its code can never be reused. [Approved Human Decision — recorded 2026-07-28; not derived from the BRD/SRS analysis.]
 - Product type (finished good, raw material, or mixed-use) and product category are separate, independent classifications.
 - Each product has exactly one primary unit of measure; whether fractional quantities are allowed follows that unit's configuration.

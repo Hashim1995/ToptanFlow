@@ -11,20 +11,12 @@ import {
 import { IsNumericDecimal18_4 } from './decimal-string.validator';
 import { ProductTypeApi } from './product-type.enum';
 
+/**
+ * Product.code is backend-generated and immutable (ADR-024).
+ * A PATCH body containing `code` is rejected by the global ValidationPipe
+ * (forbidNonWhitelisted), not silently ignored.
+ */
 export class UpdateProductDto {
-  @ApiPropertyOptional({
-    example: 'tx-001',
-    description: 'Stored uppercase after normalization. Cannot be null.',
-  })
-  @ValidateIf((_object, value) => value !== undefined)
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(255)
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim() : value,
-  )
-  code?: string;
-
   @ApiPropertyOptional({
     example: 'Parça məhsul',
     description: 'Cannot be null.',

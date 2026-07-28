@@ -26,7 +26,8 @@ Design and review persistent data structures that preserve TOPTANFLOW business i
 - Preserve immutable posted records and append-only audit history, per ADR-004.
 - Preserve source-document relationships (e.g., a return linked to its original sale, a reversal linked to its original transaction).
 - Support correction links required by the defined mechanisms: return, cancellation, reversal, reallocation, authorized adjustment.
-- Enforce uniqueness and referential integrity where the business requires it (e.g., unique active product codes, unique document numbers).
+- Enforce uniqueness and referential integrity where the business requires it (e.g., unique Product and BusinessPartner business codes including inactive rows — codes are backend-generated via `NumberSequence` per ADR-024; unique document numbers when those rules exist).
+- For automatic business codes (ADR-024): preserve independent `NumberSequence` rows per approved key, initialize sequences safely from historical data during migrations, never reuse deactivated codes, and keep allocation inside the same database transaction as entity creation.
 - Support precise money and quantity storage consistent with the precision requirement in `docs/business/invariants.md` ("Global Invariants").
 - Support concurrency and idempotency requirements identified by the Solution Architect or Backend Engineer for the task.
 - Evaluate migration safety for any schema change.

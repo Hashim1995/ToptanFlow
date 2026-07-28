@@ -6,6 +6,8 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '../../generated/prisma/client.js';
 import { SortOrder } from '../common/sorting/sort-order.enum';
+import { BusinessCodeSequenceKey } from '../number-sequences/business-code-sequence-key';
+import { NumberSequencesService } from '../number-sequences/number-sequences.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBusinessPartnerDto } from './dto/create-business-partner.dto';
 import { ListBusinessPartnersQueryDto } from './dto/list-business-partners-query.dto';
@@ -46,35 +48,43 @@ type BusinessPartnerRecord = Prisma.BusinessPartnerGetPayload<{
 
 @Injectable()
 export class BusinessPartnersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly numberSequences: NumberSequencesService,
+  ) {}
 
   async create(
     dto: CreateBusinessPartnerDto,
   ): Promise<BusinessPartnerResponseDto> {
-    const code = this.normalizeCode(dto.code);
     const name = this.normalizeName(dto.name);
-    this.assertNonEmpty('code', code);
     this.assertNonEmpty('name', name);
     this.assertAtLeastOneRole(dto.isCustomer, dto.isSupplier);
 
     await this.assertCurrencyAssignable(dto.defaultCurrencyId);
 
     try {
-      const partner = await this.prisma.businessPartner.create({
-        data: {
-          code,
-          name,
-          isCustomer: dto.isCustomer,
-          isSupplier: dto.isSupplier,
-          phone: this.normalizeOptionalText(dto.phone),
-          email: this.normalizeOptionalText(dto.email),
-          taxNumber: this.normalizeOptionalText(dto.taxNumber),
-          address: this.normalizeOptionalText(dto.address),
-          notes: this.normalizeOptionalText(dto.notes),
-          defaultCurrencyId: dto.defaultCurrencyId,
-          isActive: true,
-        },
-        select: businessPartnerSelect,
+      const partner = await this.prisma.$transaction(async (tx) => {
+        const code = await this.numberSequences.nextCode(
+          tx,
+          BusinessCodeSequenceKey.BUSINESS_PARTNER,
+        );
+
+        return tx.businessPartner.create({
+          data: {
+            code,
+            name,
+            isCustomer: dto.isCustomer,
+            isSupplier: dto.isSupplier,
+            phone: this.normalizeOptionalText(dto.phone),
+            email: this.normalizeOptionalText(dto.email),
+            taxNumber: this.normalizeOptionalText(dto.taxNumber),
+            address: this.normalizeOptionalText(dto.address),
+            notes: this.normalizeOptionalText(dto.notes),
+            defaultCurrencyId: dto.defaultCurrencyId,
+            isActive: true,
+          },
+          select: businessPartnerSelect,
+        });
       });
       return this.toResponse(partner);
     } catch (error: unknown) {
@@ -196,10 +206,6 @@ export class BusinessPartnersService {
     }
 
     return { AND: conditions };
-  }
-
-  private normalizeCode(code: string): string {
-    return code.trim().toUpperCase();
   }
 
   private normalizeName(name: string): string {

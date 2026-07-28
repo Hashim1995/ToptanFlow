@@ -10,7 +10,6 @@ describe('CreateBusinessPartnerDto validation', () => {
     partial: Record<string, unknown>,
   ): Promise<string[]> {
     const dto = plainToInstance(CreateBusinessPartnerDto, {
-      code: 'BP-001',
       name: 'Test',
       isCustomer: true,
       isSupplier: false,
@@ -20,6 +19,10 @@ describe('CreateBusinessPartnerDto validation', () => {
     const errors = await validate(dto);
     return errors.flatMap((error) => Object.values(error.constraints ?? {}));
   }
+
+  it('CreateBusinessPartnerDto does not declare code', () => {
+    expect(new CreateBusinessPartnerDto()).not.toHaveProperty('code');
+  });
 
   it('accepts valid customer-only, supplier-only, and both-role payloads', async () => {
     expect(
@@ -33,17 +36,8 @@ describe('CreateBusinessPartnerDto validation', () => {
     ).toHaveLength(0);
   });
 
-  it('rejects missing code, name, and role flags', async () => {
-    const missingCode = plainToInstance(CreateBusinessPartnerDto, {
-      name: 'Test',
-      isCustomer: true,
-      isSupplier: false,
-      defaultCurrencyId: currencyId,
-    });
-    expect((await validate(missingCode)).length).toBeGreaterThan(0);
-
+  it('rejects missing name and role flags', async () => {
     const missingName = plainToInstance(CreateBusinessPartnerDto, {
-      code: 'BP-001',
       isCustomer: true,
       isSupplier: false,
       defaultCurrencyId: currencyId,
@@ -51,7 +45,6 @@ describe('CreateBusinessPartnerDto validation', () => {
     expect((await validate(missingName)).length).toBeGreaterThan(0);
 
     const missingRoles = plainToInstance(CreateBusinessPartnerDto, {
-      code: 'BP-001',
       name: 'Test',
       defaultCurrencyId: currencyId,
     });
