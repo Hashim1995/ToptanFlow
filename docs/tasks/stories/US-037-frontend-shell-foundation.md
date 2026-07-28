@@ -3,7 +3,7 @@
 - **ID:** US-037
 - **Title:** Frontend application shell foundation
 - **Parent Epic:** [EPIC-021](../epics/EPIC-021-frontend-application.md)
-- **Status:** In Progress
+- **Status:** Done
 - **Priority:** High
 - **Business actor:** N/A (technical enabler)
 
@@ -52,7 +52,7 @@ Exact breakpoint pixel values are not prescribed — use Ant Design responsive p
 
 | Question | Disposition |
 | --- | --- |
-| SPA router library? | **Approved Human Decision (2026-07-29).** Use `react-router-dom` for client routing under the ADR-006 React SPA. No competing router ADR exists; this is an implementation choice for US-037, not a business-behavior decision. |
+| SPA router library? | **Approved Human Decision (2026-07-29).** Use `react-router-dom` for client routing under the ADR-006 React SPA. |
 | Domain nav items (products, partners, …)? | **Out of scope.** Placeholder home + shell chrome only until US-038 / feature stories activate labels from terminology. |
 | Auth session / protected routes? | **Out of scope** — blocked on US-019 open decisions. Shell remains unauthenticated. |
 | Full Azerbaijani error message catalog? | **Stub only in US-037** (mapper hook / structure). Full mapping expands with feature screens. |
@@ -69,4 +69,4 @@ Exact breakpoint pixel values are not prescribed — use Ant Design responsive p
 
 - [TASK-037-01](../tasks/TASK-037-01-wire-frontend-providers-replace-template.md) — **Done**
 - [TASK-037-02](../tasks/TASK-037-02-add-axios-http-client-foundation.md) — **Done**
-- [TASK-037-03](../tasks/TASK-037-03-add-routing-and-responsive-app-shell.md) — Ready (next)
+- [TASK-037-03](../tasks/TASK-037-03-add-routing-and-responsive-app-shell.md) — **Done**

@@ -4,6 +4,7 @@ Planning-history only. Not a product release-notes replacement.
 
 ## 2026-07-29
 
+- **Task completed:** [TASK-037-03](tasks/TASK-037-03-add-routing-and-responsive-app-shell.md) routing + responsive shell; [US-037](stories/US-037-frontend-shell-foundation.md) **Done**.
 - **Task completed:** [TASK-037-02](tasks/TASK-037-02-add-axios-http-client-foundation.md) Axios HTTP client + stub AZ error mapper (`web` build green).
 - **Story activated:** [US-037](stories/US-037-frontend-shell-foundation.md) Frontend shell foundation; router choice `react-router-dom` recorded.
 - **Tasks elaborated:** TASK-037-01, TASK-037-02, TASK-037-03.

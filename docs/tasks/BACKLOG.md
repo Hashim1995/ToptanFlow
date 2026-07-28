@@ -10,13 +10,13 @@ Priority: **H** High · **M** Medium · **L** Low
 
 | ID | Title | Epic | Priority | Depends on | Task elaboration |
 | --- | --- | --- | --- | --- | --- |
-| — | *(none — US-037 is active; see CURRENT.md)* | — | — | — | — |
+| [US-038](stories/US-038-frontend-master-data-screens.md) | Master-data UI screens | EPIC-021 | H | US-037 Done; backend readiness | On activation |
 
 ## Active (see CURRENT.md)
 
 | ID | Title | Epic | Priority | Status | Next task |
 | --- | --- | --- | --- | --- | --- |
-| [US-037](stories/US-037-frontend-shell-foundation.md) | Frontend shell foundation | EPIC-021 | H | In Progress | [TASK-037-03](tasks/TASK-037-03-add-routing-and-responsive-app-shell.md) |
+| — | *(none — activate next story from Ready)* | — | — | — | — |
 
 ## EPIC-006 remaining (after US-016)
 
@@ -65,4 +65,4 @@ Priority: **H** High · **M** Medium · **L** Low
 
 ## Completed (index only)
 
-See story files marked Done (US-001–US-016) and [`CHANGELOG.md`](CHANGELOG.md). Do not re-list full detail here.
+See story files marked Done (US-001–US-016, US-037) and [`CHANGELOG.md`](CHANGELOG.md). Do not re-list full detail here.

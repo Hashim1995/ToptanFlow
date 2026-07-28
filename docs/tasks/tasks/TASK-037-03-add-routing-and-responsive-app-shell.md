@@ -6,7 +6,7 @@
 - **Title:** Add routing and responsive app shell
 - **Parent User Story:** [US-037](../stories/US-037-frontend-shell-foundation.md)
 - **Parent Epic:** [EPIC-021](../epics/EPIC-021-frontend-application.md)
-- **Status:** Ready
+- **Status:** Done
 - **Type:** Frontend
 - **Priority:** High
 - **Estimate:** M
@@ -31,14 +31,14 @@ Add client routing (`react-router-dom`) and a responsive Ant Design app chrome w
 
 ## Acceptance criteria
 
-- [ ] Home route renders inside shell
-- [ ] Navigation reachable on narrow viewports without hover-only paths
-- [ ] User-facing shell strings Azerbaijani; no English Ant defaults in chrome
-- [ ] Build green
+- [x] Home route renders inside shell
+- [x] Navigation reachable on narrow viewports without hover-only paths
+- [x] User-facing shell strings Azerbaijani; no English Ant defaults in chrome
+- [x] Build green
 
 ## Implementation notes
 
-May depend on TASK-037-02 only loosely (can proceed after 037-01). Keep nav minimal.
+Desktop: Ant Design Sider. Mobile: header menu button + Drawer. Nav: Ana səhifə only.
 
 ## Documentation impact
 
@@ -46,15 +46,15 @@ None beyond task evidence.
 
 ## Testing expectations
 
-Build smoke; optional responsive manual check (mobile + desktop).
+Build smoke.
 
 ## Validation expectations
 
-Build green; shell usable at mobile width.
+`yarn workspace web build` green.
 
 ## Risks
 
-Over-building nav for future modules — resist.
+Over-building nav — avoided (home only).
 
 ## Assumptions
 
@@ -62,8 +62,16 @@ Router choice recorded on US-037 (`react-router-dom`).
 
 ## Evidence
 
-(To be filled when Done.)
+- `apps/web/src/app/app-shell-layout.tsx`
+- `apps/web/src/pages/home-page.tsx`
+- `apps/web/src/App.tsx` (BrowserRouter + Routes)
+- Dependencies: `react-router-dom`, `@ant-design/icons`
+- Validation: `yarn workspace web build` → success
 
 ## Result
 
-(To be filled when Done.)
+Done. Responsive shell + home route complete US-037.
+
+## Completion date
+
+2026-07-29

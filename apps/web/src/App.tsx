@@ -1,19 +1,20 @@
-import { Typography } from 'antd';
-
-const { Title, Paragraph } = Typography;
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { AppShellLayout } from './app/app-shell-layout';
+import { HomePage } from './pages/home-page';
 
 /**
- * Placeholder home only — no domain feature screens (US-038+).
+ * App routes — home only until feature stories activate screens (US-038+).
  */
 function App() {
   return (
-    <main style={{ padding: 24, maxWidth: 720, margin: '0 auto' }}>
-      <Title level={2}>TOPTANFLOW</Title>
-      <Paragraph>
-        İnterfeys quruluşu hazırlanır. Əməliyyat ekranları ayrıca hekayələrdə
-        əlavə olunacaq.
-      </Paragraph>
-    </main>
+    <BrowserRouter>
+      <Routes>
+        <Route element={<AppShellLayout />}>
+          <Route index element={<HomePage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 

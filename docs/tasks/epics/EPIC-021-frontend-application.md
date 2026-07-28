@@ -47,4 +47,4 @@ Exact screen inventory per milestone not fully listed.
 
 ## Repository evidence
 
-Web app: US-037 In Progress (providers Done; Axios/routing remaining). No domain screens yet (US-038).
+Web app: US-037 Done (providers, Axios, routing + responsive shell). Next: US-038 master-data screens.
