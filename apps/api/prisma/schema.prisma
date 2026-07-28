@@ -180,17 +180,20 @@ model User {
 /// `isSupplier` flags is therefore the correct structure; per-direction
 /// balances (receivable vs. payable) are not merged anywhere in this schema.
 model BusinessPartner {
-  id         String   @id @default(uuid())
-  name       String
-  isCustomer Boolean  @default(false)
-  isSupplier Boolean  @default(false)
+  id                String   @id @default(uuid())
+  name              String
+  isCustomer        Boolean  @default(false)
+  isSupplier        Boolean  @default(false)
   /// Source: docs/business/invariants.md, "Business Partners" — "Possible
   /// duplicate partners are flagged using normalized name, phone, tax
   /// number, and other identifiers before a new record is created." This is
   /// a soft, flagged check (not a hard rejection), so `taxNumber`/`phone` are
   /// indexed for lookup, not declared unique.
-  taxNumber  String?
-  phone      String?
+  taxNumber         String?
+  phone             String?
+  email             String?
+  address           String?
+  notes             String?
   /// "A business partner code is globally unique across its entire history
   /// — including deactivated or deleted partners — and a code is never
   /// reused after deactivation or deletion." [Approved Human Decision,
@@ -199,17 +202,27 @@ model BusinessPartner {
   /// row is never physically deleted, only deactivated via `isActive` below
   /// [Approved Human Decision, recorded 2026-07-28], so this `@unique`
   /// constraint permanently guarantees the no-reuse rule.
-  code       String   @unique
+  code              String   @unique
+  /// Preferred/default Currency for creating future documents. Not a stored
+  /// balance currency, not a reporting-base restriction, and not a ban on
+  /// multi-currency sales, purchases, payments, or collections. Partner
+  /// balances remain derived from auditable transactions and are never
+  /// stored as mutable fields on this row
+  /// (docs/business/invariants.md, "Business Partners", "Receivables and
+  /// Payables").
+  defaultCurrencyId String
+  defaultCurrency   Currency @relation(fields: [defaultCurrencyId], references: [id], onDelete: Restrict)
   /// Source: docs/business/invariants.md, "Business Partners" — "A partner
   /// that has been used in transactions is inactivated, not deleted."
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   sales            Sale[]
   purchases        Purchase[]
   cashTransactions CashTransaction[]
 
+  @@index([defaultCurrencyId])
   @@index([taxNumber])
   @@index([phone])
   @@index([isCustomer])
@@ -262,6 +275,7 @@ model Currency {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  businessPartners BusinessPartner[]
   sales            Sale[]
   purchases        Purchase[]
   moneyAccounts    MoneyAccount[]
