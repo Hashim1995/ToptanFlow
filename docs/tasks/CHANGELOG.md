@@ -4,6 +4,8 @@ Planning-history only. Not a product release-notes replacement.
 
 ## 2026-07-29
 
+- **Task completed:** [TASK-041-01](tasks/TASK-041-01-add-web-vitest-harness.md) web Vitest harness + 14 pure helper tests (Vitest 3.2.4; build/lint green).
+- **Story activated:** [US-041](stories/US-041-quality-harness-expansion.md) quality harness expansion (safe path after US-038; warehouses/auth blocked on open decisions).
 - **Story completed:** [US-038](stories/US-038-frontend-master-data-screens.md) master-data UI screens (TASK-038-05 responsive verification).
 - **Task completed:** [TASK-038-05](tasks/TASK-038-05-verify-master-data-ui-responsive-states.md) ADR-005/ui-requirements matrix + build/lint.
 - **Task completed:** [TASK-038-04](tasks/TASK-038-04-add-business-partner-screens.md) partner screens + soft-duplicate acknowledge UI (`web` build + lint green).
