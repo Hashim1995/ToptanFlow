@@ -124,6 +124,27 @@ enum CashTransactionType {
 }
 
 // ---------------------------------------------------------------------------
+// Internal infrastructure: business code sequences
+// ---------------------------------------------------------------------------
+
+/// Internal, database-backed counter for automatic business codes
+/// (Product, BusinessPartner). Not exposed via HTTP. Allocation must run
+/// inside the same Prisma transaction as entity creation so a failed create
+/// rolls back the increment. See ADR-024.
+model NumberSequence {
+  /// Internal sequence key (e.g. PRODUCT, BUSINESS_PARTNER). Application
+  /// constants only — never accepted from HTTP input.
+  key          String   @id
+  /// Last allocated integer value. Next allocation returns currentValue + 1.
+  currentValue BigInt   @default(0)
+  /// Minimum decimal digit width for formatting (does not truncate when
+  /// exceeded). Default 7 → "0000001".
+  padding      Int      @default(7)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------------------
 // Identity foundation
 // ---------------------------------------------------------------------------
 
@@ -180,36 +201,46 @@ model User {
 /// `isSupplier` flags is therefore the correct structure; per-direction
 /// balances (receivable vs. payable) are not merged anywhere in this schema.
 model BusinessPartner {
-  id         String   @id @default(uuid())
-  name       String
-  isCustomer Boolean  @default(false)
-  isSupplier Boolean  @default(false)
+  id                String   @id @default(uuid())
+  name              String
+  isCustomer        Boolean  @default(false)
+  isSupplier        Boolean  @default(false)
   /// Source: docs/business/invariants.md, "Business Partners" — "Possible
   /// duplicate partners are flagged using normalized name, phone, tax
   /// number, and other identifiers before a new record is created." This is
   /// a soft, flagged check (not a hard rejection), so `taxNumber`/`phone` are
   /// indexed for lookup, not declared unique.
-  taxNumber  String?
-  phone      String?
-  /// "A business partner code is globally unique across its entire history
-  /// — including deactivated or deleted partners — and a code is never
-  /// reused after deactivation or deletion." [Approved Human Decision,
-  /// recorded 2026-07-28; see docs/business/invariants.md, "Business
-  /// Partners" — not derived from the BRD/SRS analysis.] A `BusinessPartner`
-  /// row is never physically deleted, only deactivated via `isActive` below
-  /// [Approved Human Decision, recorded 2026-07-28], so this `@unique`
-  /// constraint permanently guarantees the no-reuse rule.
-  code       String   @unique
+  taxNumber         String?
+  phone             String?
+  email             String?
+  address           String?
+  notes             String?
+  /// Business partner code is backend-generated (ADR-024), globally unique
+  /// including inactive rows, immutable after creation, and never reused.
+  /// Application-layer clients must not supply this value. [Approved Human
+  /// Decision, recorded 2026-07-28; see docs/business/invariants.md,
+  /// "Business Partners".]
+  code              String   @unique
+  /// Preferred/default Currency for creating future documents. Not a stored
+  /// balance currency, not a reporting-base restriction, and not a ban on
+  /// multi-currency sales, purchases, payments, or collections. Partner
+  /// balances remain derived from auditable transactions and are never
+  /// stored as mutable fields on this row
+  /// (docs/business/invariants.md, "Business Partners", "Receivables and
+  /// Payables").
+  defaultCurrencyId String
+  defaultCurrency   Currency @relation(fields: [defaultCurrencyId], references: [id], onDelete: Restrict)
   /// Source: docs/business/invariants.md, "Business Partners" — "A partner
   /// that has been used in transactions is inactivated, not deleted."
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   sales            Sale[]
   purchases        Purchase[]
   cashTransactions CashTransaction[]
 
+  @@index([defaultCurrencyId])
   @@index([taxNumber])
   @@index([phone])
   @@index([isCustomer])
@@ -262,6 +293,7 @@ model Currency {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  businessPartners BusinessPartner[]
   sales            Sale[]
   purchases        Purchase[]
   moneyAccounts    MoneyAccount[]
@@ -274,12 +306,10 @@ model Currency {
 
 /// Source: docs/business/invariants.md, "Products".
 ///
-/// Persistence notes (this task):
-/// - Code uniqueness is global (including inactive rows); soft-delete via
-///   `isActive` only — never physical delete [Approved Human Decision,
-///   recorded 2026-07-28]. Application-layer code normalization is
-///   trim + uppercase (same pattern as Unit/Currency); the DB stores the
-///   normalized value under `@unique`.
+/// Persistence notes:
+/// - Code is backend-generated via NumberSequence (ADR-024); uniqueness is
+///   global (including inactive rows); soft-delete via `isActive` only —
+///   never physical delete [Approved Human Decision, recorded 2026-07-28].
 /// - Decimal scales follow ADR-023 (unit prices / stock thresholds:
 ///   `NUMERIC(18, 4)`). No stock balance is stored here — inventory is the
 ///   sum of future stock movements (docs/business/invariants.md, "Inventory").
@@ -288,17 +318,9 @@ model Currency {
 ///   Sale/Purchase (docs/business/invariants.md, "Currency").
 model Product {
   id                     String      @id @default(uuid())
-  /// "A product code is globally unique across its entire history —
-  /// including inactivated products — and a code is never reused after a
-  /// product is deactivated or deleted; a product that has been used is
-  /// inactivated, not deleted." [Approved Human Decision, recorded
-  /// 2026-07-28; see docs/business/invariants.md, "Products" — this
-  /// supersedes the earlier BRD-derived "active codes are unique" wording
-  /// with a stronger, explicitly approved global-uniqueness rule.] A
-  /// `Product` row is never physically deleted, only deactivated via
-  /// `isActive` below [Approved Human Decision, recorded 2026-07-28],
-  /// consistent with ADR-004's immutability principle, so this `@unique`
-  /// constraint permanently guarantees the no-reuse rule.
+  /// Product business code is backend-generated (ADR-024), globally unique
+  /// including inactive rows, immutable after creation, and never reused.
+  /// Application-layer clients must not supply this value.
   code                   String      @unique
   name                   String
   type                   ProductType

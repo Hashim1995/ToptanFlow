@@ -1,0 +1,24 @@
+# User story template
+
+- **ID:** US-NNN
+- **Title:**
+- **Parent Epic:** EPIC-NNN
+- **Status:** Draft | Planned | Ready | In Progress | Blocked | Review | Done | Cancelled | Deferred
+- **Priority:** High | Medium | Low
+- **Business actor:** (or N/A for technical enablers)
+- **Statement:** As a …, I want …, so that … (or technical-enabler form)
+- **Business value:**
+- **High-level scope:**
+- **High-level acceptance criteria:**
+- **Dependencies:**
+- **Related domain rules:** `docs/business/invariants.md` / workflow-map
+- **Related ADRs / docs:**
+- **Known risks:**
+- **Open questions:**
+- **Readiness checklist:**
+  - [ ] Business behavior approved / traceable
+  - [ ] No unresolved Open Decision that this story would silently resolve
+  - [ ] Dependencies satisfied or explicitly accepted
+  - [ ] Acceptance criteria sufficient to implement
+- **Task elaboration:** Deferred until activation | Elaborated (list TASK-* links)
+- **Legacy reference:** (optional, e.g. Step 16.3)

@@ -15,9 +15,16 @@ describe('UpdateProductDto validation', () => {
     expect(messages).toHaveLength(0);
   });
 
+  it('does not declare a code field', () => {
+    expect(
+      Object.getOwnPropertyDescriptor(UpdateProductDto.prototype, 'code'),
+    ).toBeUndefined();
+    const sample = plainToInstance(UpdateProductDto, { name: 'x' });
+    expect(sample).not.toHaveProperty('code');
+  });
+
   it('rejects null for non-nullable fields', async () => {
     await expect(validateDto({ name: null })).resolves.not.toHaveLength(0);
-    await expect(validateDto({ code: null })).resolves.not.toHaveLength(0);
     await expect(validateDto({ type: null })).resolves.not.toHaveLength(0);
     await expect(validateDto({ unitId: null })).resolves.not.toHaveLength(0);
   });

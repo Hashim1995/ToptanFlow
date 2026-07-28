@@ -4,8 +4,11 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '../../generated/prisma/client.js';
+import { Decimal } from '@prisma/client/runtime/client';
 import { SortOrder } from '../common/sorting/sort-order.enum';
+import { BusinessCodeSequenceKey } from '../number-sequences/business-code-sequence-key';
+import { NumberSequencesService } from '../number-sequences/number-sequences.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -44,33 +47,41 @@ type ProductRecord = Prisma.ProductGetPayload<{ select: typeof productSelect }>;
 
 @Injectable()
 export class ProductsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly numberSequences: NumberSequencesService,
+  ) {}
 
   async create(dto: CreateProductDto): Promise<ProductResponseDto> {
-    const code = this.normalizeCode(dto.code);
     const name = this.normalizeName(dto.name);
-    this.assertNonEmpty('code', code);
     this.assertNonEmpty('name', name);
 
     const category = this.normalizeOptionalCategory(dto.category);
     await this.assertUnitAssignable(dto.unitId);
 
     try {
-      const product = await this.prisma.product.create({
-        data: {
-          code,
-          name,
-          type: dto.type,
-          category,
-          unitId: dto.unitId,
-          standardSalePrice: this.toPrismaDecimal(dto.standardSalePrice),
-          latestPurchasePrice: this.toPrismaDecimal(dto.latestPurchasePrice),
-          criticalStockThreshold: this.toPrismaDecimal(
-            dto.criticalStockThreshold,
-          ),
-          isActive: true,
-        },
-        select: productSelect,
+      const product = await this.prisma.$transaction(async (tx) => {
+        const code = await this.numberSequences.nextCode(
+          tx,
+          BusinessCodeSequenceKey.PRODUCT,
+        );
+
+        return tx.product.create({
+          data: {
+            code,
+            name,
+            type: dto.type,
+            category,
+            unitId: dto.unitId,
+            standardSalePrice: this.toPrismaDecimal(dto.standardSalePrice),
+            latestPurchasePrice: this.toPrismaDecimal(dto.latestPurchasePrice),
+            criticalStockThreshold: this.toPrismaDecimal(
+              dto.criticalStockThreshold,
+            ),
+            isActive: true,
+          },
+          select: productSelect,
+        });
       });
       return this.toResponse(product);
     } catch (error: unknown) {
@@ -140,26 +151,15 @@ export class ProductsService {
       throw new NotFoundException('Product not found');
     }
 
-    const data: Prisma.ProductUpdateInput = {};
-
-    if (dto.code !== undefined) {
-      const code = this.normalizeCode(dto.code);
-      this.assertNonEmpty('code', code);
-      data.code = code;
-
-      if (code !== existing.code) {
-        const duplicate = await this.prisma.product.findFirst({
-          where: {
-            code,
-            NOT: { id },
-          },
-          select: { id: true },
-        });
-        if (duplicate) {
-          throw new ConflictException('Product code already exists');
-        }
-      }
-    }
+    const data: {
+      name?: string;
+      type?: ProductTypeApi;
+      category?: string | null;
+      unitId?: string;
+      standardSalePrice?: Decimal | null;
+      latestPurchasePrice?: Decimal | null;
+      criticalStockThreshold?: Decimal | null;
+    } = {};
 
     if (dto.name !== undefined) {
       const name = this.normalizeName(dto.name);
@@ -177,7 +177,7 @@ export class ProductsService {
 
     if (dto.unitId !== undefined) {
       await this.assertUnitAssignable(dto.unitId);
-      data.unit = { connect: { id: dto.unitId } };
+      data.unitId = dto.unitId;
     }
 
     if (dto.standardSalePrice !== undefined) {
@@ -294,10 +294,6 @@ export class ProductsService {
     return { AND: conditions };
   }
 
-  private normalizeCode(code: string): string {
-    return code.trim().toUpperCase();
-  }
-
   private normalizeName(name: string): string {
     return name.trim();
   }
@@ -318,23 +314,22 @@ export class ProductsService {
     }
   }
 
-  private toPrismaDecimal(value: string | undefined): Prisma.Decimal | null {
+  private toPrismaDecimal(value: string | undefined): Decimal | null {
     if (value === undefined) {
       return null;
     }
-    return new Prisma.Decimal(value);
+    return new Decimal(value);
   }
 
-  private toPrismaDecimalOrNull(value: string | null): Prisma.Decimal | null {
+  private toPrismaDecimalOrNull(value: string | null): Decimal | null {
     if (value === null) {
       return null;
     }
-    return new Prisma.Decimal(value);
+    return new Decimal(value);
   }
 
   private hasAtLeastOneUpdateField(dto: UpdateProductDto): boolean {
     return (
-      dto.code !== undefined ||
       dto.name !== undefined ||
       dto.type !== undefined ||
       dto.category !== undefined ||
@@ -345,9 +340,7 @@ export class ProductsService {
     );
   }
 
-  private decimalToString(
-    value: Prisma.Decimal | null | undefined,
-  ): string | null {
+  private decimalToString(value: Decimal | null | undefined): string | null {
     if (value === null || value === undefined) {
       return null;
     }
@@ -382,7 +375,9 @@ export class ProductsService {
 
   private rethrowUniqueAsConflict(error: unknown): void {
     if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
       error.code === 'P2002'
     ) {
       throw new ConflictException('Product code already exists');

@@ -4,29 +4,33 @@ import { ProductUnitResponseDto } from './product-unit-response.dto';
 
 export class ProductResponseDto {
   @ApiProperty({ format: 'uuid' })
-  id: string;
+  id!: string;
 
-  @ApiProperty({ example: 'TX-001' })
-  code: string;
+  @ApiProperty({
+    example: '0000001',
+    description:
+      'Backend-generated immutable business code (ADR-024). Not accepted on create/update.',
+  })
+  code!: string;
 
   @ApiProperty({ example: 'Parça məhsul' })
-  name: string;
+  name!: string;
 
   @ApiProperty({ enum: ProductTypeApi, example: ProductTypeApi.FINISHED_GOOD })
-  type: ProductTypeApi;
+  type!: ProductTypeApi;
 
   @ApiPropertyOptional({
     example: 'Tekstil',
     nullable: true,
     type: String,
   })
-  category: string | null;
+  category!: string | null;
 
   @ApiProperty({ format: 'uuid' })
-  unitId: string;
+  unitId!: string;
 
   @ApiProperty({ type: ProductUnitResponseDto })
-  unit: ProductUnitResponseDto;
+  unit!: ProductUnitResponseDto;
 
   @ApiPropertyOptional({
     example: '12.5000',
@@ -35,7 +39,7 @@ export class ProductResponseDto {
     description:
       'Informational default sale price (NUMERIC 18,4) as decimal string.',
   })
-  standardSalePrice: string | null;
+  standardSalePrice!: string | null;
 
   @ApiPropertyOptional({
     example: '10.0000',
@@ -44,7 +48,7 @@ export class ProductResponseDto {
     description:
       'Informational default purchase price (NUMERIC 18,4) as decimal string.',
   })
-  latestPurchasePrice: string | null;
+  latestPurchasePrice!: string | null;
 
   @ApiPropertyOptional({
     example: '5.0000',
@@ -52,14 +56,14 @@ export class ProductResponseDto {
     type: String,
     description: 'Company-total critical stock threshold as decimal string.',
   })
-  criticalStockThreshold: string | null;
+  criticalStockThreshold!: string | null;
 
   @ApiProperty({ example: true })
-  isActive: boolean;
+  isActive!: boolean;
 
   @ApiProperty({ example: '2026-07-28T00:00:00.000Z' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @ApiProperty({ example: '2026-07-28T00:00:00.000Z' })
-  updatedAt: Date;
+  updatedAt!: Date;
 }

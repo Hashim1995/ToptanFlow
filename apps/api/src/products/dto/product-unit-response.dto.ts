@@ -2,17 +2,17 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class ProductUnitResponseDto {
   @ApiProperty({ format: 'uuid' })
-  id: string;
+  id!: string;
 
   @ApiProperty({ example: 'KG' })
-  code: string;
+  code!: string;
 
   @ApiProperty({ example: 'Kiloqram' })
-  name: string;
+  name!: string;
 
   @ApiProperty({ example: true })
-  allowsFractionalQuantity: boolean;
+  allowsFractionalQuantity!: boolean;
 
   @ApiProperty({ example: true })
-  isActive: boolean;
+  isActive!: boolean;
 }

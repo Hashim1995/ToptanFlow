@@ -6,6 +6,7 @@ import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/bootstrap/configure-app';
 import { ProductTypeApi } from '../src/products/dto/product-type.enum';
+import { NumberSequencesService } from '../src/number-sequences/number-sequences.service';
 import { PrismaService } from '../src/prisma/prisma.service';
 
 describe('Products (e2e)', () => {
@@ -25,7 +26,7 @@ describe('Products (e2e)', () => {
 
   const baseProduct = {
     id: productId,
-    code: 'TX-001',
+    code: '0000001',
     name: 'Parça məhsul',
     type: ProductTypeApi.FINISHED_GOOD,
     category: 'Tekstil',
@@ -41,7 +42,7 @@ describe('Products (e2e)', () => {
 
   const expectedProductBody = {
     id: productId,
-    code: 'TX-001',
+    code: '0000001',
     name: 'Parça məhsul',
     type: ProductTypeApi.FINISHED_GOOD,
     category: 'Tekstil',
@@ -55,9 +56,16 @@ describe('Products (e2e)', () => {
     updatedAt: updatedAt.toISOString(),
   };
 
+  const numberSequences = {
+    nextCode: jest.fn().mockResolvedValue('0000001'),
+  };
+
   const prisma = {
     onModuleInit: jest.fn().mockResolvedValue(undefined),
     onModuleDestroy: jest.fn().mockResolvedValue(undefined),
+    $transaction: jest.fn((fn: (tx: typeof prisma) => unknown) =>
+      Promise.resolve(fn(prisma)),
+    ),
     product: {
       create: jest.fn(),
       findMany: jest.fn(),
@@ -124,7 +132,6 @@ describe('Products (e2e)', () => {
   }
 
   const validCreatePayload = {
-    code: 'tx-002',
     name: ' Yeni məhsul ',
     type: ProductTypeApi.FINISHED_GOOD,
     unitId,
@@ -141,6 +148,8 @@ describe('Products (e2e)', () => {
     })
       .overrideProvider(PrismaService)
       .useValue(prisma)
+      .overrideProvider(NumberSequencesService)
+      .useValue(numberSequences)
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -153,11 +162,11 @@ describe('Products (e2e)', () => {
   });
 
   describe('POST /api/v1/products', () => {
-    it('creates a product with normalized fields and serialized response', async () => {
+    it('creates a product with backend-generated code and normalized fields', async () => {
       prisma.unit.findUnique.mockResolvedValue({ id: unitId, isActive: true });
       prisma.product.create.mockResolvedValue({
         ...baseProduct,
-        code: 'TX-002',
+        code: '0000001',
         name: 'Yeni məhsul',
         category: null,
         latestPurchasePrice: new Prisma.Decimal('0'),
@@ -172,12 +181,23 @@ describe('Products (e2e)', () => {
 
       expect(body).toEqual({
         ...expectedProductBody,
-        code: 'TX-002',
+        code: '0000001',
         name: 'Yeni məhsul',
         category: null,
         standardSalePrice: '12.5000',
         latestPurchasePrice: '0.0000',
       });
+      expect(numberSequences.nextCode).toHaveBeenCalled();
+      expect(prisma.product.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            code: '0000001',
+            name: 'Yeni məhsul',
+            category: null,
+            isActive: true,
+          }) as object,
+        }),
+      );
       expect(Object.keys(body).sort()).toEqual(
         [
           'category',
@@ -197,23 +217,56 @@ describe('Products (e2e)', () => {
       );
       expect(body.unit).toEqual(unitSummary);
       expect(body.isActive).toBe(true);
-      expect(prisma.product.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            code: 'TX-002',
-            name: 'Yeni məhsul',
-            category: null,
-            isActive: true,
-          }) as object,
-        }),
-      );
       assertNoInternalLeak(response.body);
+    });
+
+    it('rejects client-supplied code with 400', async () => {
+      await request(app.getHttpServer())
+        .post('/api/v1/products')
+        .send({ ...validCreatePayload, code: 'TX-999' })
+        .expect(400);
+
+      expect(prisma.product.create).not.toHaveBeenCalled();
+      expect(numberSequences.nextCode).not.toHaveBeenCalled();
+    });
+
+    it('assigns increasing backend codes on consecutive creates', async () => {
+      prisma.unit.findUnique.mockResolvedValue({ id: unitId, isActive: true });
+      numberSequences.nextCode
+        .mockResolvedValueOnce('0000001')
+        .mockResolvedValueOnce('0000002');
+      prisma.product.create
+        .mockResolvedValueOnce({
+          ...baseProduct,
+          id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+          code: '0000001',
+          name: 'Birinci',
+        })
+        .mockResolvedValueOnce({
+          ...baseProduct,
+          id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+          code: '0000002',
+          name: 'İkinci',
+        });
+
+      const first = await request(app.getHttpServer())
+        .post('/api/v1/products')
+        .send({ ...validCreatePayload, name: 'Birinci' })
+        .expect(201);
+      const second = await request(app.getHttpServer())
+        .post('/api/v1/products')
+        .send({ ...validCreatePayload, name: 'İkinci' })
+        .expect(201);
+
+      expect((first.body as ProductJson).code).toBe('0000001');
+      expect((second.body as ProductJson).code).toBe('0000002');
+      expect(numberSequences.nextCode).toHaveBeenCalledTimes(2);
     });
 
     it('rejects missing required fields and unknown body properties', async () => {
       await request(app.getHttpServer())
         .post('/api/v1/products')
-        .send({ name: 'X', type: ProductTypeApi.FINISHED_GOOD, unitId })
+        .send({ name: 'X', type: ProductTypeApi.FINISHED_GOOD })
         .expect(400);
 
       await request(app.getHttpServer())
@@ -224,12 +277,7 @@ describe('Products (e2e)', () => {
       expect(prisma.product.create).not.toHaveBeenCalled();
     });
 
-    it('rejects whitespace-only code and name with 400', async () => {
-      await request(app.getHttpServer())
-        .post('/api/v1/products')
-        .send({ ...validCreatePayload, code: '   ' })
-        .expect(400);
-
+    it('rejects whitespace-only name with 400', async () => {
       await request(app.getHttpServer())
         .post('/api/v1/products')
         .send({ ...validCreatePayload, name: '   ' })
@@ -513,14 +561,13 @@ describe('Products (e2e)', () => {
 
       await request(app.getHttpServer())
         .patch(`/api/v1/products/${productId}`)
-        .send({ code: null })
+        .send({ code: 'TX-010' })
         .expect(400);
     });
 
     it('applies partial updates, null clearing, and preserves zero decimals', async () => {
       prisma.product.update.mockResolvedValue({
         ...baseProduct,
-        code: 'TX-010',
         name: 'Trimmed',
         category: null,
         type: ProductTypeApi.RAW_MATERIAL,
@@ -537,7 +584,6 @@ describe('Products (e2e)', () => {
       const response = await request(app.getHttpServer())
         .patch(`/api/v1/products/${productId}`)
         .send({
-          code: ' tx-010 ',
           name: ' Trimmed ',
           category: null,
           type: ProductTypeApi.RAW_MATERIAL,
@@ -551,7 +597,7 @@ describe('Products (e2e)', () => {
 
       expect(patchBody).toEqual(
         expect.objectContaining({
-          code: 'TX-010',
+          code: '0000001',
           name: 'Trimmed',
           category: null,
           type: ProductTypeApi.RAW_MATERIAL,
@@ -563,21 +609,12 @@ describe('Products (e2e)', () => {
 
       expect(prisma.product.update).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({
-            code: 'TX-010',
-            category: null,
-            standardSalePrice: null,
-          }) as object,
+          data: expect.not.objectContaining({ code: expect.anything() }),
         }),
       );
     });
 
-    it('rejects validation errors for code, name, type, unitId, and decimals', async () => {
-      await request(app.getHttpServer())
-        .patch(`/api/v1/products/${productId}`)
-        .send({ code: '   ' })
-        .expect(400);
-
+    it('rejects validation errors for name, type, unitId, and decimals', async () => {
       await request(app.getHttpServer())
         .patch(`/api/v1/products/${productId}`)
         .send({ name: '   ' })
@@ -614,7 +651,7 @@ describe('Products (e2e)', () => {
         .expect(400);
     });
 
-    it('maps missing product, unit errors, and duplicate code', async () => {
+    it('maps missing product and unit errors', async () => {
       prisma.product.findUnique.mockResolvedValue(null);
 
       await request(app.getHttpServer())
@@ -639,21 +676,6 @@ describe('Products (e2e)', () => {
         .patch(`/api/v1/products/${productId}`)
         .send({ unitId: otherUnitId })
         .expect(400);
-
-      prisma.unit.findUnique.mockResolvedValue({
-        id: otherUnitId,
-        isActive: true,
-      });
-      prisma.product.findFirst.mockResolvedValue({ id: 'other-product' });
-
-      const conflict = await request(app.getHttpServer())
-        .patch(`/api/v1/products/${productId}`)
-        .send({ code: 'TX-999' })
-        .expect(409);
-
-      const conflictBody = conflict.body as { message: string };
-      expect(conflictBody.message).toBe('Product code already exists');
-      assertNoInternalLeak(conflictBody);
     });
 
     it('updates inactive product without reactivation', async () => {
@@ -725,6 +747,7 @@ describe('Products (e2e)', () => {
         }),
       );
       expect(prisma.product.delete).not.toHaveBeenCalled();
+      expect(numberSequences.nextCode).not.toHaveBeenCalled();
 
       prisma.product.findUnique.mockResolvedValue({
         ...baseProduct,

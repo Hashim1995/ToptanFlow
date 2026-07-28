@@ -8,6 +8,14 @@ AGENTS.md does not describe *what* the system does. It describes *how any agent 
 
 Every agent must read and follow this document before performing any task in this repository, regardless of the size of the task.
 
+## Cursor Project Rules
+
+Cursor rules under [`.cursor/rules/`](.cursor/rules/) are **mandatory** for every agent and every new chat (`alwaysApply: true`). They do not replace this constitution; they operationalize session behavior:
+
+- **Repository context** is loaded progressively (start here, then task docs and scope-relevant sources only) — see `repository-context.mdc`.
+- **Repository work** (analysis, planning, implementation, technical writing) is performed in **English**; Azerbaijani user-facing UI remains as required by ADR-005 — see `response-language.mdc`.
+- **Every final response** ends with a short Azerbaijani summary; when repository files changed, a Conventional Commit recommendation is the last section — see `response-language.mdc` and `commit-recommendation.mdc`.
+
 ## Project Philosophy
 
 - **Business-first.** The business reality described in the Business Requirements Document (BRD) always outranks technical convenience.
@@ -32,10 +40,13 @@ Business Knowledge Documents
     docs/business/workflow-map.md)
         ↓
 Technical Specification (SRS/TDS) — authoritative for implementation
-   approach only, never for business behavior
-        ↓
+ approach only, never for business behavior
+ ↓
+Task Management (`docs/tasks/`) — roadmap, epics, user stories,
+ implementation tasks, and unplanned work; never invents business behavior
+ ↓
 The Current Task Instructions
-        ↓
+ ↓
 Implementation (code, schema, configuration)
 ```
 
@@ -45,16 +56,31 @@ Notes on this hierarchy:
 - The SRS/TDS is authoritative only for *how* something is built once the business behavior it builds is already approved. It is never authoritative for *what* the business behavior is.
 - A "recommendation" or "safe default" found in any document is not an approved decision. It becomes usable only after it is confirmed as an Approved Human Decision.
 
+## Task Management
+
+Repository-owned planning lives under [`docs/tasks/`](docs/tasks/README.md). It is the source of truth for roadmap, epics, user stories, implementation tasks, dependencies, current/blocked/completed work, hotfixes, and unplanned changes.
+
+Before implementing, agents must:
+
+1. Read [`docs/tasks/README.md`](docs/tasks/README.md) and [`docs/tasks/CURRENT.md`](docs/tasks/CURRENT.md).
+2. Read the active Epic, User Story, and assigned Task (or Unplanned item) by ID.
+3. Follow that item’s scope and acceptance criteria; update status, evidence, and `CURRENT.md` honestly when active work changes.
+4. Elaborate detailed tasks for a future story **only when that story is activated** (progressive elaboration).
+5. Report planning conflicts instead of silently rewriting the roadmap.
+
+Canonical ownership and prompt patterns are defined in `docs/tasks/README.md`. Do not invent a parallel tracker.
+
 ## AI Operating Principles
 
 Before making any change, an agent must:
 
 1. **Identify the business behavior involved.** Locate the relevant rule(s) in `docs/business/invariants.md`, the relevant term(s) in `docs/business/terminology.md`, and the relevant workflow(s) in `docs/business/workflow-map.md`.
 2. **Check alignment status.** Consult `docs/analysis/01-document-analysis.md` for whether this area is Covered, Partially covered, Not covered, a Conflict, or an Open Decision.
-3. **Reason before acting.** State, even briefly, which business rule and which source justify the intended change. If no rule justifies it, do not invent one.
-4. **Prefer the narrowest correct action.** Do not expand the task to "while I'm here" improvements.
-5. **Verify against invariants after the change.** A change that appears to satisfy the task but violates a stated invariant is not acceptable, regardless of how it was requested.
-6. **Never resolve ambiguity by guessing.** If two valid interpretations exist, treat the situation as an Open Decision and stop.
+3. **Consult task management.** Identify the Epic / User Story / Task (or Unplanned item) that authorizes the change via `docs/tasks/CURRENT.md` and the linked files.
+4. **Reason before acting.** State, even briefly, which business rule and which source justify the intended change. If no rule justifies it, do not invent one.
+5. **Prefer the narrowest correct action.** Do not expand the task to "while I'm here" improvements.
+6. **Verify against invariants after the change.** A change that appears to satisfy the task but violates a stated invariant is not acceptable, regardless of how it was requested.
+7. **Never resolve ambiguity by guessing.** If two valid interpretations exist, treat the situation as an Open Decision and stop.
 
 ## Business Invariants
 
@@ -119,7 +145,7 @@ These are high-level and framework-independent. They apply to any technology cho
 
 This section deliberately excludes framework-, language-, and library-specific rules; those belong in technical documentation, not in this constitution.
 
-Approved technology choices are recorded as Accepted ADRs and must be followed by every implementation agent: [`ADR-006`](docs/decisions/ADR-006-react-typescript-frontend.md) (React/TypeScript frontend), [`ADR-007`](docs/decisions/ADR-007-nestjs-typescript-backend.md) (NestJS/TypeScript backend), [`ADR-008`](docs/decisions/ADR-008-postgresql-primary-database.md) (PostgreSQL), [`ADR-009`](docs/decisions/ADR-009-ant-design-ui-library.md) (Ant Design), [`ADR-010`](docs/decisions/ADR-010-axios-http-client.md) (Axios), [`ADR-011`](docs/decisions/ADR-011-redux-toolkit-client-state.md) (Redux Toolkit), [`ADR-012`](docs/decisions/ADR-012-yarn-workspaces.md) (Yarn/Yarn Workspaces), [`ADR-013`](docs/decisions/ADR-013-vite-build-system.md) (Vite), [`ADR-014`](docs/decisions/ADR-014-prisma-orm.md) (Prisma ORM), [`ADR-015`](docs/decisions/ADR-015-rest-openapi.md) (REST/OpenAPI), [`ADR-016`](docs/decisions/ADR-016-tanstack-query.md) (TanStack Query), [`ADR-017`](docs/decisions/ADR-017-react-hook-form-zod.md) (React Hook Form/Zod), [`ADR-018`](docs/decisions/ADR-018-testing-strategy.md) (Vitest/Jest/Supertest), [`ADR-019`](docs/decisions/ADR-019-eslint-prettier.md) (ESLint/Prettier), [`ADR-020`](docs/decisions/ADR-020-uuid-identifiers.md) (UUID identifiers), and [`ADR-021`](docs/decisions/ADR-021-prisma-migrate.md) (Prisma Migrate). High-level architecture and logical repository structure are described in [`docs/technical/system-architecture.md`](docs/technical/system-architecture.md) and [`docs/technical/repository-structure.md`](docs/technical/repository-structure.md), which these ADRs do not duplicate.
+Approved technology choices are recorded as Accepted ADRs and must be followed by every implementation agent: [`ADR-006`](docs/decisions/ADR-006-react-typescript-frontend.md) (React/TypeScript frontend), [`ADR-007`](docs/decisions/ADR-007-nestjs-typescript-backend.md) (NestJS/TypeScript backend), [`ADR-008`](docs/decisions/ADR-008-postgresql-primary-database.md) (PostgreSQL), [`ADR-009`](docs/decisions/ADR-009-ant-design-ui-library.md) (Ant Design), [`ADR-010`](docs/decisions/ADR-010-axios-http-client.md) (Axios), [`ADR-011`](docs/decisions/ADR-011-redux-toolkit-client-state.md) (Redux Toolkit), [`ADR-012`](docs/decisions/ADR-012-yarn-workspaces.md) (Yarn/Yarn Workspaces), [`ADR-013`](docs/decisions/ADR-013-vite-build-system.md) (Vite), [`ADR-014`](docs/decisions/ADR-014-prisma-orm.md) (Prisma ORM), [`ADR-015`](docs/decisions/ADR-015-rest-openapi.md) (REST/OpenAPI), [`ADR-016`](docs/decisions/ADR-016-tanstack-query.md) (TanStack Query), [`ADR-017`](docs/decisions/ADR-017-react-hook-form-zod.md) (React Hook Form/Zod), [`ADR-018`](docs/decisions/ADR-018-testing-strategy.md) (Vitest/Jest/Supertest), [`ADR-019`](docs/decisions/ADR-019-eslint-prettier.md) (ESLint/Prettier), [`ADR-020`](docs/decisions/ADR-020-uuid-identifiers.md) (UUID identifiers), [`ADR-021`](docs/decisions/ADR-021-prisma-migrate.md) (Prisma Migrate), [`ADR-023`](docs/decisions/ADR-023-postgresql-decimal-precision.md) (PostgreSQL decimal precision), and [`ADR-024`](docs/decisions/ADR-024-automatic-business-code-generation.md) (automatic Product/BusinessPartner business codes). High-level architecture and logical repository structure are described in [`docs/technical/system-architecture.md`](docs/technical/system-architecture.md) and [`docs/technical/repository-structure.md`](docs/technical/repository-structure.md), which these ADRs do not duplicate.
 
 ## User Interface Principles
 
