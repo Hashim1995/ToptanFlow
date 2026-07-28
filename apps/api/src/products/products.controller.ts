@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBody,
   ApiConflictResponse,
   ApiCreatedResponse,
   ApiNotFoundResponse,
@@ -24,6 +25,7 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { ListProductsQueryDto } from './dto/list-products-query.dto';
 import { PaginatedProductsResponseDto } from './dto/paginated-products-response.dto';
 import { ProductResponseDto } from './dto/product-response.dto';
+import { ProductTypeApi } from './dto/product-type.enum';
 import { ProductsService } from './products.service';
 
 @ApiTags('Products')
@@ -33,6 +35,21 @@ export class ProductsController {
 
   @Post()
   @ApiOperation({ summary: 'Create a product' })
+  @ApiBody({
+    type: CreateProductDto,
+    examples: {
+      default: {
+        value: {
+          code: 'tx-001',
+          name: 'Parça məhsul',
+          type: ProductTypeApi.FINISHED_GOOD,
+          unitId: '22222222-2222-4222-8222-222222222222',
+          category: 'Tekstil',
+          standardSalePrice: '12.5000',
+        },
+      },
+    },
+  })
   @ApiCreatedResponse({ type: ProductResponseDto })
   @ApiBadRequestResponse({
     description: 'Invalid field values, inactive unit, or invalid decimals',
@@ -76,6 +93,7 @@ export class ProductsController {
       'Inactive products may be updated for administrative correction. ' +
       'PATCH does not change isActive and cannot reactivate a product.',
   })
+  @ApiBody({ type: UpdateProductDto })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({ type: ProductResponseDto })
   @ApiBadRequestResponse({
