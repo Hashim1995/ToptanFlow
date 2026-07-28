@@ -817,7 +817,7 @@ describe('Products (e2e)', () => {
         .expect(400);
     });
 
-    it('updates inactive product without reactivation', async () => {
+    it('updates inactive product without changing isActive when omitted', async () => {
       prisma.product.findUnique.mockResolvedValue({
         ...baseProduct,
         isActive: false,
@@ -836,6 +836,30 @@ describe('Products (e2e)', () => {
       const inactivePatchBody = response.body as ProductJson;
       expect(inactivePatchBody.isActive).toBe(false);
       expect(inactivePatchBody.name).toBe('Inactive edit');
+    });
+
+    it('reactivates an inactive product via isActive true', async () => {
+      prisma.product.findUnique.mockResolvedValue({
+        ...baseProduct,
+        isActive: false,
+      });
+      prisma.product.update.mockResolvedValue({
+        ...baseProduct,
+        isActive: true,
+      });
+
+      const response = await request(app.getHttpServer())
+        .patch(`/api/v1/products/${productId}`)
+        .send({ isActive: true })
+        .expect(200);
+
+      const body = response.body as ProductJson;
+      expect(body.isActive).toBe(true);
+      expect(prisma.product.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { isActive: true },
+        }),
+      );
     });
 
     it('updates only non-unit fields when product references inactive unit', async () => {

@@ -17,7 +17,7 @@ Priority: **H** High · **M** Medium · **L** Low
 
 | ID | Title | Epic | Priority | Status | Next task |
 | --- | --- | --- | --- | --- | --- |
-| [US-041](stories/US-041-quality-harness-expansion.md) | Quality harness expansion | EPIC-023 | M | In Progress | TASK-041-01 Done; further tasks TBD |
+| [US-041](stories/US-041-quality-harness-expansion.md) | Quality harness expansion | EPIC-023 | M | In Progress | TASK-041-01/02 Done; next TBD |
 
 ## EPIC-006 remaining (after US-016)
 

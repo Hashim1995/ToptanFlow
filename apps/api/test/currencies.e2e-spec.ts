@@ -251,4 +251,32 @@ describe('Currencies (e2e)', () => {
     );
     expect(prisma.currency.update).not.toHaveBeenCalled();
   });
+
+  it('PATCH /api/v1/currencies/:id reactivates via isActive true', async () => {
+    prisma.currency.findUnique.mockResolvedValue({
+      ...baseCurrency,
+      isActive: false,
+    });
+    prisma.currency.update.mockResolvedValue({
+      ...baseCurrency,
+      isActive: true,
+    });
+
+    const response = await request(app.getHttpServer())
+      .patch(`/api/v1/currencies/${currencyId}`)
+      .send({ isActive: true })
+      .expect(200);
+
+    expect(response.body).toEqual(
+      expect.objectContaining({
+        id: currencyId,
+        isActive: true,
+      }),
+    );
+    expect(prisma.currency.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: { isActive: true },
+      }),
+    );
+  });
 });

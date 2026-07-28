@@ -240,4 +240,26 @@ describe('Units (e2e)', () => {
     );
     expect(prisma.unit.update).not.toHaveBeenCalled();
   });
+
+  it('PATCH /api/v1/units/:id reactivates via isActive true', async () => {
+    prisma.unit.findUnique.mockResolvedValue({ ...baseUnit, isActive: false });
+    prisma.unit.update.mockResolvedValue({ ...baseUnit, isActive: true });
+
+    const response = await request(app.getHttpServer())
+      .patch(`/api/v1/units/${unitId}`)
+      .send({ isActive: true })
+      .expect(200);
+
+    expect(response.body).toEqual(
+      expect.objectContaining({
+        id: unitId,
+        isActive: true,
+      }),
+    );
+    expect(prisma.unit.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: { isActive: true },
+      }),
+    );
+  });
 });

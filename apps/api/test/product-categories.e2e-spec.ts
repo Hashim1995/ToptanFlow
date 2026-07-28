@@ -242,4 +242,32 @@ describe('Product categories (e2e)', () => {
     );
     expect(prisma.productCategory.update).not.toHaveBeenCalled();
   });
+
+  it('PATCH /api/v1/product-categories/:id reactivates via isActive true', async () => {
+    prisma.productCategory.findUnique.mockResolvedValue({
+      ...baseCategory,
+      isActive: false,
+    });
+    prisma.productCategory.update.mockResolvedValue({
+      ...baseCategory,
+      isActive: true,
+    });
+
+    const response = await request(app.getHttpServer())
+      .patch(`/api/v1/product-categories/${categoryId}`)
+      .send({ isActive: true })
+      .expect(200);
+
+    expect(response.body).toEqual(
+      expect.objectContaining({
+        id: categoryId,
+        isActive: true,
+      }),
+    );
+    expect(prisma.productCategory.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: { isActive: true },
+      }),
+    );
+  });
 });

@@ -4,6 +4,7 @@ Planning-history only. Not a product release-notes replacement.
 
 ## 2026-07-29
 
+- **Story resumed:** [US-041](stories/US-041-quality-harness-expansion.md); [TASK-041-02](tasks/TASK-041-02-reactivation-and-helper-regressions.md) **Done** (reactivation e2e 72; web Vitest 17).
 - **Approved Human Decision:** Soft-deactivated master-data entities may be
   reactivated via PATCH `isActive: true` (currencies, units, categories,
   products, business partners). Operator UI must expose **Aktiv et**. Prior

@@ -454,6 +454,30 @@ describe('BusinessPartners (e2e)', () => {
       );
       expect(prisma.businessPartner.update).not.toHaveBeenCalled();
     });
+
+    it('reactivates an inactive partner via isActive true', async () => {
+      prisma.businessPartner.findUnique.mockResolvedValue({
+        ...basePartner,
+        isActive: false,
+      });
+      prisma.businessPartner.update.mockResolvedValue({
+        ...basePartner,
+        isActive: true,
+      });
+
+      const response = await request(app.getHttpServer())
+        .patch(`/api/v1/business-partners/${partnerId}`)
+        .send({ isActive: true })
+        .expect(200);
+
+      const body = response.body as PartnerJson;
+      expect(body.isActive).toBe(true);
+      expect(prisma.businessPartner.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { isActive: true },
+        }),
+      );
+    });
   });
 
   describe('DELETE /api/v1/business-partners/:id', () => {

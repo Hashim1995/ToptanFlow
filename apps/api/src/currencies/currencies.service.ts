@@ -272,7 +272,9 @@ export class CurrenciesService {
 
   private rethrowUniqueAsConflict(error: unknown): void {
     if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
       error.code === 'P2002'
     ) {
       throw new ConflictException('Currency code already exists');

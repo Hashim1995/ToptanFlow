@@ -254,7 +254,9 @@ export class UnitsService {
 
   private rethrowUniqueAsConflict(error: unknown): void {
     if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
       error.code === 'P2002'
     ) {
       throw new ConflictException('Unit code already exists');

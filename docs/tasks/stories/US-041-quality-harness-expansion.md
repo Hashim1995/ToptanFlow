@@ -64,4 +64,5 @@ for this slice.
 Elaborated:
 
 - [TASK-041-01](../tasks/TASK-041-01-add-web-vitest-harness.md) — **Done** (Vitest + first pure helper tests)
+- [TASK-041-02](../tasks/TASK-041-02-reactivation-and-helper-regressions.md) — **Done** (reactivation e2e + helper regressions after CHANGE-001)
 - Further harness expansion (component tests, CI wiring) deferred to later tasks when needed.
