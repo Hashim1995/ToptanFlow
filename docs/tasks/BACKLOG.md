@@ -16,7 +16,7 @@ Priority: **H** High · **M** Medium · **L** Low
 
 | ID | Title | Epic | Priority | Status | Next task |
 | --- | --- | --- | --- | --- | --- |
-| [US-037](stories/US-037-frontend-shell-foundation.md) | Frontend shell foundation | EPIC-021 | H | In Progress | [TASK-037-02](tasks/TASK-037-02-add-axios-http-client-foundation.md) |
+| [US-037](stories/US-037-frontend-shell-foundation.md) | Frontend shell foundation | EPIC-021 | H | In Progress | [TASK-037-03](tasks/TASK-037-03-add-routing-and-responsive-app-shell.md) |
 
 ## EPIC-006 remaining (after US-016)
 

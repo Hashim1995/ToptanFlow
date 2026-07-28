@@ -6,7 +6,7 @@
 - **Title:** Add Axios HTTP client foundation
 - **Parent User Story:** [US-037](../stories/US-037-frontend-shell-foundation.md)
 - **Parent Epic:** [EPIC-021](../epics/EPIC-021-frontend-application.md)
-- **Status:** Ready
+- **Status:** Done
 - **Type:** Frontend
 - **Priority:** High
 - **Estimate:** S
@@ -19,7 +19,7 @@ Introduce a shared Axios instance for `apps/web` (ADR-010) with env-based API ba
 ## Scope
 
 - Shared Axios client module
-- `VITE_API_BASE_URL` (or equivalent) documented via `.env.example` if repo pattern allows
+- `VITE_API_BASE_URL` via `.env.example`
 - Technical classification of network vs HTTP errors; stub mapper (no full catalog)
 - No domain endpoint modules yet
 
@@ -32,30 +32,30 @@ Introduce a shared Axios instance for `apps/web` (ADR-010) with env-based API ba
 
 ## Acceptance criteria
 
-- [ ] Single shared Axios instance used as the HTTP transport baseline
-- [ ] Base URL configurable for local API
-- [ ] Stub error-mapping helper exists (Azerbaijani-oriented; may be minimal)
-- [ ] Build remains green
+- [x] Single shared Axios instance used as the HTTP transport baseline
+- [x] Base URL configurable for local API
+- [x] Stub error-mapping helper exists (Azerbaijani-oriented; may be minimal)
+- [x] Build remains green
 
 ## Implementation notes
 
-Keep client free of business rules (ADR-003). Do not invent idempotency/retry policy.
+No retry interceptor. Default base URL `http://localhost:3000/api/v1` when env unset.
 
 ## Documentation impact
 
-Optional `.env.example` note for web.
+`apps/web/.env.example`
 
 ## Testing expectations
 
-Build smoke; unit test for stub mapper optional.
+Build smoke.
 
 ## Validation expectations
 
-Build green.
+`yarn workspace web build` green.
 
 ## Risks
 
-Env naming inconsistency with backend — align with existing docs if any.
+Env naming — documented as `VITE_API_BASE_URL`.
 
 ## Assumptions
 
@@ -63,8 +63,17 @@ Backend remains source of truth; client only transports.
 
 ## Evidence
 
-(To be filled when Done.)
+- `apps/web/src/api/http-client.ts`
+- `apps/web/src/api/map-api-error.ts`
+- `apps/web/src/api/api-error.types.ts`
+- `apps/web/.env.example`
+- `apps/web/src/vite-env.d.ts`
+- Validation: `yarn workspace web build` → success
 
 ## Result
 
-(To be filled when Done.)
+Done. Shared Axios client + stub Azerbaijani error mapper. Next: TASK-037-03.
+
+## Completion date
+
+2026-07-29

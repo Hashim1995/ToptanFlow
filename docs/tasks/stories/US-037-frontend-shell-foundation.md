@@ -68,5 +68,5 @@ Exact breakpoint pixel values are not prescribed — use Ant Design responsive p
 ## Task elaboration
 
 - [TASK-037-01](../tasks/TASK-037-01-wire-frontend-providers-replace-template.md) — **Done**
-- [TASK-037-02](../tasks/TASK-037-02-add-axios-http-client-foundation.md) — Ready (next)
-- [TASK-037-03](../tasks/TASK-037-03-add-routing-and-responsive-app-shell.md) — Ready
+- [TASK-037-02](../tasks/TASK-037-02-add-axios-http-client-foundation.md) — **Done**
+- [TASK-037-03](../tasks/TASK-037-03-add-routing-and-responsive-app-shell.md) — Ready (next)
