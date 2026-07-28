@@ -43,6 +43,9 @@ describe('ProductsService', () => {
       findMany: jest.fn(),
       count: jest.fn(),
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
     },
     unit: {
       findUnique: jest.fn(),
@@ -334,6 +337,331 @@ describe('ProductsService', () => {
       await expect(service.findOne(productId)).rejects.toBeInstanceOf(
         NotFoundException,
       );
+    });
+  });
+
+  describe('update', () => {
+    beforeEach(() => {
+      prisma.product.findUnique.mockResolvedValue(baseProduct);
+    });
+
+    it('rejects an empty update body', async () => {
+      await expect(service.update(productId, {})).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+      expect(prisma.product.update).not.toHaveBeenCalled();
+    });
+
+    it('updates code with trim and uppercase', async () => {
+      prisma.product.update.mockResolvedValue({
+        ...baseProduct,
+        code: 'TX-002',
+      });
+
+      await service.update(productId, { code: ' tx-002 ' });
+
+      expect(prisma.product.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ code: 'TX-002' }) as object,
+        }),
+      );
+    });
+
+    it('allows same normalized current code', async () => {
+      prisma.product.update.mockResolvedValue(baseProduct);
+
+      await service.update(productId, { code: 'tx-001' });
+
+      expect(prisma.product.findFirst).not.toHaveBeenCalled();
+      expect(prisma.product.update).toHaveBeenCalled();
+    });
+
+    it('throws ConflictException on duplicate code pre-check', async () => {
+      prisma.product.findFirst.mockResolvedValue({ id: 'other-id' });
+
+      await expect(
+        service.update(productId, { code: 'TX-999' }),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(prisma.product.update).not.toHaveBeenCalled();
+    });
+
+    it('maps Prisma P2002 to ConflictException', async () => {
+      prisma.product.update.mockRejectedValue(
+        new Prisma.PrismaClientKnownRequestError('Unique constraint', {
+          code: 'P2002',
+          clientVersion: '7.9.1',
+        }),
+      );
+
+      await expect(
+        service.update(productId, { name: 'Updated name' }),
+      ).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it('updates trimmed name and rejects blank name', async () => {
+      prisma.product.update.mockResolvedValue({
+        ...baseProduct,
+        name: 'Yeni ad',
+      });
+
+      await service.update(productId, { name: ' Yeni ad ' });
+
+      expect(prisma.product.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { name: 'Yeni ad' },
+        }),
+      );
+
+      await expect(
+        service.update(productId, { name: '   ' }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('updates type and clears category with null', async () => {
+      prisma.product.update.mockResolvedValue({
+        ...baseProduct,
+        type: ProductTypeApi.RAW_MATERIAL,
+        category: null,
+      });
+
+      await service.update(productId, {
+        type: ProductTypeApi.RAW_MATERIAL,
+        category: null,
+      });
+
+      expect(prisma.product.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            type: ProductTypeApi.RAW_MATERIAL,
+            category: null,
+          }) as object,
+        }),
+      );
+    });
+
+    it('normalizes whitespace-only category to null', async () => {
+      prisma.product.update.mockResolvedValue({
+        ...baseProduct,
+        category: null,
+      });
+
+      await service.update(productId, { category: '   ' });
+
+      expect(prisma.product.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { category: null },
+        }),
+      );
+    });
+
+    it('clears decimal fields with null and persists string decimals', async () => {
+      prisma.product.update.mockResolvedValue(baseProduct);
+
+      await service.update(productId, {
+        standardSalePrice: null,
+        latestPurchasePrice: '0',
+        criticalStockThreshold: null,
+      });
+
+      const updateCalls = prisma.product.update.mock.calls as Array<
+        [
+          {
+            data: {
+              standardSalePrice: Prisma.Decimal | null;
+              latestPurchasePrice: Prisma.Decimal | null;
+              criticalStockThreshold: Prisma.Decimal | null;
+            };
+          },
+        ]
+      >;
+      const data = updateCalls[0][0].data;
+      expect(data.standardSalePrice).toBeNull();
+      expect(data.criticalStockThreshold).toBeNull();
+      expect(data.latestPurchasePrice?.equals(new Prisma.Decimal('0'))).toBe(
+        true,
+      );
+    });
+
+    it('omits unchanged fields from Prisma update data', async () => {
+      prisma.product.update.mockResolvedValue(baseProduct);
+
+      await service.update(productId, { name: 'Only name' });
+
+      expect(prisma.product.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { name: 'Only name' },
+        }),
+      );
+      expect(prisma.unit.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('validates unit when unitId is present', async () => {
+      const newUnitId = '33333333-3333-4333-8333-333333333333';
+      prisma.unit.findUnique.mockResolvedValue({
+        id: newUnitId,
+        isActive: true,
+      });
+      prisma.product.update.mockResolvedValue({
+        ...baseProduct,
+        unitId: newUnitId,
+      });
+
+      await service.update(productId, { unitId: newUnitId });
+
+      expect(prisma.unit.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: newUnitId } }),
+      );
+    });
+
+    it('throws NotFoundException for nonexistent unit', async () => {
+      prisma.unit.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.update(productId, {
+          unitId: '44444444-4444-4444-8444-444444444444',
+        }),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('throws BadRequestException for inactive unit assignment', async () => {
+      prisma.unit.findUnique.mockResolvedValue({
+        id: '44444444-4444-4444-8444-444444444444',
+        isActive: false,
+      });
+
+      await expect(
+        service.update(productId, {
+          unitId: '44444444-4444-4444-8444-444444444444',
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('allows update of another field when product references inactive unit', async () => {
+      const inactiveUnitId = '55555555-5555-4555-8555-555555555555';
+      prisma.product.findUnique.mockResolvedValue({
+        ...baseProduct,
+        unitId: inactiveUnitId,
+        unit: { ...unitSummary, id: inactiveUnitId, isActive: false },
+      });
+      prisma.product.update.mockResolvedValue({
+        ...baseProduct,
+        unitId: inactiveUnitId,
+        name: 'Düzəliş',
+        unit: { ...unitSummary, id: inactiveUnitId, isActive: false },
+      });
+
+      await service.update(productId, { name: 'Düzəliş' });
+
+      expect(prisma.unit.findUnique).not.toHaveBeenCalled();
+      expect(prisma.product.update).toHaveBeenCalled();
+    });
+
+    it('rejects explicit reassignment to the same inactive unit', async () => {
+      const inactiveUnitId = '55555555-5555-4555-8555-555555555555';
+      prisma.product.findUnique.mockResolvedValue({
+        ...baseProduct,
+        unitId: inactiveUnitId,
+        unit: { ...unitSummary, id: inactiveUnitId, isActive: false },
+      });
+      prisma.unit.findUnique.mockResolvedValue({
+        id: inactiveUnitId,
+        isActive: false,
+      });
+
+      await expect(
+        service.update(productId, { unitId: inactiveUnitId }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('updates inactive product without reactivating', async () => {
+      prisma.product.findUnique.mockResolvedValue({
+        ...baseProduct,
+        isActive: false,
+      });
+      prisma.product.update.mockResolvedValue({
+        ...baseProduct,
+        isActive: false,
+        name: 'Inactive edit',
+      });
+
+      const result = await service.update(productId, { name: 'Inactive edit' });
+
+      expect(result.isActive).toBe(false);
+      expect(prisma.product.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { name: 'Inactive edit' },
+        }),
+      );
+    });
+
+    it('throws NotFoundException when product is missing', async () => {
+      prisma.product.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.update(productId, { name: 'X' }),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('maps response decimals and nested unit', async () => {
+      prisma.product.update.mockResolvedValue(baseProduct);
+
+      const result = await service.update(productId, { name: 'Parça məhsul' });
+
+      expect(result.standardSalePrice).toBe('12.5000');
+      expect(result.unit).toEqual(unitSummary);
+    });
+  });
+
+  describe('deactivate', () => {
+    it('sets isActive false for active product', async () => {
+      prisma.product.findUnique.mockResolvedValue(baseProduct);
+      prisma.product.update.mockResolvedValue({
+        ...baseProduct,
+        isActive: false,
+      });
+
+      const result = await service.deactivate(productId);
+
+      expect(prisma.product.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { isActive: false },
+        }),
+      );
+      expect(result.isActive).toBe(false);
+    });
+
+    it('returns success without second update when already inactive', async () => {
+      prisma.product.findUnique.mockResolvedValue({
+        ...baseProduct,
+        isActive: false,
+      });
+
+      const result = await service.deactivate(productId);
+
+      expect(prisma.product.update).not.toHaveBeenCalled();
+      expect(result.isActive).toBe(false);
+      expect(result.standardSalePrice).toBe('12.5000');
+      expect(result.unit).toEqual(unitSummary);
+    });
+
+    it('throws NotFoundException when product is missing', async () => {
+      prisma.product.findUnique.mockResolvedValue(null);
+
+      await expect(service.deactivate(productId)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+    });
+
+    it('does not call product delete', async () => {
+      prisma.product.findUnique.mockResolvedValue(baseProduct);
+      prisma.product.update.mockResolvedValue({
+        ...baseProduct,
+        isActive: false,
+      });
+
+      await service.deactivate(productId);
+
+      expect(prisma.product.delete).not.toHaveBeenCalled();
     });
   });
 });

@@ -8,6 +8,7 @@ import { Prisma } from '@prisma/client';
 import { SortOrder } from '../common/sorting/sort-order.enum';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
 import { ListProductsQueryDto } from './dto/list-products-query.dto';
 import { PaginatedProductsResponseDto } from './dto/paginated-products-response.dto';
 import { ProductResponseDto } from './dto/product-response.dto';
@@ -125,6 +126,113 @@ export class ProductsService {
     return this.toResponse(product);
   }
 
+  async update(id: string, dto: UpdateProductDto): Promise<ProductResponseDto> {
+    if (!this.hasAtLeastOneUpdateField(dto)) {
+      throw new BadRequestException('At least one field must be provided');
+    }
+
+    const existing = await this.prisma.product.findUnique({
+      where: { id },
+      select: productSelect,
+    });
+
+    if (!existing) {
+      throw new NotFoundException('Product not found');
+    }
+
+    const data: Prisma.ProductUpdateInput = {};
+
+    if (dto.code !== undefined) {
+      const code = this.normalizeCode(dto.code);
+      this.assertNonEmpty('code', code);
+      data.code = code;
+
+      if (code !== existing.code) {
+        const duplicate = await this.prisma.product.findFirst({
+          where: {
+            code,
+            NOT: { id },
+          },
+          select: { id: true },
+        });
+        if (duplicate) {
+          throw new ConflictException('Product code already exists');
+        }
+      }
+    }
+
+    if (dto.name !== undefined) {
+      const name = this.normalizeName(dto.name);
+      this.assertNonEmpty('name', name);
+      data.name = name;
+    }
+
+    if (dto.type !== undefined) {
+      data.type = dto.type;
+    }
+
+    if (dto.category !== undefined) {
+      data.category = this.normalizeOptionalCategory(dto.category);
+    }
+
+    if (dto.unitId !== undefined) {
+      await this.assertUnitAssignable(dto.unitId);
+      data.unit = { connect: { id: dto.unitId } };
+    }
+
+    if (dto.standardSalePrice !== undefined) {
+      data.standardSalePrice = this.toPrismaDecimalOrNull(
+        dto.standardSalePrice,
+      );
+    }
+
+    if (dto.latestPurchasePrice !== undefined) {
+      data.latestPurchasePrice = this.toPrismaDecimalOrNull(
+        dto.latestPurchasePrice,
+      );
+    }
+
+    if (dto.criticalStockThreshold !== undefined) {
+      data.criticalStockThreshold = this.toPrismaDecimalOrNull(
+        dto.criticalStockThreshold,
+      );
+    }
+
+    try {
+      const product = await this.prisma.product.update({
+        where: { id },
+        data,
+        select: productSelect,
+      });
+      return this.toResponse(product);
+    } catch (error: unknown) {
+      this.rethrowUniqueAsConflict(error);
+      throw error;
+    }
+  }
+
+  async deactivate(id: string): Promise<ProductResponseDto> {
+    const existing = await this.prisma.product.findUnique({
+      where: { id },
+      select: productSelect,
+    });
+
+    if (!existing) {
+      throw new NotFoundException('Product not found');
+    }
+
+    if (existing.isActive) {
+      const product = await this.prisma.product.update({
+        where: { id },
+        data: { isActive: false },
+        select: productSelect,
+      });
+      return this.toResponse(product);
+    }
+
+    return this.toResponse(existing);
+  }
+
   private async assertUnitAssignable(unitId: string): Promise<void> {
     const unit = await this.prisma.unit.findUnique({
       where: { id: unitId },
@@ -215,6 +323,26 @@ export class ProductsService {
       return null;
     }
     return new Prisma.Decimal(value);
+  }
+
+  private toPrismaDecimalOrNull(value: string | null): Prisma.Decimal | null {
+    if (value === null) {
+      return null;
+    }
+    return new Prisma.Decimal(value);
+  }
+
+  private hasAtLeastOneUpdateField(dto: UpdateProductDto): boolean {
+    return (
+      dto.code !== undefined ||
+      dto.name !== undefined ||
+      dto.type !== undefined ||
+      dto.category !== undefined ||
+      dto.unitId !== undefined ||
+      dto.standardSalePrice !== undefined ||
+      dto.latestPurchasePrice !== undefined ||
+      dto.criticalStockThreshold !== undefined
+    );
   }
 
   private decimalToString(

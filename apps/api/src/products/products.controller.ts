@@ -1,9 +1,11 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
@@ -18,6 +20,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { CreateProductDto } from './dto/create-product.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
 import { ListProductsQueryDto } from './dto/list-products-query.dto';
 import { PaginatedProductsResponseDto } from './dto/paginated-products-response.dto';
 import { ProductResponseDto } from './dto/product-response.dto';
@@ -64,5 +67,45 @@ export class ProductsController {
   @ApiNotFoundResponse({ description: 'Product not found' })
   findOne(@Param('id', ParseUUIDPipe) id: string): Promise<ProductResponseDto> {
     return this.productsService.findOne(id);
+  }
+
+  @Patch(':id')
+  @ApiOperation({
+    summary: 'Update a product (partial)',
+    description:
+      'Inactive products may be updated for administrative correction. ' +
+      'PATCH does not change isActive and cannot reactivate a product.',
+  })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOkResponse({ type: ProductResponseDto })
+  @ApiBadRequestResponse({
+    description:
+      'Invalid UUID, empty update body, invalid field values, or inactive unit assignment',
+  })
+  @ApiNotFoundResponse({ description: 'Product or unit not found' })
+  @ApiConflictResponse({ description: 'Product code already exists' })
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateProductDto,
+  ): Promise<ProductResponseDto> {
+    return this.productsService.update(id, dto);
+  }
+
+  @Delete(':id')
+  @ApiOperation({
+    summary: 'Deactivate a product (soft delete)',
+    description:
+      'Sets isActive to false without physically deleting the record. ' +
+      'Idempotent when the product is already inactive. ' +
+      'Product code remains reserved and historical relations stay intact.',
+  })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOkResponse({ type: ProductResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid UUID' })
+  @ApiNotFoundResponse({ description: 'Product not found' })
+  deactivate(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<ProductResponseDto> {
+    return this.productsService.deactivate(id);
   }
 }
