@@ -38,7 +38,7 @@ invariants Business Partners; ADR-024.
 
 ## Completion definition
 
-Create/read Done (US-014); update/deactivate Done (US-015); duplicate soft-flag activated as US-016; statement/Yellow Card (US-017) not started.
+Create/read Done (US-014); update/deactivate Done (US-015); duplicate soft-flag Done (US-016); statement/Yellow Card (US-017) not started — needs transactional postings.
 
 ## Known risks
 

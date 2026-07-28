@@ -3,7 +3,7 @@
 - **ID:** US-016
 - **Title:** BusinessPartner duplicate soft-flag checks
 - **Parent Epic:** [EPIC-006](../epics/EPIC-006-business-partners-backend.md)
-- **Status:** In Progress
+- **Status:** Done
 - **Priority:** Medium
 - **Business actor:** Master-data maintainer
 
@@ -72,4 +72,4 @@ Exact-after-normalize only (no fuzzy match).
 ## Task elaboration
 
 - [TASK-016-01](../tasks/TASK-016-01-add-business-partner-duplicate-check-api.md) — **Done** (revised: create/update 409+ack; no standalone route)
-- [TASK-016-02](../tasks/TASK-016-02-extend-business-partner-duplicate-check-e2e.md) — **Ready** (e2e for create/update soft flag)
+- [TASK-016-02](../tasks/TASK-016-02-extend-business-partner-duplicate-check-e2e.md) — **Done**

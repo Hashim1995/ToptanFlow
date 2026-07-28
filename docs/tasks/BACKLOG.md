@@ -10,19 +10,18 @@ Priority: **H** High · **M** Medium · **L** Low
 
 | ID | Title | Epic | Priority | Depends on | Task elaboration |
 | --- | --- | --- | --- | --- | --- |
-| — | *(none — US-016 is active; see CURRENT.md)* | — | — | — | — |
+| [US-037](stories/US-037-frontend-shell-foundation.md) | Frontend shell foundation | EPIC-021 | H | Scaffold exists | On activation |
 
 ## Active (see CURRENT.md)
 
 | ID | Title | Epic | Priority | Status | Next task |
 | --- | --- | --- | --- | --- | --- |
-| [US-016](stories/US-016-business-partner-duplicate-soft-flag.md) | Duplicate soft-flag checks | EPIC-006 | M | In Progress | [TASK-016-02](tasks/TASK-016-02-extend-business-partner-duplicate-check-e2e.md) |
+| — | *(none — activate next story from Ready)* | — | — | — | — |
 
-## EPIC-006 remaining (after US-015)
+## EPIC-006 remaining (after US-016)
 
 | ID | Title | Priority | Depends on | Notes |
 | --- | --- | --- | --- | --- |
-| [US-016](stories/US-016-business-partner-duplicate-soft-flag.md) | Duplicate soft-flag checks | M | US-014 | **Active** |
 | [US-017](stories/US-017-business-partner-statement.md) | Business partner statement | M | EPIC-009–012 | Far; needs postings |
 
 ## Near-term enablers
@@ -66,4 +65,4 @@ Priority: **H** High · **M** Medium · **L** Low
 
 ## Completed (index only)
 
-See story files marked Done (US-001–US-015) and [`CHANGELOG.md`](CHANGELOG.md). Do not re-list full detail here.
+See story files marked Done (US-001–US-016) and [`CHANGELOG.md`](CHANGELOG.md). Do not re-list full detail here.

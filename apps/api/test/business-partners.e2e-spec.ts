@@ -125,6 +125,7 @@ describe('BusinessPartners (e2e)', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     numberSequences.nextCode.mockResolvedValue('0000001');
+    prisma.businessPartner.findMany.mockResolvedValue([]);
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -492,6 +493,132 @@ describe('BusinessPartners (e2e)', () => {
       expect((second.body as PartnerJson).isActive).toBe(false);
       expect((second.body as PartnerJson).code).toBe('0000001');
       expect(prisma.businessPartner.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('soft duplicate flag (US-016)', () => {
+    const otherPartnerId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    const otherPartner = {
+      id: otherPartnerId,
+      code: '0000002',
+      name: 'Nümunə MMC',
+      phone: '+994 50 123 45 67',
+      taxNumber: '1234567891',
+      isCustomer: true,
+      isSupplier: false,
+      isActive: true,
+    };
+
+    it('returns 409 on create when possible duplicates match', async () => {
+      prisma.currency.findUnique.mockResolvedValue({
+        id: currencyId,
+        isActive: true,
+      });
+      prisma.businessPartner.findMany.mockResolvedValue([otherPartner]);
+
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/business-partners')
+        .send({
+          name: '  NÜMUNƏ   MMC  ',
+          isCustomer: true,
+          isSupplier: false,
+          defaultCurrencyId: currencyId,
+        })
+        .expect(409);
+
+      expect(response.body).toEqual(
+        expect.objectContaining({
+          statusCode: 409,
+          message: 'Possible duplicate business partners found',
+          code: 'BUSINESS_PARTNER_DUPLICATE_SUSPECTED',
+          candidates: [
+            expect.objectContaining({
+              id: otherPartnerId,
+              code: '0000002',
+              matchedFields: ['name'],
+            }),
+          ],
+        }),
+      );
+      expect(prisma.businessPartner.create).not.toHaveBeenCalled();
+      assertNoInternalLeak(response.body);
+    });
+
+    it('creates when acknowledgeDuplicate is true despite matches', async () => {
+      prisma.currency.findUnique.mockResolvedValue({
+        id: currencyId,
+        isActive: true,
+      });
+      prisma.businessPartner.findMany.mockResolvedValue([otherPartner]);
+      prisma.businessPartner.create.mockResolvedValue({
+        ...basePartner,
+        name: 'Nümunə MMC',
+      });
+
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/business-partners')
+        .send({
+          name: 'Nümunə MMC',
+          isCustomer: true,
+          isSupplier: false,
+          defaultCurrencyId: currencyId,
+          acknowledgeDuplicate: true,
+        })
+        .expect(201);
+
+      expect((response.body as PartnerJson).code).toBe('0000001');
+      expect(prisma.businessPartner.create).toHaveBeenCalled();
+    });
+
+    it('returns 409 on PATCH identity change when duplicates match', async () => {
+      prisma.businessPartner.findUnique.mockResolvedValue({
+        ...basePartner,
+        name: 'Başqa ad',
+      });
+      prisma.businessPartner.findMany.mockResolvedValue([otherPartner]);
+
+      const response = await request(app.getHttpServer())
+        .patch(`/api/v1/business-partners/${partnerId}`)
+        .send({ name: 'Nümunə MMC' })
+        .expect(409);
+
+      expect(response.body).toEqual(
+        expect.objectContaining({
+          statusCode: 409,
+          code: 'BUSINESS_PARTNER_DUPLICATE_SUSPECTED',
+        }),
+      );
+      expect(prisma.businessPartner.update).not.toHaveBeenCalled();
+    });
+
+    it('updates when acknowledgeDuplicate is true despite matches', async () => {
+      prisma.businessPartner.findUnique.mockResolvedValue({
+        ...basePartner,
+        name: 'Başqa ad',
+      });
+      prisma.businessPartner.findMany.mockResolvedValue([otherPartner]);
+      prisma.businessPartner.update.mockResolvedValue({
+        ...basePartner,
+        name: 'Nümunə MMC',
+      });
+
+      const response = await request(app.getHttpServer())
+        .patch(`/api/v1/business-partners/${partnerId}`)
+        .send({
+          name: 'Nümunə MMC',
+          acknowledgeDuplicate: true,
+        })
+        .expect(200);
+
+      expect((response.body as PartnerJson).name).toBe('Nümunə MMC');
+      expect(prisma.businessPartner.update).toHaveBeenCalled();
+    });
+
+    it('does not expose a standalone duplicate-check route', async () => {
+      await request(app.getHttpServer())
+        .post('/api/v1/business-partners/duplicate-check')
+        .send({ name: 'Nümunə MMC' })
+        .expect(404);
     });
   });
 });

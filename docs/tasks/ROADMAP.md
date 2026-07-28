@@ -27,7 +27,7 @@ Likely upcoming phase after partner update/deactivate and remaining partner qual
 
 | Epic | Status | Focus |
 | --- | --- | --- |
-| [EPIC-006](epics/EPIC-006-business-partners-backend.md) Business partners backend | In Progress | Next: [US-016](stories/US-016-business-partner-duplicate-soft-flag.md) (active) |
+| [EPIC-006](epics/EPIC-006-business-partners-backend.md) Business partners backend | In Progress | US-014–016 Done; remaining [US-017](stories/US-017-business-partner-statement.md) (deferred) |
 | [EPIC-023](epics/EPIC-023-testing-quality-infrastructure.md) Testing & quality | In Progress | Ongoing harness ([US-041](stories/US-041-quality-harness-expansion.md)) |
 | [EPIC-021](epics/EPIC-021-frontend-application.md) Frontend application | In Progress | Scaffold only today; shell stories still Planned |
 
@@ -35,7 +35,7 @@ Likely upcoming phase after partner update/deactivate and remaining partner qual
 
 Ordered by dependency/value after current partner work:
 
-1. Finish EPIC-006 remaining stories that do not need transactional ledgers ([US-016](stories/US-016-business-partner-duplicate-soft-flag.md); [US-015](stories/US-015-business-partner-update-deactivate-apis.md) Done).
+1. EPIC-006 master-data slice largely complete (US-014–016 Done); [US-017](stories/US-017-business-partner-statement.md) waits on postings.
 2. [US-037](stories/US-037-frontend-shell-foundation.md) / [US-038](stories/US-038-frontend-master-data-screens.md) when UI work is prioritized (**inference:** valuable once APIs exist; not mandated by a dated plan).
 3. [EPIC-007](epics/EPIC-007-identity-authz.md) before production posting — **blocked on auth open decisions** for [US-019](stories/US-019-authentication-authorization.md).
 4. [US-034](stories/US-034-append-only-audit-log.md) audit interface ideally before heavy posting (analysis M0 note) — elaborate when activated.
