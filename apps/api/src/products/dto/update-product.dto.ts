@@ -39,24 +39,15 @@ export class UpdateProductDto {
   type?: ProductTypeApi;
 
   @ApiPropertyOptional({
-    example: 'Tekstil',
+    format: 'uuid',
     nullable: true,
     type: String,
-    description: 'Send null to clear. Omit to leave unchanged.',
+    description: 'Send null to clear. Omit to leave unchanged. Must be active when set.',
   })
   @ValidateIf((_object, value) => value !== undefined)
   @ValidateIf((_object, value) => value !== null)
-  @IsString()
-  @MaxLength(255)
-  @Transform(({ value }: { value: unknown }) => {
-    if (value === null || value === undefined) return value;
-    if (typeof value === 'string') {
-      const trimmed = value.trim();
-      return trimmed.length === 0 ? null : trimmed;
-    }
-    return value;
-  })
-  category?: string | null;
+  @IsUUID()
+  categoryId?: string | null;
 
   @ApiPropertyOptional({
     format: 'uuid',

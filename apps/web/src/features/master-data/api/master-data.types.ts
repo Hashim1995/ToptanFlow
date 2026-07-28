@@ -26,7 +26,7 @@ export type MasterDataListQuery = {
   /** Optional entity-specific filters. */
   type?: string;
   unitId?: string;
-  category?: string;
+  categoryId?: string;
   isCustomer?: boolean;
   isSupplier?: boolean;
   defaultCurrencyId?: string;
@@ -36,6 +36,7 @@ export type MasterDataEntityName =
   | 'currencies'
   | 'units'
   | 'products'
+  | 'product-categories'
   | 'business-partners';
 
 export type BusinessPartnerDuplicateMatchedField =

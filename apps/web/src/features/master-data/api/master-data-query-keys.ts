@@ -25,5 +25,6 @@ export const masterDataQueryKeys = {
   currencies: createEntityKeys('currencies'),
   units: createEntityKeys('units'),
   products: createEntityKeys('products'),
+  productCategories: createEntityKeys('product-categories'),
   businessPartners: createEntityKeys('business-partners'),
 };

@@ -1,16 +1,15 @@
 import { useEffect, useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Alert, Form, Input, Modal, Select, Typography } from 'antd';
+import { Alert, Form, Input, Modal, Select } from 'antd';
 import {
   productFormSchema,
   type ProductFormValues,
 } from '../forms/product.schemas';
+import { useProductCategoriesList } from '../api/product-categories.hooks';
 import { useUnitsList } from '../api/units.hooks';
 import type { ProductType } from '../api/products.api';
 import { MASTER_DATA_LABELS, productTypeLabel } from './labels';
-
-const { Text } = Typography;
 
 type ProductFormModalProps = {
   open: boolean;
@@ -18,6 +17,7 @@ type ProductFormModalProps = {
   mode: 'create' | 'edit';
   readOnlyCode?: string;
   fallbackUnitOption?: { value: string; label: string };
+  fallbackCategoryOption?: { value: string; label: string };
   initialValues?: ProductFormValues;
   submitting: boolean;
   errorMessage?: string;
@@ -28,7 +28,7 @@ type ProductFormModalProps = {
 const emptyValues: ProductFormValues = {
   name: '',
   type: 'FINISHED_GOOD',
-  category: '',
+  categoryId: '',
   unitId: '',
   standardSalePrice: '',
   latestPurchasePrice: '',
@@ -41,6 +41,7 @@ export function ProductFormModal({
   mode,
   readOnlyCode,
   fallbackUnitOption,
+  fallbackCategoryOption,
   initialValues,
   submitting,
   errorMessage,
@@ -54,6 +55,13 @@ export function ProductFormModal({
     isActive: true,
     pageSize: 100,
     sortBy: 'code',
+    sortOrder: 'asc',
+  });
+
+  const categoriesQuery = useProductCategoriesList({
+    isActive: true,
+    pageSize: 100,
+    sortBy: 'name',
     sortOrder: 'asc',
   });
 
@@ -90,12 +98,29 @@ export function ProductFormModal({
     return options;
   }, [unitsQuery.data?.data, fallbackUnitOption]);
 
-  const typeOptions = (
-    Object.keys(labels.types) as ProductType[]
-  ).map((type) => ({
-    value: type,
-    label: productTypeLabel(type),
-  }));
+  const categoryOptions = useMemo(() => {
+    const categories = categoriesQuery.data?.data ?? [];
+    const options = categories.map((category) => ({
+      value: category.id,
+      label: category.name,
+    }));
+
+    if (
+      fallbackCategoryOption &&
+      !options.some((option) => option.value === fallbackCategoryOption.value)
+    ) {
+      options.unshift(fallbackCategoryOption);
+    }
+
+    return options;
+  }, [categoriesQuery.data?.data, fallbackCategoryOption]);
+
+  const typeOptions = (Object.keys(labels.types) as ProductType[]).map(
+    (type) => ({
+      value: type,
+      label: productTypeLabel(type),
+    }),
+  );
 
   return (
     <Modal
@@ -118,13 +143,13 @@ export function ProductFormModal({
           style={{ marginBottom: 16 }}
         />
       ) : null}
-      <Form layout="vertical">
+      <Form layout="vertical" requiredMark>
         {mode === 'edit' && readOnlyCode ? (
-          <Form.Item label={common.code}>
+          <Form.Item
+            label={common.code}
+            help={labels.codeReadonlyHint}
+          >
             <Input value={readOnlyCode} disabled readOnly />
-            <Text type="secondary" style={{ display: 'block', marginTop: 4 }}>
-              {labels.codeReadonlyHint}
-            </Text>
           </Form.Item>
         ) : null}
 
@@ -137,7 +162,13 @@ export function ProductFormModal({
           <Controller
             name="name"
             control={control}
-            render={({ field }) => <Input {...field} autoComplete="off" />}
+            render={({ field }) => (
+              <Input
+                {...field}
+                autoComplete="off"
+                placeholder={common.namePlaceholder}
+              />
+            )}
           />
         </Form.Item>
 
@@ -155,6 +186,7 @@ export function ProductFormModal({
                 {...field}
                 options={typeOptions}
                 style={{ width: '100%' }}
+                placeholder={labels.type}
               />
             )}
           />
@@ -162,13 +194,26 @@ export function ProductFormModal({
 
         <Form.Item
           label={labels.category}
-          validateStatus={errors.category ? 'error' : undefined}
-          help={errors.category?.message}
+          validateStatus={errors.categoryId ? 'error' : undefined}
+          help={errors.categoryId?.message}
         >
           <Controller
-            name="category"
+            name="categoryId"
             control={control}
-            render={({ field }) => <Input {...field} autoComplete="off" />}
+            render={({ field }) => (
+              <Select
+                {...field}
+                allowClear
+                showSearch
+                optionFilterProp="label"
+                loading={categoriesQuery.isLoading}
+                options={categoryOptions}
+                style={{ width: '100%' }}
+                placeholder={labels.categoryPlaceholder}
+                value={field.value || undefined}
+                onChange={(value) => field.onChange(value ?? '')}
+              />
+            )}
           />
         </Form.Item>
 
@@ -203,7 +248,9 @@ export function ProductFormModal({
           <Controller
             name="standardSalePrice"
             control={control}
-            render={({ field }) => <Input {...field} inputMode="decimal" />}
+            render={({ field }) => (
+              <Input {...field} inputMode="decimal" placeholder="0.0000" />
+            )}
           />
         </Form.Item>
 
@@ -215,7 +262,9 @@ export function ProductFormModal({
           <Controller
             name="latestPurchasePrice"
             control={control}
-            render={({ field }) => <Input {...field} inputMode="decimal" />}
+            render={({ field }) => (
+              <Input {...field} inputMode="decimal" placeholder="0.0000" />
+            )}
           />
         </Form.Item>
 
@@ -227,7 +276,9 @@ export function ProductFormModal({
           <Controller
             name="criticalStockThreshold"
             control={control}
-            render={({ field }) => <Input {...field} inputMode="decimal" />}
+            render={({ field }) => (
+              <Input {...field} inputMode="decimal" placeholder="0.0000" />
+            )}
           />
         </Form.Item>
       </Form>

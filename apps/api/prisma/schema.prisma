@@ -304,6 +304,21 @@ model Currency {
 // Products
 // ---------------------------------------------------------------------------
 
+/// Flat product category reference data (CHANGE-001 / US-042).
+/// Product type and category remain separate classifications
+/// (docs/business/invariants.md, "Products").
+/// Historical category-on-document reporting (BRD-CA-18) is NOT modeled here.
+model ProductCategory {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+
+  @@index([isActive])
+}
+
 /// Source: docs/business/invariants.md, "Products".
 ///
 /// Persistence notes:
@@ -317,33 +332,32 @@ model Currency {
 ///   the system’s AZN reporting context; document-line currency lives on
 ///   Sale/Purchase (docs/business/invariants.md, "Currency").
 model Product {
-  id                     String      @id @default(uuid())
+  id                     String           @id @default(uuid())
   /// Product business code is backend-generated (ADR-024), globally unique
   /// including inactive rows, immutable after creation, and never reused.
   /// Application-layer clients must not supply this value.
-  code                   String      @unique
+  code                   String           @unique
   name                   String
   type                   ProductType
-  /// "Product type... and product category are separate, independent
-  /// classifications." Modeled as a plain scalar field rather than a
-  /// dedicated ProductCategory entity, since a category entity was not part
-  /// of the initial domain-model scope; revisit if hierarchical/reusable
-  /// categories are later approved.
-  category               String?
+  /// Optional FK to flat ProductCategory (CHANGE-001). Nullable — products
+  /// may exist without a category. Inactive categories remain readable for
+  /// historical products; create/update must use an active category.
+  categoryId             String?
+  category               ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   unitId                 String
   /// Required primary unit of measure. `onDelete: Restrict` so a Unit
   /// cannot be removed while Products reference it. Referencing an
   /// *inactive* Unit remains allowed at the DB layer so historical
   /// products stay intact; blocking inactive Units on *new* product
-  /// create/update is application policy (future Product module).
-  unit                   Unit        @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  /// create/update is application policy.
+  unit                   Unit             @relation(fields: [unitId], references: [id], onDelete: Restrict)
   /// "Standard sale price and latest purchase price are informational
   /// defaults only; each posted document line keeps its own price and cost
   /// as recorded at posting time, regardless of later master-data changes."
   /// Scale: ADR-023 unit prices → `Decimal(18, 4)` / PostgreSQL `NUMERIC(18, 4)`.
-  standardSalePrice      Decimal?    @db.Decimal(18, 4)
+  standardSalePrice      Decimal?         @db.Decimal(18, 4)
   /// Scale: ADR-023 unit prices → `Decimal(18, 4)` / PostgreSQL `NUMERIC(18, 4)`.
-  latestPurchasePrice    Decimal?    @db.Decimal(18, 4)
+  latestPurchasePrice    Decimal?         @db.Decimal(18, 4)
   /// "A critical (minimum) stock threshold must be capable of being
   /// evaluated at main-warehouse, specific-warehouse, and company-total
   /// levels separately."
@@ -351,15 +365,16 @@ model Product {
   /// since per-warehouse thresholds require a Warehouse entity, which is out
   /// of Product-persistence scope (Inventory module, deferred).
   /// Scale: ADR-023 stock thresholds → `Decimal(18, 4)` / PostgreSQL `NUMERIC(18, 4)`.
-  criticalStockThreshold Decimal?    @db.Decimal(18, 4)
-  isActive               Boolean     @default(true)
-  createdAt              DateTime    @default(now())
-  updatedAt              DateTime    @updatedAt
+  criticalStockThreshold Decimal?         @db.Decimal(18, 4)
+  isActive               Boolean          @default(true)
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
 
   saleItems     SaleItem[]
   purchaseItems PurchaseItem[]
 
   @@index([unitId])
+  @@index([categoryId])
   @@index([type])
   @@index([isActive])
 }

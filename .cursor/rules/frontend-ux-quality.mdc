@@ -1,0 +1,23 @@
+---
+description: Mandatory Ant Design UX quality bar for apps/web UI work
+alwaysApply: true
+---
+
+# Frontend UX Quality Bar
+
+When creating or changing anything under `apps/web/`:
+
+1. Read and follow the **Forms / Filters / Ant Design quality bar** in
+   [`docs/technical/ui-requirements.md`](../../docs/technical/ui-requirements.md)
+   (CHANGE-001 / US-042). Functional-but-bare screens are incomplete.
+2. Every field: Azerbaijani label, placeholder, field-level validation
+   (RHF + Zod + Ant `Form.Item`), correct input semantics.
+3. Every list: usable FilterBar (search + status + domain filters), clear
+   empty/loading/error/success, pagination with size changer, desktop table /
+   mobile cards with all actions reachable.
+4. Use Ant Design capabilities fully (`Select showSearch`, Modal confirm,
+   Tag, Grid breakpoints, etc.). Do not invent a parallel design system.
+5. Never expose enum keys, API field names, or raw backend messages.
+6. Backend-generated codes (ADR-024) are read-only and never submitted.
+7. If a required Azerbaijani business term is missing, stop per ADR-005 —
+   except owner-approved routine labels for delivered enums (US-038 guidance).

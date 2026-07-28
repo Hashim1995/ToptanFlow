@@ -4,7 +4,7 @@ import { productFormSchema } from './product.schemas';
 const validBase = {
   name: 'Parça',
   type: 'FINISHED_GOOD' as const,
-  category: '',
+  categoryId: '',
   unitId: '22222222-2222-4222-8222-222222222222',
   standardSalePrice: '',
   latestPurchasePrice: '',

@@ -9,6 +9,7 @@ import { HealthModule } from './health/health.module';
 import { UnitsModule } from './units/units.module';
 import { CurrenciesModule } from './currencies/currencies.module';
 import { ProductsModule } from './products/products.module';
+import { ProductCategoriesModule } from './product-categories/product-categories.module';
 import { BusinessPartnersModule } from './business-partners/business-partners.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
@@ -22,6 +23,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
     HealthModule,
     UnitsModule,
     CurrenciesModule,
+    ProductCategoriesModule,
     ProductsModule,
     BusinessPartnersModule,
   ],

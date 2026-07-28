@@ -22,6 +22,7 @@ import {
   useProductsList,
   useUpdateProduct,
 } from '../api/products.hooks';
+import { useProductCategoriesList } from '../api/product-categories.hooks';
 import type { ProductFormValues } from '../forms/product.schemas';
 import { ActiveStatusTag } from '../ui/active-status-tag';
 import {
@@ -29,10 +30,11 @@ import {
   type ActiveFilterValue,
 } from '../ui/active-filter';
 import { MASTER_DATA_LABELS, productTypeLabel } from '../ui/labels';
-import { ActiveStatusFilter, ListToolbar } from '../ui/list-toolbar';
+import { ActiveStatusFilter, FilterBar } from '../ui/list-toolbar';
+import { PageHeader } from '../ui/page-header';
 import { ProductFormModal } from '../ui/product-form-modal';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 type FormMode =
   | { kind: 'closed' }
@@ -61,6 +63,7 @@ export function ProductsPage() {
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState<ActiveFilterValue>('all');
   const [typeFilter, setTypeFilter] = useState<TypeFilterValue>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string | 'all'>('all');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [formMode, setFormMode] = useState<FormMode>({ kind: 'closed' });
@@ -73,21 +76,33 @@ export function ProductsPage() {
       search: search || undefined,
       isActive: activeFilterToIsActive(activeFilter),
       type: typeFilter === 'all' ? undefined : typeFilter,
+      categoryId: categoryFilter === 'all' ? undefined : categoryFilter,
       sortBy: 'code',
       sortOrder: 'asc' as const,
     }),
-    [page, pageSize, search, activeFilter, typeFilter],
+    [page, pageSize, search, activeFilter, typeFilter, categoryFilter],
   );
 
   const list = useProductsList(listQuery);
+  const categoriesForFilter = useProductCategoriesList({
+    pageSize: 100,
+    sortBy: 'name',
+    sortOrder: 'asc',
+  });
   const createMutation = useCreateProduct();
   const updateMutation = useUpdateProduct();
   const deactivateMutation = useDeactivateProduct();
   const submitting = createMutation.isPending || updateMutation.isPending;
 
   const columns: ColumnsType<Product> = [
-    { title: common.code, dataIndex: 'code', key: 'code', width: 110 },
-    { title: common.name, dataIndex: 'name', key: 'name' },
+    {
+      title: common.code,
+      dataIndex: 'code',
+      key: 'code',
+      width: 110,
+      sorter: true,
+    },
+    { title: common.name, dataIndex: 'name', key: 'name', sorter: true },
     {
       title: labels.type,
       dataIndex: 'type',
@@ -96,9 +111,8 @@ export function ProductsPage() {
     },
     {
       title: labels.category,
-      dataIndex: 'category',
       key: 'category',
-      render: (value: string | null) => value ?? '—',
+      render: (_, record) => record.category?.name ?? '—',
     },
     {
       title: labels.unit,
@@ -152,13 +166,14 @@ export function ProductsPage() {
 
   async function handleSubmit(values: ProductFormValues) {
     setFormError(undefined);
+    const categoryId = emptyToNull(values.categoryId ?? '');
 
     try {
       if (formMode.kind === 'create') {
         await createMutation.mutateAsync({
           name: values.name.trim(),
           type: values.type,
-          category: emptyToNull(values.category ?? ''),
+          categoryId,
           unitId: values.unitId,
           standardSalePrice: emptyToUndefined(values.standardSalePrice),
           latestPurchasePrice: emptyToUndefined(values.latestPurchasePrice),
@@ -173,7 +188,7 @@ export function ProductsPage() {
           input: {
             name: values.name.trim(),
             type: values.type,
-            category: emptyToNull(values.category ?? ''),
+            categoryId,
             unitId: values.unitId,
             standardSalePrice: emptyToNull(values.standardSalePrice),
             latestPurchasePrice: emptyToNull(values.latestPurchasePrice),
@@ -211,7 +226,7 @@ export function ProductsPage() {
       ? {
           name: formMode.product.name,
           type: formMode.product.type,
-          category: formMode.product.category ?? '',
+          categoryId: formMode.product.categoryId ?? '',
           unitId: formMode.product.unitId,
           standardSalePrice: formMode.product.standardSalePrice ?? '',
           latestPurchasePrice: formMode.product.latestPurchasePrice ?? '',
@@ -228,6 +243,14 @@ export function ProductsPage() {
         }
       : undefined;
 
+  const fallbackCategoryOption =
+    formMode.kind === 'edit' && formMode.product.category
+      ? {
+          value: formMode.product.category.id,
+          label: formMode.product.category.name,
+        }
+      : undefined;
+
   const typeFilterOptions = [
     { value: 'all' as const, label: common.all },
     ...(Object.keys(labels.types) as ProductType[]).map((type) => ({
@@ -236,35 +259,37 @@ export function ProductsPage() {
     })),
   ];
 
+  const categoryFilterOptions = [
+    { value: 'all', label: common.all },
+    ...(categoriesForFilter.data?.data ?? []).map((category) => ({
+      value: category.id,
+      label: category.name,
+    })),
+  ];
+
   return (
     <div>
-      <Space
-        style={{
-          width: '100%',
-          justifyContent: 'space-between',
-          marginBottom: 16,
-        }}
-        wrap
-      >
-        <Title level={3} style={{ margin: 0 }}>
-          {labels.title}
-        </Title>
-        <Button type="primary" onClick={openCreate}>
-          {labels.create}
-        </Button>
-      </Space>
+      <PageHeader
+        title={labels.title}
+        description={labels.description}
+        extra={
+          <Button type="primary" onClick={openCreate}>
+            {labels.create}
+          </Button>
+        }
+      />
 
-      <ListToolbar>
+      <FilterBar>
         <Input.Search
           allowClear
-          placeholder={common.search}
+          placeholder={common.searchPlaceholder}
           value={searchInput}
           onChange={(event) => setSearchInput(event.target.value)}
           onSearch={(value) => {
             setSearch(value.trim());
             setPage(1);
           }}
-          style={{ maxWidth: 280 }}
+          style={{ minWidth: 220, maxWidth: 320 }}
         />
         <ActiveStatusFilter
           value={activeFilter}
@@ -281,9 +306,23 @@ export function ProductsPage() {
           }}
           style={{ minWidth: 180 }}
           aria-label={labels.filterType}
+          placeholder={labels.filterType}
           options={typeFilterOptions}
         />
-      </ListToolbar>
+        <Select
+          value={categoryFilter}
+          onChange={(value: string) => {
+            setCategoryFilter(value);
+            setPage(1);
+          }}
+          style={{ minWidth: 180 }}
+          showSearch
+          optionFilterProp="label"
+          aria-label={labels.filterCategory}
+          placeholder={labels.filterCategory}
+          options={categoryFilterOptions}
+        />
+      </FilterBar>
 
       {list.isError ? (
         <Alert
@@ -328,7 +367,7 @@ export function ProductsPage() {
                   {labels.unit}: {product.unit.code} — {product.unit.name}
                 </Text>
                 <Text type="secondary">
-                  {labels.category}: {product.category ?? '—'}
+                  {labels.category}: {product.category?.name ?? '—'}
                 </Text>
                 <Text type="secondary">
                   {labels.standardSalePrice}:{' '}
@@ -371,6 +410,7 @@ export function ProductsPage() {
           formMode.kind === 'edit' ? formMode.product.code : undefined
         }
         fallbackUnitOption={fallbackUnitOption}
+        fallbackCategoryOption={fallbackCategoryOption}
         initialValues={editInitialValues}
         submitting={submitting}
         errorMessage={formError}

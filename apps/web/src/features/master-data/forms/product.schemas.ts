@@ -36,10 +36,9 @@ export const productFormSchema = z.object({
   type: z.enum(PRODUCT_TYPES, {
     message: 'Məhsul tipi seçilməlidir.',
   }),
-  category: z
+  categoryId: z
     .string()
-    .trim()
-    .max(255, { message: 'Kateqoriya çox uzundur.' })
+    .uuid({ message: 'Kateqoriya seçimi yanlışdır.' })
     .optional()
     .or(z.literal('')),
   unitId: z.string().uuid({ message: 'Ölçü vahidi seçilməlidir.' }),

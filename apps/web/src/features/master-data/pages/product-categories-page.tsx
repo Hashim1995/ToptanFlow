@@ -14,14 +14,14 @@ import {
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { mapApiError } from '../../../api/map-api-error';
-import type { Unit } from '../api/units.api';
+import type { ProductCategory } from '../api/product-categories.api';
 import {
-  useCreateUnit,
-  useDeactivateUnit,
-  useUnitsList,
-  useUpdateUnit,
-} from '../api/units.hooks';
-import type { UnitFormValues } from '../forms/reference-data.schemas';
+  useCreateProductCategory,
+  useDeactivateProductCategory,
+  useProductCategoriesList,
+  useUpdateProductCategory,
+} from '../api/product-categories.hooks';
+import type { ProductCategoryFormValues } from '../forms/reference-data.schemas';
 import { ActiveStatusTag } from '../ui/active-status-tag';
 import {
   activeFilterToIsActive,
@@ -30,17 +30,17 @@ import {
 import { MASTER_DATA_LABELS } from '../ui/labels';
 import { ActiveStatusFilter, FilterBar } from '../ui/list-toolbar';
 import { PageHeader } from '../ui/page-header';
-import { UnitFormModal } from '../ui/reference-form-modals';
+import { ProductCategoryFormModal } from '../ui/reference-form-modals';
 
 const { Text } = Typography;
 
 type FormMode =
   | { kind: 'closed' }
   | { kind: 'create' }
-  | { kind: 'edit'; unit: Unit };
+  | { kind: 'edit'; category: ProductCategory };
 
-export function UnitsPage() {
-  const labels = MASTER_DATA_LABELS.units;
+export function ProductCategoriesPage() {
+  const labels = MASTER_DATA_LABELS.categories;
   const common = MASTER_DATA_LABELS.common;
   const screens = Grid.useBreakpoint();
   const isDesktop = Boolean(screens.md);
@@ -59,27 +59,24 @@ export function UnitsPage() {
       pageSize,
       search: search || undefined,
       isActive: activeFilterToIsActive(activeFilter),
-      sortBy: 'code',
+      sortBy: 'name',
       sortOrder: 'asc' as const,
     }),
     [page, pageSize, search, activeFilter],
   );
 
-  const list = useUnitsList(listQuery);
-  const createMutation = useCreateUnit();
-  const updateMutation = useUpdateUnit();
-  const deactivateMutation = useDeactivateUnit();
-
+  const list = useProductCategoriesList(listQuery);
+  const createMutation = useCreateProductCategory();
+  const updateMutation = useUpdateProductCategory();
+  const deactivateMutation = useDeactivateProductCategory();
   const submitting = createMutation.isPending || updateMutation.isPending;
 
-  const columns: ColumnsType<Unit> = [
-    { title: common.code, dataIndex: 'code', key: 'code' },
-    { title: common.name, dataIndex: 'name', key: 'name' },
+  const columns: ColumnsType<ProductCategory> = [
     {
-      title: common.fractional,
-      dataIndex: 'allowsFractionalQuantity',
-      key: 'allowsFractionalQuantity',
-      render: (value: boolean) => (value ? common.yes : common.no),
+      title: common.name,
+      dataIndex: 'name',
+      key: 'name',
+      sorter: true,
     },
     {
       title: common.status,
@@ -96,7 +93,11 @@ export function UnitsPage() {
             {common.edit}
           </Button>
           {record.isActive ? (
-            <Button type="link" danger onClick={() => confirmDeactivate(record)}>
+            <Button
+              type="link"
+              danger
+              onClick={() => confirmDeactivate(record)}
+            >
               {common.deactivate}
             </Button>
           ) : null}
@@ -110,9 +111,9 @@ export function UnitsPage() {
     setFormMode({ kind: 'create' });
   }
 
-  function openEdit(unit: Unit) {
+  function openEdit(category: ProductCategory) {
     setFormError(undefined);
-    setFormMode({ kind: 'edit', unit });
+    setFormMode({ kind: 'edit', category });
   }
 
   function closeForm() {
@@ -120,13 +121,9 @@ export function UnitsPage() {
     setFormError(undefined);
   }
 
-  async function handleSubmit(values: UnitFormValues) {
+  async function handleSubmit(values: ProductCategoryFormValues) {
     setFormError(undefined);
-    const payload = {
-      code: values.code.trim(),
-      name: values.name.trim(),
-      allowsFractionalQuantity: values.allowsFractionalQuantity,
-    };
+    const payload = { name: values.name.trim() };
 
     try {
       if (formMode.kind === 'create') {
@@ -134,7 +131,7 @@ export function UnitsPage() {
         message.success(common.createSuccess);
       } else if (formMode.kind === 'edit') {
         await updateMutation.mutateAsync({
-          id: formMode.unit.id,
+          id: formMode.category.id,
           input: payload,
         });
         message.success(common.updateSuccess);
@@ -145,7 +142,7 @@ export function UnitsPage() {
     }
   }
 
-  function confirmDeactivate(unit: Unit) {
+  function confirmDeactivate(category: ProductCategory) {
     Modal.confirm({
       title: labels.deactivateConfirm,
       okText: common.confirm,
@@ -153,7 +150,7 @@ export function UnitsPage() {
       okButtonProps: { danger: true },
       onOk: async () => {
         try {
-          await deactivateMutation.mutateAsync(unit.id);
+          await deactivateMutation.mutateAsync(category.id);
           message.success(common.deactivateSuccess);
         } catch (error) {
           message.error(mapApiError(error).userMessage);
@@ -165,11 +162,7 @@ export function UnitsPage() {
 
   const editInitialValues =
     formMode.kind === 'edit'
-      ? {
-          code: formMode.unit.code,
-          name: formMode.unit.name,
-          allowsFractionalQuantity: formMode.unit.allowsFractionalQuantity,
-        }
+      ? { name: formMode.category.name }
       : undefined;
 
   return (
@@ -220,7 +213,7 @@ export function UnitsPage() {
       ) : null}
 
       {isDesktop ? (
-        <Table<Unit>
+        <Table<ProductCategory>
           rowKey="id"
           loading={list.isLoading}
           columns={columns}
@@ -234,21 +227,17 @@ export function UnitsPage() {
           {!list.isLoading && (list.data?.data.length ?? 0) === 0 ? (
             <Text type="secondary">{labels.empty}</Text>
           ) : null}
-          {(list.data?.data ?? []).map((unit) => (
-            <Card key={unit.id} size="small">
+          {(list.data?.data ?? []).map((category) => (
+            <Card key={category.id} size="small">
               <Space direction="vertical" style={{ width: '100%' }}>
-                <Text strong>
-                  {unit.code} — {unit.name}
-                </Text>
-                <Text type="secondary">
-                  {common.fractional}:{' '}
-                  {unit.allowsFractionalQuantity ? common.yes : common.no}
-                </Text>
-                <ActiveStatusTag isActive={unit.isActive} />
+                <Text strong>{category.name}</Text>
+                <ActiveStatusTag isActive={category.isActive} />
                 <Space wrap>
-                  <Button onClick={() => openEdit(unit)}>{common.edit}</Button>
-                  {unit.isActive ? (
-                    <Button danger onClick={() => confirmDeactivate(unit)}>
+                  <Button onClick={() => openEdit(category)}>
+                    {common.edit}
+                  </Button>
+                  {category.isActive ? (
+                    <Button danger onClick={() => confirmDeactivate(category)}>
                       {common.deactivate}
                     </Button>
                   ) : null}
@@ -271,7 +260,7 @@ export function UnitsPage() {
         }}
       />
 
-      <UnitFormModal
+      <ProductCategoryFormModal
         open={formMode.kind !== 'closed'}
         title={formMode.kind === 'edit' ? labels.edit : labels.create}
         initialValues={editInitialValues}

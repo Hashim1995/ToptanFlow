@@ -25,12 +25,18 @@ const unitSummarySelect = {
   isActive: true,
 } satisfies Prisma.UnitSelect;
 
+const categorySummarySelect = {
+  id: true,
+  name: true,
+  isActive: true,
+} satisfies Prisma.ProductCategorySelect;
+
 const productSelect = {
   id: true,
   code: true,
   name: true,
   type: true,
-  category: true,
+  categoryId: true,
   unitId: true,
   standardSalePrice: true,
   latestPurchasePrice: true,
@@ -38,9 +44,8 @@ const productSelect = {
   isActive: true,
   createdAt: true,
   updatedAt: true,
-  unit: {
-    select: unitSummarySelect,
-  },
+  unit: { select: unitSummarySelect },
+  category: { select: categorySummarySelect },
 } satisfies Prisma.ProductSelect;
 
 type ProductRecord = Prisma.ProductGetPayload<{ select: typeof productSelect }>;
@@ -55,9 +60,8 @@ export class ProductsService {
   async create(dto: CreateProductDto): Promise<ProductResponseDto> {
     const name = this.normalizeName(dto.name);
     this.assertNonEmpty('name', name);
-
-    const category = this.normalizeOptionalCategory(dto.category);
     await this.assertUnitAssignable(dto.unitId);
+    const categoryId = await this.resolveCategoryId(dto.categoryId);
 
     try {
       const product = await this.prisma.$transaction(async (tx) => {
@@ -71,7 +75,7 @@ export class ProductsService {
             code,
             name,
             type: dto.type,
-            category,
+            categoryId,
             unitId: dto.unitId,
             standardSalePrice: this.toPrismaDecimal(dto.standardSalePrice),
             latestPurchasePrice: this.toPrismaDecimal(dto.latestPurchasePrice),
@@ -97,7 +101,6 @@ export class ProductsService {
     const pageSize = query.pageSize ?? 20;
     const sortBy = query.sortBy ?? 'code';
     const sortOrder = query.sortOrder ?? SortOrder.ASC;
-
     const where = this.buildListWhere(query);
 
     const [data, total] = await Promise.all([
@@ -115,12 +118,7 @@ export class ProductsService {
 
     return {
       data: data.map((product) => this.toResponse(product)),
-      meta: {
-        page,
-        pageSize,
-        total,
-        totalPages,
-      },
+      meta: { page, pageSize, total, totalPages },
     };
   }
 
@@ -129,11 +127,9 @@ export class ProductsService {
       where: { id },
       select: productSelect,
     });
-
     if (!product) {
       throw new NotFoundException('Product not found');
     }
-
     return this.toResponse(product);
   }
 
@@ -146,7 +142,6 @@ export class ProductsService {
       where: { id },
       select: productSelect,
     });
-
     if (!existing) {
       throw new NotFoundException('Product not found');
     }
@@ -154,7 +149,7 @@ export class ProductsService {
     const data: {
       name?: string;
       type?: ProductTypeApi;
-      category?: string | null;
+      categoryId?: string | null;
       unitId?: string;
       standardSalePrice?: Decimal | null;
       latestPurchasePrice?: Decimal | null;
@@ -166,32 +161,26 @@ export class ProductsService {
       this.assertNonEmpty('name', name);
       data.name = name;
     }
-
     if (dto.type !== undefined) {
       data.type = dto.type;
     }
-
-    if (dto.category !== undefined) {
-      data.category = this.normalizeOptionalCategory(dto.category);
+    if (dto.categoryId !== undefined) {
+      data.categoryId = await this.resolveCategoryId(dto.categoryId);
     }
-
     if (dto.unitId !== undefined) {
       await this.assertUnitAssignable(dto.unitId);
       data.unitId = dto.unitId;
     }
-
     if (dto.standardSalePrice !== undefined) {
       data.standardSalePrice = this.toPrismaDecimalOrNull(
         dto.standardSalePrice,
       );
     }
-
     if (dto.latestPurchasePrice !== undefined) {
       data.latestPurchasePrice = this.toPrismaDecimalOrNull(
         dto.latestPurchasePrice,
       );
     }
-
     if (dto.criticalStockThreshold !== undefined) {
       data.criticalStockThreshold = this.toPrismaDecimalOrNull(
         dto.criticalStockThreshold,
@@ -216,11 +205,9 @@ export class ProductsService {
       where: { id },
       select: productSelect,
     });
-
     if (!existing) {
       throw new NotFoundException('Product not found');
     }
-
     if (existing.isActive) {
       const product = await this.prisma.product.update({
         where: { id },
@@ -229,8 +216,30 @@ export class ProductsService {
       });
       return this.toResponse(product);
     }
-
     return this.toResponse(existing);
+  }
+
+  private async resolveCategoryId(
+    categoryId: string | null | undefined,
+  ): Promise<string | null> {
+    if (categoryId === undefined || categoryId === null) {
+      return null;
+    }
+    await this.assertCategoryAssignable(categoryId);
+    return categoryId;
+  }
+
+  private async assertCategoryAssignable(categoryId: string): Promise<void> {
+    const category = await this.prisma.productCategory.findUnique({
+      where: { id: categoryId },
+      select: { id: true, isActive: true },
+    });
+    if (!category) {
+      throw new NotFoundException('Product category not found');
+    }
+    if (!category.isActive) {
+      throw new BadRequestException('Product category is inactive');
+    }
   }
 
   private async assertUnitAssignable(unitId: string): Promise<void> {
@@ -238,11 +247,9 @@ export class ProductsService {
       where: { id: unitId },
       select: { id: true, isActive: true },
     });
-
     if (!unit) {
       throw new NotFoundException('Unit not found');
     }
-
     if (!unit.isActive) {
       throw new BadRequestException('Unit is inactive');
     }
@@ -256,20 +263,14 @@ export class ProductsService {
     if (query.isActive !== undefined) {
       conditions.push({ isActive: query.isActive });
     }
-
     if (query.type !== undefined) {
       conditions.push({ type: query.type });
     }
-
     if (query.unitId !== undefined) {
       conditions.push({ unitId: query.unitId });
     }
-
-    const category = query.category?.trim();
-    if (category) {
-      conditions.push({
-        category: { equals: category, mode: 'insensitive' },
-      });
+    if (query.categoryId !== undefined) {
+      conditions.push({ categoryId: query.categoryId });
     }
 
     const search = query.search?.trim();
@@ -278,34 +279,18 @@ export class ProductsService {
         OR: [
           { code: { contains: search, mode: 'insensitive' } },
           { name: { contains: search, mode: 'insensitive' } },
-          { category: { contains: search, mode: 'insensitive' } },
+          { category: { name: { contains: search, mode: 'insensitive' } } },
         ],
       });
     }
 
-    if (conditions.length === 0) {
-      return undefined;
-    }
-
-    if (conditions.length === 1) {
-      return conditions[0];
-    }
-
+    if (conditions.length === 0) return undefined;
+    if (conditions.length === 1) return conditions[0];
     return { AND: conditions };
   }
 
   private normalizeName(name: string): string {
     return name.trim();
-  }
-
-  private normalizeOptionalCategory(
-    category: string | null | undefined,
-  ): string | null {
-    if (category === undefined || category === null) {
-      return null;
-    }
-    const trimmed = category.trim();
-    return trimmed.length === 0 ? null : trimmed;
   }
 
   private assertNonEmpty(field: string, value: string): void {
@@ -315,16 +300,12 @@ export class ProductsService {
   }
 
   private toPrismaDecimal(value: string | undefined): Decimal | null {
-    if (value === undefined) {
-      return null;
-    }
+    if (value === undefined) return null;
     return new Decimal(value);
   }
 
   private toPrismaDecimalOrNull(value: string | null): Decimal | null {
-    if (value === null) {
-      return null;
-    }
+    if (value === null) return null;
     return new Decimal(value);
   }
 
@@ -332,7 +313,7 @@ export class ProductsService {
     return (
       dto.name !== undefined ||
       dto.type !== undefined ||
-      dto.category !== undefined ||
+      dto.categoryId !== undefined ||
       dto.unitId !== undefined ||
       dto.standardSalePrice !== undefined ||
       dto.latestPurchasePrice !== undefined ||
@@ -341,9 +322,7 @@ export class ProductsService {
   }
 
   private decimalToString(value: Decimal | null | undefined): string | null {
-    if (value === null || value === undefined) {
-      return null;
-    }
+    if (value === null || value === undefined) return null;
     return value.toFixed(4);
   }
 
@@ -353,7 +332,14 @@ export class ProductsService {
       code: product.code,
       name: product.name,
       type: product.type as ProductTypeApi,
-      category: product.category,
+      categoryId: product.categoryId,
+      category: product.category
+        ? {
+            id: product.category.id,
+            name: product.category.name,
+            isActive: product.category.isActive,
+          }
+        : null,
       unitId: product.unitId,
       unit: {
         id: product.unit.id,

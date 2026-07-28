@@ -6,6 +6,7 @@ import {
   IsString,
   IsUUID,
   MaxLength,
+  ValidateIf,
 } from 'class-validator';
 import { IsNumericDecimal18_4 } from './decimal-string.validator';
 import { ProductTypeApi } from './product-type.enum';
@@ -17,36 +18,29 @@ export class CreateProductDto {
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : value,
   )
-  name: string;
+  name!: string;
 
   @ApiProperty({
     enum: ProductTypeApi,
     example: ProductTypeApi.FINISHED_GOOD,
   })
   @IsEnum(ProductTypeApi)
-  type: ProductTypeApi;
+  type!: ProductTypeApi;
 
   @ApiPropertyOptional({
-    example: 'Tekstil',
+    format: 'uuid',
     nullable: true,
     type: String,
+    description: 'Optional active ProductCategory id (CHANGE-001).',
   })
   @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  @Transform(({ value }: { value: unknown }) => {
-    if (value === null || value === undefined) return value;
-    if (typeof value === 'string') {
-      const trimmed = value.trim();
-      return trimmed.length === 0 ? null : trimmed;
-    }
-    return value;
-  })
-  category?: string | null;
+  @ValidateIf((_object, value) => value !== null && value !== undefined)
+  @IsUUID()
+  categoryId?: string | null;
 
   @ApiProperty({ format: 'uuid' })
   @IsUUID()
-  unitId: string;
+  unitId!: string;
 
   @ApiPropertyOptional({
     example: '12.5000',

@@ -4,6 +4,9 @@ Planning-history only. Not a product release-notes replacement.
 
 ## 2026-07-29
 
+- **Unplanned CHANGE completed:** [CHANGE-001](unplanned/CHANGE-001-product-category-and-frontend-ux-uplift.md) ProductCategory flat reference + frontend UX quality bar; [US-042](stories/US-042-product-category-and-frontend-ux-uplift.md) **Done** (TASK-042-01..05).
+- **Unplanned CHANGE:** [CHANGE-001](unplanned/CHANGE-001-product-category-and-frontend-ux-uplift.md) ProductCategory flat reference + frontend UX quality bar (owner).
+- **Story activated:** [US-042](stories/US-042-product-category-and-frontend-ux-uplift.md); TASK-042-01 docs/gates Done; US-041 further work paused.
 - **Task completed:** [TASK-041-01](tasks/TASK-041-01-add-web-vitest-harness.md) web Vitest harness + 14 pure helper tests (Vitest 3.2.4; build/lint green).
 - **Story activated:** [US-041](stories/US-041-quality-harness-expansion.md) quality harness expansion (safe path after US-038; warehouses/auth blocked on open decisions).
 - **Story completed:** [US-038](stories/US-038-frontend-master-data-screens.md) master-data UI screens (TASK-038-05 responsive verification).

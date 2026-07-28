@@ -47,7 +47,7 @@ export class ProductsController {
           name: 'Parça məhsul',
           type: ProductTypeApi.FINISHED_GOOD,
           unitId: '22222222-2222-4222-8222-222222222222',
-          category: 'Tekstil',
+          categoryId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
           standardSalePrice: '12.5000',
         },
       },

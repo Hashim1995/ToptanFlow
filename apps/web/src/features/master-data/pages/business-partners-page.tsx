@@ -36,9 +36,10 @@ import {
 import { BusinessPartnerFormModal } from '../ui/business-partner-form-modal';
 import { DuplicateReviewModal } from '../ui/duplicate-review-modal';
 import { MASTER_DATA_LABELS } from '../ui/labels';
-import { ActiveStatusFilter, ListToolbar } from '../ui/list-toolbar';
+import { ActiveStatusFilter, FilterBar } from '../ui/list-toolbar';
+import { PageHeader } from '../ui/page-header';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 const DUPLICATE_CODE = 'BUSINESS_PARTNER_DUPLICATE_SUSPECTED';
 
@@ -317,33 +318,27 @@ export function BusinessPartnersPage() {
 
   return (
     <div>
-      <Space
-        style={{
-          width: '100%',
-          justifyContent: 'space-between',
-          marginBottom: 16,
-        }}
-        wrap
-      >
-        <Title level={3} style={{ margin: 0 }}>
-          {labels.title}
-        </Title>
-        <Button type="primary" onClick={openCreate}>
-          {labels.create}
-        </Button>
-      </Space>
+      <PageHeader
+        title={labels.title}
+        description={labels.description}
+        extra={
+          <Button type="primary" onClick={openCreate}>
+            {labels.create}
+          </Button>
+        }
+      />
 
-      <ListToolbar>
+      <FilterBar>
         <Input.Search
           allowClear
-          placeholder={common.search}
+          placeholder={common.searchPlaceholder}
           value={searchInput}
           onChange={(event) => setSearchInput(event.target.value)}
           onSearch={(value) => {
             setSearch(value.trim());
             setPage(1);
           }}
-          style={{ maxWidth: 280 }}
+          style={{ minWidth: 220, maxWidth: 320 }}
         />
         <ActiveStatusFilter
           value={activeFilter}
@@ -360,6 +355,7 @@ export function BusinessPartnersPage() {
           }}
           style={{ minWidth: 160 }}
           aria-label={labels.filterRole}
+          placeholder={labels.filterRole}
           options={[
             { value: 'all', label: common.all },
             { value: 'customer', label: labels.customer },
@@ -367,7 +363,7 @@ export function BusinessPartnersPage() {
             { value: 'both', label: labels.bothRoles },
           ]}
         />
-      </ListToolbar>
+      </FilterBar>
 
       {list.isError ? (
         <Alert

@@ -13,6 +13,7 @@ describe('Products (e2e)', () => {
   const productId = '11111111-1111-4111-8111-111111111111';
   const unitId = '22222222-2222-4222-8222-222222222222';
   const otherUnitId = '33333333-3333-4333-8333-333333333333';
+  const categoryId = '66666666-6666-4666-8666-666666666666';
   const createdAt = new Date('2026-07-28T00:00:00.000Z');
   const updatedAt = new Date('2026-07-28T00:00:00.000Z');
 
@@ -24,12 +25,18 @@ describe('Products (e2e)', () => {
     isActive: true,
   };
 
+  const categorySummary = {
+    id: categoryId,
+    name: 'Tekstil',
+    isActive: true,
+  };
+
   const baseProduct = {
     id: productId,
     code: '0000001',
     name: 'Parça məhsul',
     type: ProductTypeApi.FINISHED_GOOD,
-    category: 'Tekstil',
+    categoryId,
     unitId,
     standardSalePrice: new Prisma.Decimal('12.5'),
     latestPurchasePrice: new Prisma.Decimal('10'),
@@ -38,6 +45,7 @@ describe('Products (e2e)', () => {
     createdAt,
     updatedAt,
     unit: unitSummary,
+    category: categorySummary,
   };
 
   const expectedProductBody = {
@@ -45,7 +53,8 @@ describe('Products (e2e)', () => {
     code: '0000001',
     name: 'Parça məhsul',
     type: ProductTypeApi.FINISHED_GOOD,
-    category: 'Tekstil',
+    categoryId,
+    category: categorySummary,
     unitId,
     unit: unitSummary,
     standardSalePrice: '12.5000',
@@ -78,17 +87,22 @@ describe('Products (e2e)', () => {
     unit: {
       findUnique: jest.fn(),
     },
+    productCategory: {
+      findUnique: jest.fn(),
+    },
   };
 
   let app: INestApplication<App>;
 
   type ProductUnitJson = typeof unitSummary;
+  type ProductCategoryJson = typeof categorySummary;
   type ProductJson = {
     id: string;
     code: string;
     name: string;
     type: string;
-    category: string | null;
+    categoryId: string | null;
+    category: ProductCategoryJson | null;
     unitId: string;
     unit: ProductUnitJson;
     standardSalePrice: string | null;
@@ -135,10 +149,27 @@ describe('Products (e2e)', () => {
     name: ' Yeni məhsul ',
     type: ProductTypeApi.FINISHED_GOOD,
     unitId,
-    category: '   ',
+    categoryId: null,
     standardSalePrice: '12.5',
     latestPurchasePrice: '0',
   };
+
+  const productResponseKeys = [
+    'category',
+    'categoryId',
+    'code',
+    'createdAt',
+    'criticalStockThreshold',
+    'id',
+    'isActive',
+    'latestPurchasePrice',
+    'name',
+    'standardSalePrice',
+    'type',
+    'unit',
+    'unitId',
+    'updatedAt',
+  ].sort();
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -168,6 +199,7 @@ describe('Products (e2e)', () => {
         ...baseProduct,
         code: '0000001',
         name: 'Yeni məhsul',
+        categoryId: null,
         category: null,
         latestPurchasePrice: new Prisma.Decimal('0'),
       });
@@ -183,6 +215,7 @@ describe('Products (e2e)', () => {
         ...expectedProductBody,
         code: '0000001',
         name: 'Yeni məhsul',
+        categoryId: null,
         category: null,
         standardSalePrice: '12.5000',
         latestPurchasePrice: '0.0000',
@@ -193,31 +226,43 @@ describe('Products (e2e)', () => {
           data: expect.objectContaining({
             code: '0000001',
             name: 'Yeni məhsul',
-            category: null,
+            categoryId: null,
             isActive: true,
           }) as object,
         }),
       );
-      expect(Object.keys(body).sort()).toEqual(
-        [
-          'category',
-          'code',
-          'createdAt',
-          'criticalStockThreshold',
-          'id',
-          'isActive',
-          'latestPurchasePrice',
-          'name',
-          'standardSalePrice',
-          'type',
-          'unit',
-          'unitId',
-          'updatedAt',
-        ].sort(),
-      );
+      expect(Object.keys(body).sort()).toEqual(productResponseKeys);
       expect(body.unit).toEqual(unitSummary);
       expect(body.isActive).toBe(true);
       assertNoInternalLeak(response.body);
+    });
+
+    it('assigns an active categoryId when provided', async () => {
+      prisma.unit.findUnique.mockResolvedValue({ id: unitId, isActive: true });
+      prisma.productCategory.findUnique.mockResolvedValue({
+        id: categoryId,
+        isActive: true,
+      });
+      prisma.product.create.mockResolvedValue({
+        ...baseProduct,
+        name: 'Yeni məhsul',
+        latestPurchasePrice: new Prisma.Decimal('0'),
+      });
+
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/products')
+        .send({ ...validCreatePayload, categoryId })
+        .expect(201);
+
+      const body = response.body as ProductJson;
+      expect(body.categoryId).toBe(categoryId);
+      expect(body.category).toEqual(categorySummary);
+      expect(prisma.productCategory.findUnique).toHaveBeenCalled();
+      expect(prisma.product.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ categoryId }) as object,
+        }),
+      );
     });
 
     it('rejects client-supplied code with 400', async () => {
@@ -241,12 +286,16 @@ describe('Products (e2e)', () => {
           id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
           code: '0000001',
           name: 'Birinci',
+          categoryId: null,
+          category: null,
         })
         .mockResolvedValueOnce({
           ...baseProduct,
           id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
           code: '0000002',
           name: 'İkinci',
+          categoryId: null,
+          category: null,
         });
 
       const first = await request(app.getHttpServer())
@@ -284,7 +333,7 @@ describe('Products (e2e)', () => {
         .expect(400);
     });
 
-    it('rejects invalid type, unitId UUID, and decimal payloads', async () => {
+    it('rejects invalid type, unitId UUID, categoryId UUID, and decimal payloads', async () => {
       await request(app.getHttpServer())
         .post('/api/v1/products')
         .send({ ...validCreatePayload, type: 'INVALID' })
@@ -293,6 +342,11 @@ describe('Products (e2e)', () => {
       await request(app.getHttpServer())
         .post('/api/v1/products')
         .send({ ...validCreatePayload, unitId: 'not-a-uuid' })
+        .expect(400);
+
+      await request(app.getHttpServer())
+        .post('/api/v1/products')
+        .send({ ...validCreatePayload, categoryId: 'not-a-uuid' })
         .expect(400);
 
       await request(app.getHttpServer())
@@ -349,6 +403,35 @@ describe('Products (e2e)', () => {
       );
     });
 
+    it('maps missing category to 404 and inactive category to 400', async () => {
+      prisma.unit.findUnique.mockResolvedValue({ id: unitId, isActive: true });
+      prisma.productCategory.findUnique.mockResolvedValue(null);
+
+      const notFound = await request(app.getHttpServer())
+        .post('/api/v1/products')
+        .send({ ...validCreatePayload, categoryId })
+        .expect(404);
+
+      expect(notFound.body).toEqual(
+        expect.objectContaining({ message: 'Product category not found' }),
+      );
+
+      prisma.productCategory.findUnique.mockResolvedValue({
+        id: categoryId,
+        isActive: false,
+      });
+
+      const inactive = await request(app.getHttpServer())
+        .post('/api/v1/products')
+        .send({ ...validCreatePayload, categoryId })
+        .expect(400);
+
+      expect(inactive.body).toEqual(
+        expect.objectContaining({ message: 'Product category is inactive' }),
+      );
+      expect(prisma.product.create).not.toHaveBeenCalled();
+    });
+
     it('maps duplicate product code to 409 without leaking Prisma details', async () => {
       prisma.unit.findUnique.mockResolvedValue({ id: unitId, isActive: true });
       prisma.product.create.mockRejectedValue(
@@ -399,6 +482,8 @@ describe('Products (e2e)', () => {
       expect(body.data).toHaveLength(2);
       expect(body.data[0].standardSalePrice).toBe('12.5000');
       expect(body.data[0].unit).toEqual(unitSummary);
+      expect(body.data[0].categoryId).toBe(categoryId);
+      expect(body.data[0].category).toEqual(categorySummary);
       expect(body.data[0]).not.toHaveProperty('saleItems');
       expect(body.data[0]).not.toHaveProperty('purchaseItems');
       expect(body.data[1].isActive).toBe(false);
@@ -435,7 +520,15 @@ describe('Products (e2e)', () => {
         .expect(400);
       await request(app.getHttpServer())
         .get('/api/v1/products')
+        .query({ categoryId: 'bad' })
+        .expect(400);
+      await request(app.getHttpServer())
+        .get('/api/v1/products')
         .query({ sortBy: 'stock' })
+        .expect(400);
+      await request(app.getHttpServer())
+        .get('/api/v1/products')
+        .query({ sortBy: 'category' })
         .expect(400);
       await request(app.getHttpServer())
         .get('/api/v1/products')
@@ -449,7 +542,7 @@ describe('Products (e2e)', () => {
       expect(prisma.product.findMany).not.toHaveBeenCalled();
     });
 
-    it('transforms isActive and ignores whitespace-only search and category', async () => {
+    it('transforms isActive and ignores whitespace-only search', async () => {
       prisma.product.findMany.mockResolvedValue([]);
       prisma.product.count.mockResolvedValue(0);
 
@@ -479,12 +572,28 @@ describe('Products (e2e)', () => {
 
       await request(app.getHttpServer())
         .get('/api/v1/products')
-        .query({ search: '   ', category: '   ' })
+        .query({ search: '   ' })
         .expect(200);
 
       expect(prisma.product.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: undefined,
+        }),
+      );
+    });
+
+    it('applies categoryId filter when provided', async () => {
+      prisma.product.findMany.mockResolvedValue([]);
+      prisma.product.count.mockResolvedValue(0);
+
+      await request(app.getHttpServer())
+        .get('/api/v1/products')
+        .query({ categoryId })
+        .expect(200);
+
+      expect(prisma.product.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { categoryId },
         }),
       );
     });
@@ -499,6 +608,9 @@ describe('Products (e2e)', () => {
         .expect(200);
 
       expect(active.body as ProductJson).toEqual(expectedProductBody);
+      expect(Object.keys(active.body as ProductJson).sort()).toEqual(
+        productResponseKeys,
+      );
 
       prisma.product.findUnique.mockResolvedValue({
         ...baseProduct,
@@ -512,6 +624,8 @@ describe('Products (e2e)', () => {
       const inactiveBody = inactive.body as ProductJson;
       expect(inactiveBody.isActive).toBe(false);
       expect(inactiveBody.criticalStockThreshold).toBeNull();
+      expect(inactiveBody.categoryId).toBe(categoryId);
+      expect(inactiveBody.category).toEqual(categorySummary);
     });
 
     it('rejects invalid UUID and missing product', async () => {
@@ -569,6 +683,7 @@ describe('Products (e2e)', () => {
       prisma.product.update.mockResolvedValue({
         ...baseProduct,
         name: 'Trimmed',
+        categoryId: null,
         category: null,
         type: ProductTypeApi.RAW_MATERIAL,
         standardSalePrice: null,
@@ -585,7 +700,7 @@ describe('Products (e2e)', () => {
         .patch(`/api/v1/products/${productId}`)
         .send({
           name: ' Trimmed ',
-          category: null,
+          categoryId: null,
           type: ProductTypeApi.RAW_MATERIAL,
           standardSalePrice: null,
           latestPurchasePrice: '0',
@@ -599,6 +714,7 @@ describe('Products (e2e)', () => {
         expect.objectContaining({
           code: '0000001',
           name: 'Trimmed',
+          categoryId: null,
           category: null,
           type: ProductTypeApi.RAW_MATERIAL,
           standardSalePrice: null,
@@ -612,9 +728,10 @@ describe('Products (e2e)', () => {
           data: expect.not.objectContaining({ code: expect.anything() }),
         }),
       );
+      expect(prisma.productCategory.findUnique).not.toHaveBeenCalled();
     });
 
-    it('rejects validation errors for name, type, unitId, and decimals', async () => {
+    it('rejects validation errors for name, type, unitId, categoryId, and decimals', async () => {
       await request(app.getHttpServer())
         .patch(`/api/v1/products/${productId}`)
         .send({ name: '   ' })
@@ -628,6 +745,11 @@ describe('Products (e2e)', () => {
       await request(app.getHttpServer())
         .patch(`/api/v1/products/${productId}`)
         .send({ unitId: 'bad' })
+        .expect(400);
+
+      await request(app.getHttpServer())
+        .patch(`/api/v1/products/${productId}`)
+        .send({ categoryId: 'bad' })
         .expect(400);
 
       await request(app.getHttpServer())
@@ -651,7 +773,7 @@ describe('Products (e2e)', () => {
         .expect(400);
     });
 
-    it('maps missing product and unit errors', async () => {
+    it('maps missing product, unit, and category errors', async () => {
       prisma.product.findUnique.mockResolvedValue(null);
 
       await request(app.getHttpServer())
@@ -675,6 +797,23 @@ describe('Products (e2e)', () => {
       await request(app.getHttpServer())
         .patch(`/api/v1/products/${productId}`)
         .send({ unitId: otherUnitId })
+        .expect(400);
+
+      prisma.productCategory.findUnique.mockResolvedValue(null);
+
+      await request(app.getHttpServer())
+        .patch(`/api/v1/products/${productId}`)
+        .send({ categoryId })
+        .expect(404);
+
+      prisma.productCategory.findUnique.mockResolvedValue({
+        id: categoryId,
+        isActive: false,
+      });
+
+      await request(app.getHttpServer())
+        .patch(`/api/v1/products/${productId}`)
+        .send({ categoryId })
         .expect(400);
     });
 
@@ -741,6 +880,7 @@ describe('Products (e2e)', () => {
         isActive: false,
       });
       expect(firstBody.unit).toEqual(unitSummary);
+      expect(firstBody.category).toEqual(categorySummary);
       expect(prisma.product.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: { isActive: false },

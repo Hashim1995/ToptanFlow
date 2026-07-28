@@ -12,12 +12,19 @@ export type ProductUnitSummary = {
   isActive: boolean;
 };
 
+export type ProductCategorySummary = {
+  id: string;
+  name: string;
+  isActive: boolean;
+};
+
 export type Product = {
   id: string;
   code: string;
   name: string;
   type: ProductType;
-  category: string | null;
+  categoryId: string | null;
+  category: ProductCategorySummary | null;
   unitId: string;
   unit: ProductUnitSummary;
   standardSalePrice: string | null;
@@ -31,13 +38,13 @@ export type Product = {
 export type ProductListQuery = MasterDataListQuery & {
   type?: ProductType;
   unitId?: string;
-  category?: string;
+  categoryId?: string;
 };
 
 export type CreateProductInput = {
   name: string;
   type: ProductType;
-  category?: string | null;
+  categoryId?: string | null;
   unitId: string;
   standardSalePrice?: string;
   latestPurchasePrice?: string;
@@ -47,7 +54,7 @@ export type CreateProductInput = {
 export type UpdateProductInput = {
   name?: string;
   type?: ProductType;
-  category?: string | null;
+  categoryId?: string | null;
   unitId?: string;
   standardSalePrice?: string | null;
   latestPurchasePrice?: string | null;

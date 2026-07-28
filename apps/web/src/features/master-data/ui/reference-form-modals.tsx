@@ -4,8 +4,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Alert, Form, Input, Modal, Switch } from 'antd';
 import {
   currencyFormSchema,
+  productCategoryFormSchema,
   unitFormSchema,
   type CurrencyFormValues,
+  type ProductCategoryFormValues,
   type UnitFormValues,
 } from '../forms/reference-data.schemas';
 import { MASTER_DATA_LABELS } from './labels';
@@ -66,7 +68,7 @@ export function CurrencyFormModal({
           style={{ marginBottom: 16 }}
         />
       ) : null}
-      <Form layout="vertical">
+      <Form layout="vertical" requiredMark>
         <Form.Item
           label={labels.code}
           required
@@ -76,7 +78,13 @@ export function CurrencyFormModal({
           <Controller
             name="code"
             control={control}
-            render={({ field }) => <Input {...field} autoComplete="off" />}
+            render={({ field }) => (
+              <Input
+                {...field}
+                autoComplete="off"
+                placeholder="Məsələn: AZN"
+              />
+            )}
           />
         </Form.Item>
         <Form.Item
@@ -88,7 +96,13 @@ export function CurrencyFormModal({
           <Controller
             name="name"
             control={control}
-            render={({ field }) => <Input {...field} autoComplete="off" />}
+            render={({ field }) => (
+              <Input
+                {...field}
+                autoComplete="off"
+                placeholder={labels.namePlaceholder}
+              />
+            )}
           />
         </Form.Item>
         <Form.Item
@@ -99,7 +113,9 @@ export function CurrencyFormModal({
           <Controller
             name="symbol"
             control={control}
-            render={({ field }) => <Input {...field} autoComplete="off" />}
+            render={({ field }) => (
+              <Input {...field} autoComplete="off" placeholder="₼" />
+            )}
           />
         </Form.Item>
       </Form>
@@ -173,7 +189,7 @@ export function UnitFormModal({
           style={{ marginBottom: 16 }}
         />
       ) : null}
-      <Form layout="vertical">
+      <Form layout="vertical" requiredMark>
         <Form.Item
           label={labels.code}
           required
@@ -183,7 +199,13 @@ export function UnitFormModal({
           <Controller
             name="code"
             control={control}
-            render={({ field }) => <Input {...field} autoComplete="off" />}
+            render={({ field }) => (
+              <Input
+                {...field}
+                autoComplete="off"
+                placeholder="Məsələn: KG"
+              />
+            )}
           />
         </Form.Item>
         <Form.Item
@@ -195,7 +217,13 @@ export function UnitFormModal({
           <Controller
             name="name"
             control={control}
-            render={({ field }) => <Input {...field} autoComplete="off" />}
+            render={({ field }) => (
+              <Input
+                {...field}
+                autoComplete="off"
+                placeholder={labels.namePlaceholder}
+              />
+            )}
           />
         </Form.Item>
         <Form.Item label={labels.fractional}>
@@ -204,6 +232,87 @@ export function UnitFormModal({
             control={control}
             render={({ field }) => (
               <Switch checked={field.value} onChange={field.onChange} />
+            )}
+          />
+        </Form.Item>
+      </Form>
+    </Modal>
+  );
+}
+
+type ProductCategoryFormModalProps = {
+  open: boolean;
+  title: string;
+  initialValues?: ProductCategoryFormValues;
+  submitting: boolean;
+  errorMessage?: string;
+  onCancel: () => void;
+  onSubmit: (values: ProductCategoryFormValues) => Promise<void> | void;
+};
+
+export function ProductCategoryFormModal({
+  open,
+  title,
+  initialValues,
+  submitting,
+  errorMessage,
+  onCancel,
+  onSubmit,
+}: ProductCategoryFormModalProps) {
+  const common = MASTER_DATA_LABELS.common;
+  const categoryLabels = MASTER_DATA_LABELS.categories;
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<ProductCategoryFormValues>({
+    resolver: zodResolver(productCategoryFormSchema),
+    defaultValues: initialValues ?? { name: '' },
+  });
+
+  useEffect(() => {
+    if (open) {
+      reset(initialValues ?? { name: '' });
+    }
+  }, [open, initialValues, reset]);
+
+  return (
+    <Modal
+      title={title}
+      open={open}
+      onCancel={onCancel}
+      onOk={handleSubmit(onSubmit)}
+      okText={common.save}
+      cancelText={common.cancel}
+      confirmLoading={submitting}
+      destroyOnHidden
+      forceRender
+    >
+      {errorMessage ? (
+        <Alert
+          type="error"
+          showIcon
+          message={errorMessage}
+          style={{ marginBottom: 16 }}
+        />
+      ) : null}
+      <Form layout="vertical">
+        <Form.Item
+          label={common.name}
+          required
+          validateStatus={errors.name ? 'error' : undefined}
+          help={errors.name?.message}
+        >
+          <Controller
+            name="name"
+            control={control}
+            render={({ field }) => (
+              <Input
+                {...field}
+                autoComplete="off"
+                placeholder={categoryLabels.namePlaceholder}
+              />
             )}
           />
         </Form.Item>

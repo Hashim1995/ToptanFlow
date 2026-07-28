@@ -31,7 +31,7 @@ describe('UpdateProductDto validation', () => {
 
   it('allows null for nullable clearable fields', async () => {
     const messages = await validateDto({
-      category: null,
+      categoryId: null,
       standardSalePrice: null,
       latestPurchasePrice: null,
       criticalStockThreshold: null,

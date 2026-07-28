@@ -2,12 +2,13 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AppShellLayout } from './app/app-shell-layout';
 import { BusinessPartnersPage } from './features/master-data/pages/business-partners-page';
 import { CurrenciesPage } from './features/master-data/pages/currencies-page';
+import { ProductCategoriesPage } from './features/master-data/pages/product-categories-page';
 import { ProductsPage } from './features/master-data/pages/products-page';
 import { UnitsPage } from './features/master-data/pages/units-page';
 import { HomePage } from './pages/home-page';
 
 /**
- * App routes — shell + master-data screens (US-038).
+ * App routes — shell + master-data screens (US-038 / US-042).
  */
 function App() {
   return (
@@ -17,6 +18,10 @@ function App() {
           <Route index element={<HomePage />} />
           <Route path="currencies" element={<CurrenciesPage />} />
           <Route path="units" element={<UnitsPage />} />
+          <Route
+            path="product-categories"
+            element={<ProductCategoriesPage />}
+          />
           <Route path="products" element={<ProductsPage />} />
           <Route path="business-partners" element={<BusinessPartnersPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />

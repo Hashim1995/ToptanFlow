@@ -27,3 +27,11 @@ export const unitFormSchema = z.object({
 });
 
 export type UnitFormValues = z.infer<typeof unitFormSchema>;
+
+export const productCategoryFormSchema = z.object({
+  name: requiredText('Ad'),
+});
+
+export type ProductCategoryFormValues = z.infer<
+  typeof productCategoryFormSchema
+>;

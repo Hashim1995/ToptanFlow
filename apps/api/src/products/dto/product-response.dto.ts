@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ProductCategorySummaryDto } from './product-category-summary.dto';
 import { ProductTypeApi } from './product-type.enum';
 import { ProductUnitResponseDto } from './product-unit-response.dto';
 
@@ -20,11 +21,17 @@ export class ProductResponseDto {
   type!: ProductTypeApi;
 
   @ApiPropertyOptional({
-    example: 'Tekstil',
+    format: 'uuid',
     nullable: true,
     type: String,
   })
-  category!: string | null;
+  categoryId!: string | null;
+
+  @ApiPropertyOptional({
+    type: ProductCategorySummaryDto,
+    nullable: true,
+  })
+  category!: ProductCategorySummaryDto | null;
 
   @ApiProperty({ format: 'uuid' })
   unitId!: string;
