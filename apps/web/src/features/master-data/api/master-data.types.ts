@@ -23,6 +23,10 @@ export type MasterDataListQuery = {
   isActive?: boolean;
   sortBy?: string;
   sortOrder?: SortOrder;
+  /** Optional entity-specific filters (e.g. products). */
+  type?: string;
+  unitId?: string;
+  category?: string;
 };
 
 export type MasterDataEntityName =

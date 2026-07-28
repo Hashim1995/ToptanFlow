@@ -30,6 +30,10 @@ const NAV_ITEMS = [
     key: '/units',
     label: <Link to="/units">{MASTER_DATA_LABELS.units.nav}</Link>,
   },
+  {
+    key: '/products',
+    label: <Link to="/products">{MASTER_DATA_LABELS.products.nav}</Link>,
+  },
 ];
 
 /**
@@ -100,7 +104,7 @@ export function AppShellLayout() {
         </Header>
 
         <Content style={{ padding: 24 }}>
-          <div style={{ maxWidth: 960, margin: '0 auto' }}>
+          <div style={{ maxWidth: 1200, margin: '0 auto' }}>
             <Outlet />
           </div>
         </Content>

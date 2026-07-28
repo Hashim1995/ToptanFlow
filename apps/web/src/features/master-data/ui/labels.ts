@@ -1,4 +1,7 @@
-/** Approved owner labels for US-038 reference-data screens (2026-07-29). */
+/**
+ * Owner guidance (2026-07-29): agents may choose clear Azerbaijani UI labels
+ * for known delivered enums without stopping the task for confirmation.
+ */
 export const MASTER_DATA_LABELS = {
   currencies: {
     nav: 'Valyutalar',
@@ -15,6 +18,27 @@ export const MASTER_DATA_LABELS = {
     edit: 'Ölçü vahidini redaktə et',
     empty: 'Heç bir ölçü vahidi tapılmadı.',
     deactivateConfirm: 'Bu ölçü vahidini deaktiv etmək istəyirsiniz?',
+  },
+  products: {
+    nav: 'Məhsullar',
+    title: 'Məhsullar',
+    create: 'Yeni məhsul',
+    edit: 'Məhsulu redaktə et',
+    empty: 'Heç bir məhsul tapılmadı.',
+    deactivateConfirm: 'Bu məhsulu deaktiv etmək istəyirsiniz?',
+    type: 'Tip',
+    category: 'Kateqoriya',
+    unit: 'Ölçü vahidi',
+    standardSalePrice: 'Standart satış qiyməti',
+    latestPurchasePrice: 'Son alış qiyməti',
+    criticalStockThreshold: 'Kritik stok həddi',
+    filterType: 'Tip filtri',
+    codeReadonlyHint: 'Kod sistem tərəfindən yaradılır və dəyişdirilə bilməz.',
+    types: {
+      FINISHED_GOOD: 'Hazır məhsul',
+      RAW_MATERIAL: 'Xammal',
+      MIXED_USE: 'Qarışıq təyinatlı',
+    },
   },
   common: {
     code: 'Kod',
@@ -43,3 +67,10 @@ export const MASTER_DATA_LABELS = {
     confirm: 'Təsdiq et',
   },
 } as const;
+
+export type ProductTypeLabelKey =
+  keyof typeof MASTER_DATA_LABELS.products.types;
+
+export function productTypeLabel(type: ProductTypeLabelKey): string {
+  return MASTER_DATA_LABELS.products.types[type];
+}

@@ -68,7 +68,8 @@ ui-requirements.md.
 | Exact screen inventory? | Four delivered modules only: currencies, units, products, business partners. |
 | Authentication / protected routes? | Out of scope; US-019 remains blocked. |
 | Delete behavior? | UI invokes delivered soft-deactivate endpoints only; no hard delete or reactivation UI. |
-| Currency/unit Azerbaijani labels? | Approved (owner, 2026-07-29 via next-task proceed): `Valyutalar`, `Ölçü vahidləri`. |
+| Currency/unit Azerbaijani labels? | Approved: `Valyutalar`, `Ölçü vahidləri`. |
+| Routine Azerbaijani UI labels for delivered enums? | Owner (2026-07-29): agents may choose clear correct labels without stopping; e.g. product types Hazır məhsul / Xammal / Qarışıq təyinatlı. |
 | Automated browser testing? | Add focused component/UI tests only when the project test harness is activated; each task requires build/lint plus responsive manual evidence. |
 
 ## Readiness checklist
@@ -84,6 +85,6 @@ Elaborated:
 
 - [TASK-038-01](../tasks/TASK-038-01-add-master-data-frontend-api-foundation.md) — **Done**
 - [TASK-038-02](../tasks/TASK-038-02-add-currency-unit-screens.md) — **Done**
-- [TASK-038-03](../tasks/TASK-038-03-add-product-screens.md) — Ready
+- [TASK-038-03](../tasks/TASK-038-03-add-product-screens.md) — **Done**
 - [TASK-038-04](../tasks/TASK-038-04-add-business-partner-screens.md) — Ready
 - [TASK-038-05](../tasks/TASK-038-05-verify-master-data-ui-responsive-states.md) — Ready after 038-02..04
