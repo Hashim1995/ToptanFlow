@@ -59,7 +59,9 @@ export class UsersController {
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Update a user (including reactivate via isActive)' })
+  @ApiOperation({
+    summary: 'Update a user (including reactivate via isActive)',
+  })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({ type: UserResponseDto })
   @ApiBadRequestResponse({
@@ -84,9 +86,7 @@ export class UsersController {
   @ApiOkResponse({ type: UserResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid UUID' })
   @ApiNotFoundResponse({ description: 'User not found' })
-  deactivate(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<UserResponseDto> {
+  deactivate(@Param('id', ParseUUIDPipe) id: string): Promise<UserResponseDto> {
     return this.usersService.deactivate(id);
   }
 }

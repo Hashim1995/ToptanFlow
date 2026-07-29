@@ -9,7 +9,7 @@ import { UsersService } from './users.service';
 import * as passwordUtil from './password.util';
 
 jest.mock('./password.util', () => ({
-  hashPassword: jest.fn(async (plain: string) => `hashed:${plain}`),
+  hashPassword: jest.fn((plain: string) => Promise.resolve(`hashed:${plain}`)),
   verifyPassword: jest.fn(),
 }));
 

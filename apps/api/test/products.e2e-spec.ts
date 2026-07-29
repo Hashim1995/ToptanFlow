@@ -72,7 +72,7 @@ describe('Products (e2e)', () => {
   const prisma = {
     onModuleInit: jest.fn().mockResolvedValue(undefined),
     onModuleDestroy: jest.fn().mockResolvedValue(undefined),
-    $transaction: jest.fn((fn: (tx: typeof prisma) => unknown) =>
+    $transaction: jest.fn((fn: (tx: unknown) => unknown) =>
       Promise.resolve(fn(prisma)),
     ),
     product: {
