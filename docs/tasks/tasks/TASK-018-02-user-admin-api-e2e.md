@@ -6,7 +6,7 @@
 - **Title:** User admin API e2e
 - **Parent User Story:** [US-018](../stories/US-018-user-account-foundation.md)
 - **Parent Epic:** [EPIC-007](../epics/EPIC-007-identity-authz.md)
-- **Status:** Ready
+- **Status:** Done
 - **Type:** Test
 - **Priority:** High
 - **Estimate:** S
@@ -27,14 +27,19 @@ Auth login flows (TASK-019-04).
 
 ## Acceptance criteria
 
-- [ ] Happy-path CRUD + deactivate/reactivate covered
-- [ ] Responses omit `passwordHash`
-- [ ] Duplicate username conflict covered
+- [x] Happy-path CRUD + deactivate/reactivate covered
+- [x] Responses omit `passwordHash`
+- [x] Duplicate username conflict covered
 
 ## Evidence
 
-(To be filled)
+- `apps/api/test/users.e2e-spec.ts`
+- `yarn workspace api test:e2e -- users.e2e-spec.ts` → **8 passed**
 
 ## Result
 
-(To be filled)
+Done. US-018 acceptance complete for backend user admin slice.
+
+## Completion date
+
+2026-07-29

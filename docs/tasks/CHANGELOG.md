@@ -4,6 +4,7 @@ Planning-history only. Not a product release-notes replacement.
 
 ## 2026-07-29
 
+- **Story completed:** [US-018](stories/US-018-user-account-foundation.md); [TASK-018-02](tasks/TASK-018-02-user-admin-api-e2e.md) **Done** (users e2e 8 passed). Next: [TASK-019-01](tasks/TASK-019-01-jwt-auth-module.md).
 - **Task completed:** [TASK-018-01](tasks/TASK-018-01-user-persistence-and-crud.md) User `passwordHash` + `/users` CRUD + bootstrap seed (`argon2`; 12 unit tests; migration `20260729110103_add_user_password_hash`).
 - **Approved Human Decision → [ADR-025](../decisions/ADR-025-jwt-auth-flat-users-v1.md):** JWT + Argon2id; access 24h / refresh 30d; single-company; no roles/admin types — any active user can do everything. Closes auth open decisions for v1. [US-018](stories/US-018-user-account-foundation.md) In Progress; [US-019](stories/US-019-authentication-authorization.md) Ready; tasks TASK-018-01/02, TASK-019-01..04 elaborated.
 - **Owner focus:** Jump to identity/auth — [EPIC-007](epics/EPIC-007-identity-authz.md), [US-018](stories/US-018-user-account-foundation.md), [US-019](stories/US-019-authentication-authorization.md). No tasks elaborated; blocked on Approved Human Decisions (auth implementation, AD-17/18, permission registry).

@@ -3,7 +3,7 @@
 - **ID:** US-018
 - **Title:** User account administration foundation
 - **Parent Epic:** [EPIC-007](../epics/EPIC-007-identity-authz.md)
-- **Status:** In Progress
+- **Status:** Done
 - **Priority:** High
 - **Business actor:** Any authenticated active user (v1 flat users — ADR-025)
 
@@ -61,4 +61,4 @@ None for v1 flat users. Granular roles deferred.
 ## Task elaboration
 
 - [TASK-018-01](../tasks/TASK-018-01-user-persistence-and-crud.md) — **Done**
-- [TASK-018-02](../tasks/TASK-018-02-user-admin-api-e2e.md) — **Ready** (e2e coverage)
+- [TASK-018-02](../tasks/TASK-018-02-user-admin-api-e2e.md) — **Done**

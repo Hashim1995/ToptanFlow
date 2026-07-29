@@ -32,8 +32,8 @@ invariants Users & Permissions; ADR-025; system-architecture Authentication boun
 
 ## Child user stories
 
-- US-018 — **In Progress**
-- US-019 — **Ready**
+- US-018 — **Done**
+- US-019 — **Ready** (next TASK-019-01)
 
 ## Completion definition
 
