@@ -23,6 +23,9 @@
 - No role may alter audit history.
 - Enforcing a restriction only in the user interface is not sufficient; the restriction must hold wherever the action could otherwise be performed.
 - Requiring the document creator and its approver to be different people is an optional business policy, not a mandatory rule by default.
+- **[Approved Human Decision — recorded 2026-07-29; see ADR-025.]** For v1, authentication uses JWT (access + refresh) with access-token lifetime 24 hours and refresh-token lifetime 30 days (rotating refresh). Passwords use Argon2id. Login uses `username`.
+- **[Approved Human Decision — recorded 2026-07-29; see ADR-025.]** For v1, the product is single-company; multi-company / membership isolation is not implemented.
+- **[Approved Human Decision — recorded 2026-07-29; see ADR-025.]** For v1, there are no role packages and no admin/user-type split: every authenticated **active** user may perform every available application action. Granular permissions and per-user overrides remain deferred until a future Approved Human Decision.
 
 ## Business Partners
 
@@ -168,5 +171,7 @@ The following business-relevant topics are referenced in the analysis but are ex
 - The full fixed-asset status catalog and whether deferred (credit) settlement is allowed on an asset sale.
 - Bundle return/refund allocation policy and whether a "physical bundle" stocking mode exists alongside always-exploding components.
 - Maker/approver separation as a default (mandatory) versus optional policy.
+
+**Partially superseded for v1 by Approved Human Decision (2026-07-29, ADR-025):** authentication mechanism (JWT + Argon2id, longer TTLs), single-company operation, and flat equal users (no roles/admin types). Still deferred / not decided by that entry: granular role packages, per-user permission overrides (AD-18), and multi-company membership if ever required later.
 
 **Partially resolved by a subsequent Approved Human Decision:** "Multi-currency scope (single base currency versus per-document/per-account currency)" — recorded 2026-07-28 as an Approved Human Decision (see "## Currency" above): currency selection is optional and defaults to AZN, and foreign-currency documents may additionally record the selected currency, foreign amount, and exchange rate. Still unresolved and not decided by this entry: the exchange-rate source and timing, and whether a money account may hold a native non-AZN balance versus always being reported in AZN.

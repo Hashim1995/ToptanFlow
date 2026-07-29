@@ -11,6 +11,7 @@ import { CurrenciesModule } from './currencies/currencies.module';
 import { ProductsModule } from './products/products.module';
 import { ProductCategoriesModule } from './product-categories/product-categories.module';
 import { BusinessPartnersModule } from './business-partners/business-partners.module';
+import { UsersModule } from './users/users.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 @Module({
@@ -26,6 +27,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
     ProductCategoriesModule,
     ProductsModule,
     BusinessPartnersModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [

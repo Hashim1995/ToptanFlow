@@ -78,7 +78,7 @@ Once posted, a business fact is not edited or deleted in place (ADR-004). A corr
 
 ## Authentication and Authorization Boundary
 
-Authentication and authorization decisions are enforced by the backend (ADR-003, ADR-007); the frontend may hide or disable UI affordances for a user without permission, as a usability convenience only (ADR-002, `docs/technical/ui-requirements.md`), but this UI-level hiding is never a security control. The specific authentication implementation (session, token, provider) is not decided by this document (see "Known Open Decisions").
+Authentication and authorization decisions are enforced by the backend (ADR-003, ADR-007, ADR-025); the frontend may hide or disable UI affordances for a user without permission, as a usability convenience only (ADR-002, `docs/technical/ui-requirements.md`), but this UI-level hiding is never a security control. For v1, ADR-025 defines JWT authentication and flat equal active users (no role packages).
 
 ## Audit Boundary
 
@@ -108,8 +108,6 @@ The frontend and backend are independently buildable and deployable applications
 
 The following technical decisions remain unresolved and are not decided by this document, any ADR referenced here, or any prior task. They must not be implemented using a "reasonable default"; each requires an explicit Approved Human Decision before implementation, per `AGENTS.md` ("Open Decisions"):
 
-- Authentication implementation.
-- Authorization implementation details.
 - OpenAPI contract-generation tooling (e.g., automatic client generation) — the API style itself is resolved by ADR-015.
 - UUID version and column storage representation — the identifier strategy itself is resolved by ADR-020. Human-readable Product and BusinessPartner business codes are a separate concern resolved by ADR-024 (backend-generated sequential codes via internal `NumberSequence`); they are not technical primary identifiers.
 - Exact migration workflow/process (branching, review, deployment order) — the migration tool itself is resolved by ADR-021.
@@ -119,13 +117,13 @@ The following technical decisions remain unresolved and are not decided by this 
 - Backup and restore strategy.
 - Offline support details.
 
-The following items are now resolved by Accepted ADRs and are no longer Open Decisions: monorepo package/workspace tooling (ADR-012, Yarn/Yarn Workspaces), frontend build tooling (ADR-013, Vite), ORM/database access strategy (ADR-014, Prisma), API style (ADR-015, REST with OpenAPI), server-state strategy (ADR-016, TanStack Query), frontend validation library (ADR-017, Zod with React Hook Form), testing frameworks (ADR-018, Vitest/Jest/Supertest), primary identifier strategy (ADR-020, UUID), and migration tooling (ADR-021, Prisma Migrate).
+The following items are now resolved by Accepted ADRs and are no longer Open Decisions: monorepo package/workspace tooling (ADR-012, Yarn/Yarn Workspaces), frontend build tooling (ADR-013, Vite), ORM/database access strategy (ADR-014, Prisma), API style (ADR-015, REST with OpenAPI), server-state strategy (ADR-016, TanStack Query), frontend validation library (ADR-017, Zod with React Hook Form), testing frameworks (ADR-018, Vitest/Jest/Supertest), primary identifier strategy (ADR-020, UUID), migration tooling (ADR-021, Prisma Migrate), and **v1 authentication/authorization** (ADR-025: JWT + Argon2id, 24h access / 30d refresh, single-company, flat equal active users).
 
 ## Architecture Stop Conditions
 
 An agent using this document must stop and request clarification when:
 
 - A task requires resolving one of the Known Open Decisions above as a prerequisite to proceeding.
-- A task's technical approach would require deviating from ADR-001 through ADR-021.
+- A task's technical approach would require deviating from ADR-001 through ADR-025.
 - A proposed shared contract would become authoritative over backend validation or calculation.
 - A responsive or localization requirement cannot be satisfied without a design decision not yet approved.

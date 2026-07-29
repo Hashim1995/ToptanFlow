@@ -3,6 +3,7 @@ import {
   IsEnum,
   IsInt,
   IsNotEmpty,
+  IsOptional,
   IsString,
   Max,
   Min,
@@ -61,6 +62,22 @@ export class EnvironmentVariables {
    */
   @IsString()
   CORS_ORIGINS = '';
+
+  /**
+   * Optional first-user bootstrap for empty databases (ADR-025 / seed).
+   * Used only by `prisma db seed`; not required for API boot.
+   */
+  @IsOptional()
+  @IsString()
+  BOOTSTRAP_USERNAME = '';
+
+  @IsOptional()
+  @IsString()
+  BOOTSTRAP_PASSWORD = '';
+
+  @IsOptional()
+  @IsString()
+  BOOTSTRAP_FULL_NAME = '';
 }
 
 /**

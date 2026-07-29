@@ -4,6 +4,10 @@ Planning-history only. Not a product release-notes replacement.
 
 ## 2026-07-29
 
+- **Task completed:** [TASK-018-01](tasks/TASK-018-01-user-persistence-and-crud.md) User `passwordHash` + `/users` CRUD + bootstrap seed (`argon2`; 12 unit tests; migration `20260729110103_add_user_password_hash`).
+- **Approved Human Decision → [ADR-025](../decisions/ADR-025-jwt-auth-flat-users-v1.md):** JWT + Argon2id; access 24h / refresh 30d; single-company; no roles/admin types — any active user can do everything. Closes auth open decisions for v1. [US-018](stories/US-018-user-account-foundation.md) In Progress; [US-019](stories/US-019-authentication-authorization.md) Ready; tasks TASK-018-01/02, TASK-019-01..04 elaborated.
+- **Owner focus:** Jump to identity/auth — [EPIC-007](epics/EPIC-007-identity-authz.md), [US-018](stories/US-018-user-account-foundation.md), [US-019](stories/US-019-authentication-authorization.md). No tasks elaborated; blocked on Approved Human Decisions (auth implementation, AD-17/18, permission registry).
+- **Sequential US review:** First incomplete by ID [US-017](stories/US-017-business-partner-statement.md) → **Deferred** (EPIC-009–012 postings + BRD-OD-11). Next review: [US-018](stories/US-018-user-account-foundation.md).
 - **Story resumed:** [US-041](stories/US-041-quality-harness-expansion.md); [TASK-041-02](tasks/TASK-041-02-reactivation-and-helper-regressions.md) **Done** (reactivation e2e 72; web Vitest 17).
 - **Approved Human Decision:** Soft-deactivated master-data entities may be
   reactivated via PATCH `isActive: true` (currencies, units, categories,

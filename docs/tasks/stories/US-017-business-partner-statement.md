@@ -3,7 +3,7 @@
 - **ID:** US-017
 - **Title:** Business partner statement
 - **Parent Epic:** [EPIC-006](../epics/EPIC-006-business-partners-backend.md)
-- **Status:** Planned
+- **Status:** Deferred
 - **Priority:** Medium
 - **Business actor:** Controller / Accounting view / Manager
 
@@ -27,7 +27,7 @@ Statement aggregation from posted sales/purchases/cash/advances/adjustments once
 
 ## Dependencies
 
-EPIC-009–012 posting capabilities.
+EPIC-009–012 posting capabilities (Purchase, Sale, Cash, Settlement).
 
 ## Related domain rules
 
@@ -47,11 +47,11 @@ Mutual offset open (BRD-OD-11) must not be invented.
 
 ## Readiness checklist
 
-- [ ] Business behavior approved / traceable for this slice
-- [ ] No unresolved Open Decision that this story would silently resolve
-- [ ] Dependencies satisfied or explicitly accepted
-- [ ] Acceptance criteria sufficient to implement
+- [x] Business behavior approved / traceable for this slice (invariants + workflow-map)
+- [ ] No unresolved Open Decision that this story would silently resolve — **BRD-OD-11** remains open
+- [ ] Dependencies satisfied or explicitly accepted — **EPIC-009–012 not started**
+- [ ] Acceptance criteria sufficient to implement — refine at activation after postings exist
 
 ## Task elaboration
 
-Deferred until activation
+Deferred until activation. **2026-07-29 sequential review:** not implementable now; remain Deferred until posting modules exist and BRD-OD-11 disposition is clear.

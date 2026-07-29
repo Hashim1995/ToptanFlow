@@ -11,19 +11,19 @@ Priority: **H** High · **M** Medium · **L** Low
 | ID | Title | Epic | Priority | Depends on | Task elaboration |
 | --- | --- | --- | --- | --- | --- |
 | [US-020](stories/US-020-warehouse-master-data.md) | Warehouse master data | EPIC-008 | H | BRD-OD-02 | Not elaborated; gate open decisions first |
-| [US-018](stories/US-018-user-account-foundation.md) | User account foundation | EPIC-007 | H | Auth open decisions | Before US-019 |
 
 ## Active (see CURRENT.md)
 
 | ID | Title | Epic | Priority | Status | Next task |
 | --- | --- | --- | --- | --- | --- |
-| [US-041](stories/US-041-quality-harness-expansion.md) | Quality harness expansion | EPIC-023 | M | In Progress | TASK-041-01/02 Done; next TBD |
+| [US-018](stories/US-018-user-account-foundation.md) | User account foundation | EPIC-007 | H | In Progress | Next: [TASK-018-02](tasks/TASK-018-02-user-admin-api-e2e.md) |
+| [US-019](stories/US-019-authentication-authorization.md) | Authentication & authorization | EPIC-007 | H | Ready | After US-018; TASK-019-01..04 |
 
 ## EPIC-006 remaining (after US-016)
 
 | ID | Title | Priority | Depends on | Notes |
 | --- | --- | --- | --- | --- |
-| [US-017](stories/US-017-business-partner-statement.md) | Business partner statement | M | EPIC-009–012 | Far; needs postings |
+| [US-017](stories/US-017-business-partner-statement.md) | Business partner statement | M | EPIC-009–012 | **Deferred** (2026-07-29 review); BRD-OD-11 |
 
 ## Near-term enablers
 
@@ -31,9 +31,9 @@ Priority: **H** High · **M** Medium · **L** Low
 | --- | --- | --- | --- | --- |
 | [US-037](stories/US-037-frontend-shell-foundation.md) | Frontend shell foundation | EPIC-021 | H | **Done** |
 | [US-038](stories/US-038-frontend-master-data-screens.md) | Master-data UI screens | EPIC-021 | H | **Done** |
-| [US-041](stories/US-041-quality-harness-expansion.md) | Quality harness expansion | EPIC-023 | M | **In Progress** (TASK-041-01 Done) |
-| [US-018](stories/US-018-user-account-foundation.md) | User account foundation | EPIC-007 | H | Placeholder User model only today |
-| [US-019](stories/US-019-authentication-authorization.md) | Authentication & authorization | EPIC-007 | H | **Draft** — open decisions |
+| [US-041](stories/US-041-quality-harness-expansion.md) | Quality harness expansion | EPIC-023 | M | **Done** |
+| [US-018](stories/US-018-user-account-foundation.md) | User account foundation | EPIC-007 | H | **In Progress** (ADR-025) |
+| [US-019](stories/US-019-authentication-authorization.md) | Authentication & authorization | EPIC-007 | H | **Ready** (ADR-025; after US-018) |
 | [US-034](stories/US-034-append-only-audit-log.md) | Append-only audit history | EPIC-019 | H | Prefer before heavy posting |
 
 ## Transactional core (later)

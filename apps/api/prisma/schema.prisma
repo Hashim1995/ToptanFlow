@@ -154,19 +154,18 @@ model NumberSequence {
 /// "every sensitive action must remain attributable to one identifiable user
 /// account," and "User accounts are personal; when employment ends, the
 /// account is deactivated, not deleted."
-/// Authentication and authorization are explicitly out of scope for this task
-/// and are NOT modeled here (no credentials, roles, or permission tables).
+/// Credentials: `passwordHash` (Argon2id) per ADR-025. No Role/Permission
+/// tables in v1 (flat equal active users). JWT login is US-019.
 model User {
-  id        String   @id @default(uuid())
-  fullName  String
-  /// TODO: the exact login/identification method (username, email, phone) is
-  /// an implementation detail deferred to a future authentication task,
-  /// which is explicitly out of scope here. `username` is a placeholder,
-  /// unique, human-assignable identifier only.
-  username  String   @unique
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(uuid())
+  fullName     String
+  /// Unique login identifier (ADR-025).
+  username     String   @unique
+  /// Argon2id hash. Never returned by HTTP APIs.
+  passwordHash String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   createdSales       Sale[]            @relation("SaleCreatedBy")
   postedSales        Sale[]            @relation("SalePostedBy")
