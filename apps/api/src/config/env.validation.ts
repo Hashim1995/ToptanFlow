@@ -1,4 +1,4 @@
-import { plainToInstance } from 'class-transformer';
+import { plainToInstance, Type } from 'class-transformer';
 import {
   IsEnum,
   IsInt,
@@ -41,6 +41,7 @@ export class EnvironmentVariables {
   @IsEnum(NodeEnv)
   NODE_ENV: NodeEnv = NodeEnv.Development;
 
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   @Max(65535)
@@ -78,6 +79,30 @@ export class EnvironmentVariables {
   @IsOptional()
   @IsString()
   BOOTSTRAP_FULL_NAME = '';
+
+  /**
+   * JWT access-token signing secret (ADR-025). Override in every non-local env.
+   */
+  @IsString()
+  @IsNotEmpty()
+  JWT_ACCESS_SECRET = 'dev-only-jwt-access-secret-change-me';
+
+  /** Access token lifetime (ADR-025: 24h). Parsed by @nestjs/jwt. */
+  @IsString()
+  @IsNotEmpty()
+  JWT_ACCESS_EXPIRES_IN = '24h';
+
+  /** Refresh cookie / token lifetime in days (ADR-025: 30). */
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(365)
+  JWT_REFRESH_EXPIRES_DAYS = 30;
+
+  /** httpOnly cookie name for the opaque refresh token. */
+  @IsString()
+  @IsNotEmpty()
+  REFRESH_COOKIE_NAME = 'refresh_token';
 }
 
 /**

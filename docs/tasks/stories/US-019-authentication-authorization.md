@@ -3,7 +3,7 @@
 - **ID:** US-019
 - **Title:** Authentication and authorization
 - **Parent Epic:** [EPIC-007](../epics/EPIC-007-identity-authz.md)
-- **Status:** Ready
+- **Status:** Done
 - **Priority:** High
 - **Business actor:** All system users (flat equal — ADR-025)
 
@@ -46,7 +46,7 @@ ADR-025; ADR-003; analysis §7.5 (now approved via ADR-025 with longer TTLs).
 
 ## Known risks
 
-Existing master-data e2e must adopt auth (or test bootstrap token).
+Existing master-data e2e must adopt auth (or test bootstrap token). — **Mitigated** via `auth-e2e.helper.ts`.
 
 ## Open questions
 
@@ -61,7 +61,12 @@ None for v1 flat authorization.
 
 ## Task elaboration
 
-- [TASK-019-01](../tasks/TASK-019-01-jwt-auth-module.md) — Planned (depends TASK-018-01)
-- [TASK-019-02](../tasks/TASK-019-02-protect-apis-flat-authz.md) — Planned
-- [TASK-019-03](../tasks/TASK-019-03-web-login-and-session.md) — Planned
-- [TASK-019-04](../tasks/TASK-019-04-auth-e2e-and-regression.md) — Planned
+- [TASK-019-01](../tasks/TASK-019-01-jwt-auth-module.md) — **Done**
+- [TASK-019-02](../tasks/TASK-019-02-protect-apis-flat-authz.md) — **Done**
+- [TASK-019-03](../tasks/TASK-019-03-web-login-and-session.md) — **Done**
+- [TASK-019-04](../tasks/TASK-019-04-auth-e2e-and-regression.md) — **Done**
+
+## Completion evidence (2026-07-30)
+
+API protect + web login/session + auth/master-data e2e green (ADR-025).
+User admin UI intentionally out of US-019 scope (optional follow-up).

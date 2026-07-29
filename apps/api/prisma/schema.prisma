@@ -176,8 +176,26 @@ model User {
   createdCashTxns    CashTransaction[] @relation("CashTransactionCreatedBy")
   postedCashTxns     CashTransaction[] @relation("CashTransactionPostedBy")
   cancelledCashTxns  CashTransaction[] @relation("CashTransactionCancelledBy")
+  refreshTokens      RefreshToken[]
 
   @@index([isActive])
+}
+
+/// Server-side refresh token (hashed). Opaque token value is only in the
+/// httpOnly cookie; rotation revokes the previous row (ADR-025).
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// SHA-256 hex of the opaque refresh token.
+  tokenHash String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@index([expiresAt])
 }
 
 // ---------------------------------------------------------------------------

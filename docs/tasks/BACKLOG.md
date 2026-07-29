@@ -16,7 +16,7 @@ Priority: **H** High · **M** Medium · **L** Low
 
 | ID | Title | Epic | Priority | Status | Next task |
 | --- | --- | --- | --- | --- | --- |
-| [US-019](stories/US-019-authentication-authorization.md) | Authentication & authorization | EPIC-007 | H | Ready | [TASK-019-01](tasks/TASK-019-01-jwt-auth-module.md) |
+| — | — | — | — | No active story | Owner pick next (see CURRENT.md) |
 
 ## EPIC-006 remaining (after US-016)
 
@@ -32,7 +32,7 @@ Priority: **H** High · **M** Medium · **L** Low
 | [US-038](stories/US-038-frontend-master-data-screens.md) | Master-data UI screens | EPIC-021 | H | **Done** |
 | [US-041](stories/US-041-quality-harness-expansion.md) | Quality harness expansion | EPIC-023 | M | **Done** |
 | [US-018](stories/US-018-user-account-foundation.md) | User account foundation | EPIC-007 | H | **Done** |
-| [US-019](stories/US-019-authentication-authorization.md) | Authentication & authorization | EPIC-007 | H | **Ready** (next: TASK-019-01) |
+| [US-019](stories/US-019-authentication-authorization.md) | Authentication & authorization | EPIC-007 | H | **Done** |
 | [US-034](stories/US-034-append-only-audit-log.md) | Append-only audit history | EPIC-019 | H | Prefer before heavy posting |
 
 ## Transactional core (later)

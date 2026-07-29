@@ -6,7 +6,7 @@
 - **Title:** Protect APIs with flat authenticated-active authz
 - **Parent User Story:** [US-019](../stories/US-019-authentication-authorization.md)
 - **Parent Epic:** [EPIC-007](../epics/EPIC-007-identity-authz.md)
-- **Status:** Planned
+- **Status:** Done
 - **Type:** Backend / Security
 - **Priority:** High
 - **Estimate:** M
@@ -29,14 +29,17 @@ Permission matrices; frontend.
 
 ## Acceptance criteria
 
-- [ ] Master-data mutations require auth
-- [ ] Any active user succeeds equally (no role checks)
-- [ ] Existing e2e still green with auth helper
+- [x] Master-data mutations require auth
+- [x] Any active user succeeds equally (no role checks)
+- [x] Existing e2e still green with auth helper
 
 ## Evidence
 
-(To be filled)
+- `JwtStrategy` + `JwtAuthGuard` as `APP_GUARD`; `@Public()` on auth/health/root
+- E2e helper: `apps/api/test/auth-e2e.helper.ts` (`withAuth`, `attachAuthUserMock`, `mockUserFindUniqueResolved`)
+- Master-data / users e2e suites attach Bearer tokens
+- Full `yarn workspace api test:e2e` — 88 passed
 
 ## Result
 
-(To be filled)
+Done 2026-07-30. Flat active-user authz enforced on all non-public v1 routes.

@@ -1,17 +1,20 @@
 import { useState } from 'react';
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   Button,
   Drawer,
   Grid,
   Layout,
   Menu,
+  Space,
   Typography,
   theme,
 } from 'antd';
 import type { MenuProps } from 'antd';
-import { MenuOutlined } from '@ant-design/icons';
+import { LogoutOutlined, MenuOutlined } from '@ant-design/icons';
 import { MASTER_DATA_LABELS } from '../features/master-data/ui/labels';
+import { AUTH_LABELS } from '../features/auth/ui/labels';
+import { useAuth } from '../features/auth/use-auth';
 
 const { Header, Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -79,15 +82,29 @@ const NAV_ITEMS: MenuItem[] = [
 /**
  * Responsive app chrome (US-037 / TASK-037-03; uplifted CHANGE-001 / US-042).
  * Desktop: sider with grouped nav. Mobile: header button + drawer.
+ * Logout: US-019 / ADR-025.
  */
 export function AppShellLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const auth = useAuth();
   const screens = Grid.useBreakpoint();
   const isDesktop = Boolean(screens.md);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const { token } = theme.useToken();
 
   const selectedKeys = [location.pathname === '/' ? '/' : location.pathname];
+
+  async function handleLogout() {
+    setLoggingOut(true);
+    try {
+      await auth.logout();
+      navigate('/login', { replace: true });
+    } finally {
+      setLoggingOut(false);
+    }
+  }
 
   const menu = (
     <Menu
@@ -149,6 +166,21 @@ export function AppShellLayout() {
               TOPTANFLOW
             </Title>
           </div>
+          <Space>
+            {auth.user ? (
+              <Text type="secondary" ellipsis style={{ maxWidth: 160 }}>
+                {auth.user.fullName}
+              </Text>
+            ) : null}
+            <Button
+              type="default"
+              icon={<LogoutOutlined />}
+              loading={loggingOut}
+              onClick={() => void handleLogout()}
+            >
+              {AUTH_LABELS.logout}
+            </Button>
+          </Space>
         </Header>
 
         <Content

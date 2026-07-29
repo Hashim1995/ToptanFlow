@@ -2,6 +2,11 @@
 
 Planning-history only. Not a product release-notes replacement.
 
+## 2026-07-30
+
+- **Epic completed:** [EPIC-007](epics/EPIC-007-identity-authz.md); [US-019](stories/US-019-authentication-authorization.md) **Done** (TASK-019-02 protect APIs; TASK-019-03 web login/session; TASK-019-04 auth e2e — 88 e2e / web 33 tests).
+- **Task completed:** [TASK-019-01](tasks/TASK-019-01-jwt-auth-module.md) JWT login/refresh/logout + `RefreshToken` model (ADR-025; 8 unit tests). Next: [TASK-019-02](tasks/TASK-019-02-protect-apis-flat-authz.md).
+
 ## 2026-07-29
 
 - **Story completed:** [US-018](stories/US-018-user-account-foundation.md); [TASK-018-02](tasks/TASK-018-02-user-admin-api-e2e.md) **Done** (users e2e 8 passed). Next: [TASK-019-01](tasks/TASK-019-01-jwt-auth-module.md).

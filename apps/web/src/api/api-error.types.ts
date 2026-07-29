@@ -2,7 +2,7 @@
  * Technical classification of transport failures (ADR-010).
  * Not a business decision — feeds Azerbaijani presentation only.
  */
-export type ApiErrorKind = 'network' | 'http' | 'unknown';
+export type ApiErrorKind = 'network' | 'http' | 'unauthorized' | 'unknown';
 
 export type MappedApiError = {
   kind: ApiErrorKind;

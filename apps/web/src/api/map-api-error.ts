@@ -51,7 +51,7 @@ function mapAxiosError(error: AxiosError): MappedApiError {
       : undefined;
 
   return {
-    kind: 'http',
+    kind: statusCode === 401 ? 'unauthorized' : 'http',
     statusCode,
     code,
     candidates,

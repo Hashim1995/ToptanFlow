@@ -1,5 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Public } from '../auth/public.decorator';
 import { HealthResponseDto } from './dto/health-response.dto';
 
 /**
@@ -8,14 +9,11 @@ import { HealthResponseDto } from './dto/health-response.dto';
  * applied). Returns basic application health information only — no
  * database connectivity check, credentials, or infrastructure detail is
  * exposed, per this task's explicit requirement.
- *
- * TODO: a database-connectivity health check (e.g., a Prisma `$queryRaw`
- * ping) is a reasonable future extension, but is not implemented here since
- * this task's scope is limited to "basic application health information."
  */
 @ApiTags('Health')
 @Controller('health')
 export class HealthController {
+  @Public()
   @Get()
   @ApiOperation({ summary: 'Basic application health check' })
   @ApiOkResponse({ type: HealthResponseDto })

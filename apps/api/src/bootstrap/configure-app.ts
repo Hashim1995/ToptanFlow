@@ -4,6 +4,7 @@ import {
   VersioningType,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import cookieParser from 'cookie-parser';
 
 export interface AppBootstrapSettings {
   apiPrefix: string;
@@ -13,7 +14,7 @@ export interface AppBootstrapSettings {
 /**
  * Applies every cross-cutting bootstrap concern that does not belong to a
  * specific business module: global API prefix, URI versioning, the global
- * validation pipe, and CORS — each read from environment configuration
+ * validation pipe, cookies, and CORS — each read from environment configuration
  * (`src/config/env.validation.ts`) rather than hardcoded.
  *
  * Kept as a standalone, callable function (rather than inline in
@@ -27,6 +28,8 @@ export function configureApp(app: INestApplication): AppBootstrapSettings {
   const port = configService.get<number>('PORT', 3000);
   const nodeEnv = configService.get<string>('NODE_ENV', 'development');
   const corsOrigins = configService.get<string>('CORS_ORIGINS', '');
+
+  app.use(cookieParser());
 
   app.setGlobalPrefix(apiPrefix);
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });

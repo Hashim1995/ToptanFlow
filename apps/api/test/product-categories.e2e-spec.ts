@@ -6,6 +6,7 @@ import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/bootstrap/configure-app';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { attachAuthUserMock, withAuth } from './auth-e2e.helper';
 
 describe('Product categories (e2e)', () => {
   const categoryId = '11111111-1111-4111-8111-111111111111';
@@ -39,6 +40,7 @@ describe('Product categories (e2e)', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    attachAuthUserMock(prisma);
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -60,7 +62,7 @@ describe('Product categories (e2e)', () => {
     prisma.productCategory.findFirst.mockResolvedValue(null);
     prisma.productCategory.create.mockResolvedValue(baseCategory);
 
-    const response = await request(app.getHttpServer())
+    const response = await withAuth(request(app.getHttpServer()))
       .post('/api/v1/product-categories')
       .send({ name: ' Tekstil ' })
       .expect(201);
@@ -79,7 +81,7 @@ describe('Product categories (e2e)', () => {
   });
 
   it('POST /api/v1/product-categories rejects whitespace-only name with 400', async () => {
-    const response = await request(app.getHttpServer())
+    const response = await withAuth(request(app.getHttpServer()))
       .post('/api/v1/product-categories')
       .send({ name: '   ' })
       .expect(400);
@@ -102,7 +104,7 @@ describe('Product categories (e2e)', () => {
       }),
     );
 
-    const response = await request(app.getHttpServer())
+    const response = await withAuth(request(app.getHttpServer()))
       .post('/api/v1/product-categories')
       .send({ name: 'Tekstil' })
       .expect(409);
@@ -119,7 +121,7 @@ describe('Product categories (e2e)', () => {
     prisma.productCategory.findMany.mockResolvedValue([baseCategory]);
     prisma.productCategory.count.mockResolvedValue(1);
 
-    const response = await request(app.getHttpServer())
+    const response = await withAuth(request(app.getHttpServer()))
       .get('/api/v1/product-categories')
       .expect(200);
 
@@ -143,22 +145,22 @@ describe('Product categories (e2e)', () => {
   });
 
   it('GET /api/v1/product-categories rejects invalid pagination and sort query params', async () => {
-    await request(app.getHttpServer())
+    await withAuth(request(app.getHttpServer()))
       .get('/api/v1/product-categories')
       .query({ page: 0 })
       .expect(400);
 
-    await request(app.getHttpServer())
+    await withAuth(request(app.getHttpServer()))
       .get('/api/v1/product-categories')
       .query({ pageSize: 101 })
       .expect(400);
 
-    await request(app.getHttpServer())
+    await withAuth(request(app.getHttpServer()))
       .get('/api/v1/product-categories')
       .query({ sortBy: 'price' })
       .expect(400);
 
-    await request(app.getHttpServer())
+    await withAuth(request(app.getHttpServer()))
       .get('/api/v1/product-categories')
       .query({ sortOrder: 'up' })
       .expect(400);
@@ -167,13 +169,13 @@ describe('Product categories (e2e)', () => {
   });
 
   it('GET /api/v1/product-categories/:id rejects invalid UUID and maps missing category to 404', async () => {
-    await request(app.getHttpServer())
+    await withAuth(request(app.getHttpServer()))
       .get('/api/v1/product-categories/not-a-uuid')
       .expect(400);
 
     prisma.productCategory.findUnique.mockResolvedValue(null);
 
-    const response = await request(app.getHttpServer())
+    const response = await withAuth(request(app.getHttpServer()))
       .get(`/api/v1/product-categories/${categoryId}`)
       .expect(404);
 
@@ -186,7 +188,7 @@ describe('Product categories (e2e)', () => {
   });
 
   it('PATCH /api/v1/product-categories/:id rejects an empty body with 400', async () => {
-    const response = await request(app.getHttpServer())
+    const response = await withAuth(request(app.getHttpServer()))
       .patch(`/api/v1/product-categories/${categoryId}`)
       .send({})
       .expect(400);
@@ -207,7 +209,7 @@ describe('Product categories (e2e)', () => {
       isActive: false,
     });
 
-    const first = await request(app.getHttpServer())
+    const first = await withAuth(request(app.getHttpServer()))
       .delete(`/api/v1/product-categories/${categoryId}`)
       .expect(200);
 
@@ -230,7 +232,7 @@ describe('Product categories (e2e)', () => {
     });
     prisma.productCategory.update.mockClear();
 
-    const second = await request(app.getHttpServer())
+    const second = await withAuth(request(app.getHttpServer()))
       .delete(`/api/v1/product-categories/${categoryId}`)
       .expect(200);
 
@@ -253,7 +255,7 @@ describe('Product categories (e2e)', () => {
       isActive: true,
     });
 
-    const response = await request(app.getHttpServer())
+    const response = await withAuth(request(app.getHttpServer()))
       .patch(`/api/v1/product-categories/${categoryId}`)
       .send({ isActive: true })
       .expect(200);

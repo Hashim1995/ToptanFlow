@@ -1,12 +1,16 @@
 /**
  * Used as `nest start --watch --exec "node scripts/run-patched-main.cjs"`.
- * Nest appends the compiled entry path; patch the Prisma client, then load it.
+ * Nest may append Node flags (e.g. --enable-source-maps) plus the compiled
+ * entry path; patch the Prisma client, then load the entry.
  */
 require('./patch-prisma-client-dist.cjs');
 
-const entry = process.argv[2];
+const entry = process.argv.slice(2).find((arg) => !arg.startsWith('-'));
 if (!entry) {
-  console.error('[run-patched-main] missing entry file argument from nest start');
+  console.error(
+    '[run-patched-main] missing entry file argument from nest start',
+    process.argv.slice(2),
+  );
   process.exit(1);
 }
 

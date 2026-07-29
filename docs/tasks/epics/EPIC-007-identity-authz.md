@@ -2,7 +2,7 @@
 
 - **ID:** EPIC-007
 - **Title:** Identity, authentication, and authorization
-- **Status:** In Progress
+- **Status:** Done
 
 ## Business objective
 
@@ -33,7 +33,7 @@ invariants Users & Permissions; ADR-025; system-architecture Authentication boun
 ## Child user stories
 
 - US-018 — **Done**
-- US-019 — **Ready** (next TASK-019-01)
+- US-019 — **Done**
 
 ## Completion definition
 
@@ -41,7 +41,7 @@ Protected APIs require an authenticated **active** user (v1: all such users equa
 
 ## Known risks
 
-Existing e2e must adopt auth helpers when guards land.
+Existing e2e must adopt auth helpers when guards land. — **Mitigated**.
 
 ## Open questions
 
@@ -49,7 +49,9 @@ None for v1 flat users. Future roles/overrides require a new decision.
 
 ## Repository evidence
 
-Prisma `User` placeholder today; auth modules not yet implemented.
+- Users CRUD + Argon2id (`apps/api/src/users/`)
+- Auth module JWT + refresh cookie (`apps/api/src/auth/`)
+- Global JwtAuthGuard; web login/session (`apps/web/src/features/auth/`)
 
 ## 2026-07-29 review (owner decisions → ADR-025)
 
@@ -57,3 +59,7 @@ Prisma `User` placeholder today; auth modules not yet implemented.
 - Single company.
 - No roles / no admin type; every active user can do everything.
 - Tasks elaborated: TASK-018-01/02, TASK-019-01..04.
+
+## 2026-07-30 completion
+
+US-018 + US-019 Done. Epic complete for v1 flat identity/auth.

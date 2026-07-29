@@ -5,6 +5,11 @@ import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/bootstrap/configure-app';
 import { PrismaService } from '../src/prisma/prisma.service';
+import {
+  attachAuthUserMock,
+  mockUserFindUniqueResolved,
+  withAuth,
+} from './auth-e2e.helper';
 
 describe('Users (e2e)', () => {
   const userId = '11111111-1111-4111-8111-111111111111';
@@ -38,6 +43,7 @@ describe('Users (e2e)', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    attachAuthUserMock(prisma);
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -58,7 +64,7 @@ describe('Users (e2e)', () => {
   it('POST /api/v1/users creates a user and never returns passwordHash', async () => {
     prisma.user.create.mockResolvedValue(baseUser);
 
-    const response = await request(app.getHttpServer())
+    const response = await withAuth(request(app.getHttpServer()))
       .post('/api/v1/users')
       .send({
         fullName: ' Əli Məmmədov ',
@@ -99,7 +105,7 @@ describe('Users (e2e)', () => {
   }, 30_000);
 
   it('POST /api/v1/users rejects short passwords with 400', async () => {
-    const response = await request(app.getHttpServer())
+    const response = await withAuth(request(app.getHttpServer()))
       .post('/api/v1/users')
       .send({
         fullName: 'Əli',
@@ -120,7 +126,7 @@ describe('Users (e2e)', () => {
   it('POST /api/v1/users maps duplicate username to 409', async () => {
     prisma.user.create.mockRejectedValue({ code: 'P2002' });
 
-    const response = await request(app.getHttpServer())
+    const response = await withAuth(request(app.getHttpServer()))
       .post('/api/v1/users')
       .send({
         fullName: 'Əli',
@@ -141,7 +147,7 @@ describe('Users (e2e)', () => {
     prisma.user.findMany.mockResolvedValue([baseUser]);
     prisma.user.count.mockResolvedValue(1);
 
-    const response = await request(app.getHttpServer())
+    const response = await withAuth(request(app.getHttpServer()))
       .get('/api/v1/users')
       .expect(200);
 
@@ -167,9 +173,9 @@ describe('Users (e2e)', () => {
   });
 
   it('GET /api/v1/users/:id maps missing user to 404', async () => {
-    prisma.user.findUnique.mockResolvedValue(null);
+    mockUserFindUniqueResolved(prisma, null);
 
-    const response = await request(app.getHttpServer())
+    const response = await withAuth(request(app.getHttpServer()))
       .get(`/api/v1/users/${userId}`)
       .expect(404);
 
@@ -182,13 +188,13 @@ describe('Users (e2e)', () => {
   });
 
   it('PATCH /api/v1/users/:id updates fullName and omits passwordHash', async () => {
-    prisma.user.findUnique.mockResolvedValue(baseUser);
+    mockUserFindUniqueResolved(prisma, baseUser);
     prisma.user.update.mockResolvedValue({
       ...baseUser,
       fullName: 'Yeni Ad',
     });
 
-    const response = await request(app.getHttpServer())
+    const response = await withAuth(request(app.getHttpServer()))
       .patch(`/api/v1/users/${userId}`)
       .send({ fullName: 'Yeni Ad' })
       .expect(200);
@@ -203,13 +209,13 @@ describe('Users (e2e)', () => {
   });
 
   it('DELETE /api/v1/users/:id soft-deactivates and is idempotent', async () => {
-    prisma.user.findUnique.mockResolvedValue(baseUser);
+    mockUserFindUniqueResolved(prisma, baseUser);
     prisma.user.update.mockResolvedValue({
       ...baseUser,
       isActive: false,
     });
 
-    const first = await request(app.getHttpServer())
+    const first = await withAuth(request(app.getHttpServer()))
       .delete(`/api/v1/users/${userId}`)
       .expect(200);
 
@@ -221,13 +227,13 @@ describe('Users (e2e)', () => {
     );
     expect(prisma.user.delete).not.toHaveBeenCalled();
 
-    prisma.user.findUnique.mockResolvedValue({
+    mockUserFindUniqueResolved(prisma, {
       ...baseUser,
       isActive: false,
     });
     prisma.user.update.mockClear();
 
-    const second = await request(app.getHttpServer())
+    const second = await withAuth(request(app.getHttpServer()))
       .delete(`/api/v1/users/${userId}`)
       .expect(200);
 
@@ -241,7 +247,7 @@ describe('Users (e2e)', () => {
   });
 
   it('PATCH /api/v1/users/:id reactivates via isActive true', async () => {
-    prisma.user.findUnique.mockResolvedValue({
+    mockUserFindUniqueResolved(prisma, {
       ...baseUser,
       isActive: false,
     });
@@ -250,7 +256,7 @@ describe('Users (e2e)', () => {
       isActive: true,
     });
 
-    const response = await request(app.getHttpServer())
+    const response = await withAuth(request(app.getHttpServer()))
       .patch(`/api/v1/users/${userId}`)
       .send({ isActive: true })
       .expect(200);

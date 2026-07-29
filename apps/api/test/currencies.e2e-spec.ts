@@ -6,6 +6,7 @@ import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/bootstrap/configure-app';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { attachAuthUserMock, withAuth } from './auth-e2e.helper';
 
 describe('Currencies (e2e)', () => {
   const currencyId = '11111111-1111-4111-8111-111111111111';
@@ -41,6 +42,7 @@ describe('Currencies (e2e)', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    attachAuthUserMock(prisma);
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -64,7 +66,7 @@ describe('Currencies (e2e)', () => {
       symbol: null,
     });
 
-    const response = await request(app.getHttpServer())
+    const response = await withAuth(request(app.getHttpServer()))
       .post('/api/v1/currencies')
       .send({ code: 'usd', name: 'ABŞ dolları', symbol: '  ' })
       .expect(201);
@@ -92,7 +94,7 @@ describe('Currencies (e2e)', () => {
   });
 
   it('POST /api/v1/currencies rejects whitespace-only fields with 400', async () => {
-    const response = await request(app.getHttpServer())
+    const response = await withAuth(request(app.getHttpServer()))
       .post('/api/v1/currencies')
       .send({ code: '   ', name: '   ' })
       .expect(400);
@@ -114,7 +116,7 @@ describe('Currencies (e2e)', () => {
       }),
     );
 
-    const response = await request(app.getHttpServer())
+    const response = await withAuth(request(app.getHttpServer()))
       .post('/api/v1/currencies')
       .send({ code: 'USD', name: 'Duplicate' })
       .expect(409);
@@ -131,7 +133,7 @@ describe('Currencies (e2e)', () => {
     prisma.currency.findMany.mockResolvedValue([baseCurrency]);
     prisma.currency.count.mockResolvedValue(1);
 
-    const response = await request(app.getHttpServer())
+    const response = await withAuth(request(app.getHttpServer()))
       .get('/api/v1/currencies')
       .expect(200);
 
@@ -157,22 +159,22 @@ describe('Currencies (e2e)', () => {
   });
 
   it('GET /api/v1/currencies rejects invalid pagination and sort query params', async () => {
-    await request(app.getHttpServer())
+    await withAuth(request(app.getHttpServer()))
       .get('/api/v1/currencies')
       .query({ page: 0 })
       .expect(400);
 
-    await request(app.getHttpServer())
+    await withAuth(request(app.getHttpServer()))
       .get('/api/v1/currencies')
       .query({ pageSize: 101 })
       .expect(400);
 
-    await request(app.getHttpServer())
+    await withAuth(request(app.getHttpServer()))
       .get('/api/v1/currencies')
       .query({ sortBy: 'rate' })
       .expect(400);
 
-    await request(app.getHttpServer())
+    await withAuth(request(app.getHttpServer()))
       .get('/api/v1/currencies')
       .query({ sortOrder: 'up' })
       .expect(400);
@@ -181,13 +183,13 @@ describe('Currencies (e2e)', () => {
   });
 
   it('GET /api/v1/currencies/:id rejects invalid UUID and maps missing currency to 404', async () => {
-    await request(app.getHttpServer())
+    await withAuth(request(app.getHttpServer()))
       .get('/api/v1/currencies/not-a-uuid')
       .expect(400);
 
     prisma.currency.findUnique.mockResolvedValue(null);
 
-    const response = await request(app.getHttpServer())
+    const response = await withAuth(request(app.getHttpServer()))
       .get(`/api/v1/currencies/${currencyId}`)
       .expect(404);
 
@@ -200,7 +202,7 @@ describe('Currencies (e2e)', () => {
   });
 
   it('PATCH /api/v1/currencies/:id rejects an empty body with 400', async () => {
-    const response = await request(app.getHttpServer())
+    const response = await withAuth(request(app.getHttpServer()))
       .patch(`/api/v1/currencies/${currencyId}`)
       .send({})
       .expect(400);
@@ -221,7 +223,7 @@ describe('Currencies (e2e)', () => {
       isActive: false,
     });
 
-    const first = await request(app.getHttpServer())
+    const first = await withAuth(request(app.getHttpServer()))
       .delete(`/api/v1/currencies/${currencyId}`)
       .expect(200);
 
@@ -239,7 +241,7 @@ describe('Currencies (e2e)', () => {
     });
     prisma.currency.update.mockClear();
 
-    const second = await request(app.getHttpServer())
+    const second = await withAuth(request(app.getHttpServer()))
       .delete(`/api/v1/currencies/${currencyId}`)
       .expect(200);
 
@@ -262,7 +264,7 @@ describe('Currencies (e2e)', () => {
       isActive: true,
     });
 
-    const response = await request(app.getHttpServer())
+    const response = await withAuth(request(app.getHttpServer()))
       .patch(`/api/v1/currencies/${currencyId}`)
       .send({ isActive: true })
       .expect(200);

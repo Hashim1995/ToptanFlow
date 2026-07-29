@@ -10,10 +10,13 @@ const root = path.dirname(fileURLToPath(import.meta.url));
  * Vitest 3.x chosen for Yarn workspace stability on this environment.
  *
  * React plugin deliberately omitted — vitest.config is separate from
- * vite.config; JSX transform is handled by esbuild defaults in test mode.
+ * vite.config; JSX uses the automatic runtime (react-jsx).
  */
 export default defineConfig({
   root,
+  esbuild: {
+    jsx: 'automatic',
+  },
   test: {
     testTimeout: 15_000,
     projects: [
@@ -27,6 +30,9 @@ export default defineConfig({
       },
       {
         extends: true,
+        esbuild: {
+          jsx: 'automatic',
+        },
         test: {
           name: 'ui',
           environment: 'jsdom',
