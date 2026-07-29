@@ -3,7 +3,7 @@
 - **ID:** US-041
 - **Title:** Expand automated quality harness
 - **Parent Epic:** [EPIC-023](../epics/EPIC-023-testing-quality-infrastructure.md)
-- **Status:** In Progress
+- **Status:** Done
 - **Priority:** Medium
 - **Business actor:** N/A (quality enabler)
 
@@ -65,4 +65,5 @@ Elaborated:
 
 - [TASK-041-01](../tasks/TASK-041-01-add-web-vitest-harness.md) — **Done** (Vitest + first pure helper tests)
 - [TASK-041-02](../tasks/TASK-041-02-reactivation-and-helper-regressions.md) — **Done** (reactivation e2e + helper regressions after CHANGE-001)
-- Further harness expansion (component tests, CI wiring) deferred to later tasks when needed.
+- [TASK-041-03](../tasks/TASK-041-03-web-schema-and-ui-smoke.md) — **Done** (schema Vitest + UI smoke)
+- Further CI wiring deferred (EPIC-023 open).
