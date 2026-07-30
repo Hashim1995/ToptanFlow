@@ -6,7 +6,7 @@
 
 ## Current phase
 
-**Inventory module (EPIC-008)** — [ADR-026](../decisions/ADR-026-initial-warehouses-v1.md) Accepted; [US-020](stories/US-020-warehouse-master-data.md) Ready (next TASK-020-02). [US-021](stories/US-021-inventory-movements-balances.md) elaborated, waits US-020 Done. Yatı / purchase / sale / cash not in this phase.
+**Inventory module (EPIC-008)** — [ADR-026](../decisions/ADR-026-initial-warehouses-v1.md) Accepted; [US-020](stories/US-020-warehouse-master-data.md) **Done**; [US-021](stories/US-021-inventory-movements-balances.md) **Ready** (next TASK-021-01). Yatı / purchase / sale / cash not in this phase.
 
 ## Phase map
 
@@ -35,7 +35,7 @@ Ordered by dependency/value after current partner work:
 
 1. EPIC-006 master-data slice largely complete (US-014–016 Done); [US-017](stories/US-017-business-partner-statement.md) waits on postings.
 2. [US-037](stories/US-037-frontend-shell-foundation.md) / [US-038](stories/US-038-frontend-master-data-screens.md) **Done**.
-3. [EPIC-008](epics/EPIC-008-inventory-warehouses.md) / [US-020](stories/US-020-warehouse-master-data.md) next on transactional spine — **gated by BRD-OD-02**.
+3. [EPIC-008](epics/EPIC-008-inventory-warehouses.md) / [US-021](stories/US-021-inventory-movements-balances.md) active on transactional spine (US-020 Done; ADR-026).
 4. [EPIC-007](epics/EPIC-007-identity-authz.md) before production posting — **blocked on auth open decisions** for [US-019](stories/US-019-authentication-authorization.md).
 5. [US-034](stories/US-034-append-only-audit-log.md) audit interface ideally before heavy posting (analysis M0 note) — elaborate when activated.
 
@@ -57,7 +57,7 @@ Attachments minimum (EPIC-017 / US-031) before evidence-heavy acceptance where r
 
 | Epic | Status | Major dependency |
 | --- | --- | --- |
-| [EPIC-008](epics/EPIC-008-inventory-warehouses.md) Inventory & warehouses | In Progress | ADR-026; US-020 Ready |
+| [EPIC-008](epics/EPIC-008-inventory-warehouses.md) Inventory & warehouses | In Progress | ADR-026; US-020 Done; US-021 Ready |
 | [EPIC-009](epics/EPIC-009-purchasing.md) Purchasing | Planned | Partners, products, inventory |
 | [EPIC-010](epics/EPIC-010-sales.md) Sales | Planned | Partners, products, inventory; preferably purchasing |
 | [EPIC-011](epics/EPIC-011-cash-expenses.md) Cash & expenses | Planned | Partners; cash account open decisions |

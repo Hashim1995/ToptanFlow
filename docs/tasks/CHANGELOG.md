@@ -4,6 +4,9 @@ Planning-history only. Not a product release-notes replacement.
 
 ## 2026-07-31
 
+- **Story completed:** [US-020](stories/US-020-warehouse-master-data.md) Warehouse master data (TASK-020-01..05). Next: [US-021](stories/US-021-inventory-movements-balances.md) / [TASK-021-01](tasks/TASK-021-01-stock-movement-balance-persistence.md).
+- **Task completed:** [TASK-020-05](tasks/TASK-020-05-warehouse-ui-screens.md) Warehouse UI **Anbarlar** (lint/test/build green).
+- **Task completed:** [TASK-020-04](tasks/TASK-020-04-warehouse-api-e2e.md) Warehouse API e2e (12 passed). Next: [TASK-020-05](tasks/TASK-020-05-warehouse-ui-screens.md).
 - **Task completed:** [TASK-020-03](tasks/TASK-020-03-warehouse-crud-api.md) Warehouse CRUD API (`/api/v1/warehouses`; code via `WAREHOUSE` sequence; 13 unit tests). Next: [TASK-020-04](tasks/TASK-020-04-warehouse-api-e2e.md).
 - **Task completed:** [TASK-020-02](tasks/TASK-020-02-warehouse-persistence-model.md) Warehouse Prisma model + migration + seed `Əsas anbar` / `WAREHOUSE` sequence. Next: [TASK-020-03](tasks/TASK-020-03-warehouse-crud-api.md).
 - **Epic activated:** [EPIC-008](epics/EPIC-008-inventory-warehouses.md) inventory only (Yatı/sales/purchases/cash deferred).

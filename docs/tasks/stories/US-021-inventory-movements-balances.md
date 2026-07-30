@@ -3,7 +3,7 @@
 - **ID:** US-021
 - **Title:** Inventory movements and balances
 - **Parent Epic:** [EPIC-008](../epics/EPIC-008-inventory-warehouses.md)
-- **Status:** Planned
+- **Status:** Ready
 - **Priority:** High
 - **Business actor:** Warehouse officer
 
@@ -58,15 +58,13 @@ BRD-OD-04 negative-stock **exceptions** remain open (v1 = hard block only).
 
 - [x] Behavior for this slice traceable (ADR-026 + invariants)
 - [x] Negative-stock exceptions not silently resolved (explicitly out of scope)
-- [ ] Dependencies satisfied — wait US-020 Done before activating
+- [x] Dependencies satisfied (US-020 Done)
 - [x] Acceptance criteria sufficient to elaborate tasks
 
 ## Task elaboration
 
-- [TASK-021-01](../tasks/TASK-021-01-stock-movement-balance-persistence.md) — Planned
+- [TASK-021-01](../tasks/TASK-021-01-stock-movement-balance-persistence.md) — **Ready** (next)
 - [TASK-021-02](../tasks/TASK-021-02-inventory-movement-post-api.md) — Planned
 - [TASK-021-03](../tasks/TASK-021-03-inventory-api-e2e.md) — Planned
 - [TASK-021-04](../tasks/TASK-021-04-inventory-balances-transfer-ui.md) — Planned
 - [TASK-021-05](../tasks/TASK-021-05-stock-count-workflow.md) — Planned
-
-Activate US-021 only after US-020 is Done.

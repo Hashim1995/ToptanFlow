@@ -75,6 +75,12 @@ const NAV_ITEMS: MenuItem[] = [
           </Link>
         ),
       },
+      {
+        key: '/warehouses',
+        label: (
+          <Link to="/warehouses">{MASTER_DATA_LABELS.warehouses.nav}</Link>
+        ),
+      },
     ],
   },
 ];

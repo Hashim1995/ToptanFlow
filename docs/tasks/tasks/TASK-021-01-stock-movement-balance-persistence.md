@@ -6,7 +6,7 @@
 - **Title:** Stock movement and balance persistence
 - **Parent User Story:** [US-021](../stories/US-021-inventory-movements-balances.md)
 - **Parent Epic:** [EPIC-008](../epics/EPIC-008-inventory-warehouses.md)
-- **Status:** Planned
+- **Status:** Ready
 - **Type:** Database
 - **Priority:** High
 - **Estimate:** L

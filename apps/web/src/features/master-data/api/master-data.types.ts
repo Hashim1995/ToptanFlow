@@ -25,6 +25,7 @@ export type MasterDataListQuery = {
   sortOrder?: SortOrder;
   /** Optional entity-specific filters. */
   type?: string;
+  kind?: string;
   unitId?: string;
   categoryId?: string;
   isCustomer?: boolean;
@@ -37,7 +38,8 @@ export type MasterDataEntityName =
   | 'units'
   | 'products'
   | 'product-categories'
-  | 'business-partners';
+  | 'business-partners'
+  | 'warehouses';
 
 export type BusinessPartnerDuplicateMatchedField =
   | 'name'

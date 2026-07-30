@@ -3,7 +3,7 @@ import {
   activeFilterToIsActive,
   type ActiveFilterValue,
 } from './active-filter';
-import { productTypeLabel } from './labels';
+import { productTypeLabel, warehouseKindLabel } from './labels';
 
 describe('activeFilterToIsActive', () => {
   it.each<[ActiveFilterValue, boolean | undefined]>([
@@ -20,5 +20,12 @@ describe('productTypeLabel', () => {
     expect(productTypeLabel('FINISHED_GOOD')).toBe('Hazır məhsul');
     expect(productTypeLabel('RAW_MATERIAL')).toBe('Xammal');
     expect(productTypeLabel('MIXED_USE')).toBe('Qarışıq təyinatlı');
+  });
+});
+
+describe('warehouseKindLabel', () => {
+  it('returns Azerbaijani labels, not enum keys', () => {
+    expect(warehouseKindLabel('GENERAL')).toBe('Ümumi');
+    expect(warehouseKindLabel('DAMAGED')).toBe('Zədələnmiş');
   });
 });

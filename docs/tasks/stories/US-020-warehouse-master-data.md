@@ -3,7 +3,7 @@
 - **ID:** US-020
 - **Title:** Warehouse master data
 - **Parent Epic:** [EPIC-008](../epics/EPIC-008-inventory-warehouses.md)
-- **Status:** In Progress
+- **Status:** Done
 - **Priority:** High
 - **Business actor:** Warehouse officer / master-data maintainer
 
@@ -64,5 +64,9 @@ None for US-020 after ADR-026. AD-05 damaged receipt posting waits purchasing.
 - [TASK-020-01](../tasks/TASK-020-01-record-initial-warehouses-decision.md) — **Done**
 - [TASK-020-02](../tasks/TASK-020-02-warehouse-persistence-model.md) — **Done**
 - [TASK-020-03](../tasks/TASK-020-03-warehouse-crud-api.md) — **Done**
-- [TASK-020-04](../tasks/TASK-020-04-warehouse-api-e2e.md) — **Ready** (next)
-- [TASK-020-05](../tasks/TASK-020-05-warehouse-ui-screens.md) — Planned
+- [TASK-020-04](../tasks/TASK-020-04-warehouse-api-e2e.md) — **Done**
+- [TASK-020-05](../tasks/TASK-020-05-warehouse-ui-screens.md) — **Done**
+
+## Result
+
+Done 2026-07-31. Warehouse master operable (Prisma + API + Anbarlar UI). Next: [US-021](US-021-inventory-movements-balances.md).

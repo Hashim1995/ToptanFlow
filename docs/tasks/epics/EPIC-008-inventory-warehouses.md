@@ -36,8 +36,8 @@ invariants Inventory; workflow-map Inventory; ADR-026; ADR-024; ADR-025.
 
 ## Child user stories
 
-- [US-020](../stories/US-020-warehouse-master-data.md) — **In Progress** (next TASK-020-04)
-- [US-021](../stories/US-021-inventory-movements-balances.md) — Planned (activate after US-020 Done)
+- [US-020](../stories/US-020-warehouse-master-data.md) — **Done**
+- [US-021](../stories/US-021-inventory-movements-balances.md) — **Ready** (next TASK-021-01)
 
 ## Completion definition
 
@@ -53,7 +53,7 @@ BRD-OD-04 exception policy; AD-05 (purchase). AD-06 accepted for v1 one-step tra
 
 ## Repository evidence
 
-ADR-026 accepted; `Warehouse` + `WarehouseKind` in Prisma; migration `20260731080000_add_warehouse`; seed default `Əsas anbar`. Stock movements still absent (US-021).
+ADR-026 accepted; Warehouse master (DB + API + Anbarlar UI) Done. Stock movements still absent (US-021).
 
 ## 2026-07-31 activation
 

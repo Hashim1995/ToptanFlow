@@ -7,6 +7,7 @@ import { CurrenciesPage } from './features/master-data/pages/currencies-page';
 import { ProductCategoriesPage } from './features/master-data/pages/product-categories-page';
 import { ProductsPage } from './features/master-data/pages/products-page';
 import { UnitsPage } from './features/master-data/pages/units-page';
+import { WarehousesPage } from './features/master-data/pages/warehouses-page';
 import { HomePage } from './pages/home-page';
 
 /**
@@ -31,6 +32,7 @@ function App() {
               path="business-partners"
               element={<BusinessPartnersPage />}
             />
+            <Route path="warehouses" element={<WarehousesPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Route>

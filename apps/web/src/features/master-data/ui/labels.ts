@@ -100,6 +100,24 @@ export const MASTER_DATA_LABELS = {
       taxNumber: 'Vergi nömrəsi',
     },
   },
+  warehouses: {
+    nav: 'Anbarlar',
+    title: 'Anbarlar',
+    description: 'Anbar istinad məlumatları və növ təyinatı.',
+    create: 'Yeni anbar',
+    edit: 'Anbarı redaktə et',
+    empty: 'Heç bir anbar tapılmadı.',
+    deactivateConfirm: 'Bu anbarı deaktiv etmək istəyirsiniz?',
+    activateConfirm: 'Bu anbarı yenidən aktiv etmək istəyirsiniz?',
+    kind: 'Növ',
+    kindPlaceholder: 'Növ seçin',
+    filterKind: 'Növ',
+    codeReadonlyHint: 'Kod sistem tərəfindən yaradılır və dəyişdirilə bilməz.',
+    kinds: {
+      GENERAL: 'Ümumi',
+      DAMAGED: 'Zədələnmiş',
+    },
+  },
   common: {
     code: 'Kod',
     name: 'Ad',
@@ -137,4 +155,11 @@ export type ProductTypeLabelKey =
 
 export function productTypeLabel(type: ProductTypeLabelKey): string {
   return MASTER_DATA_LABELS.products.types[type];
+}
+
+export type WarehouseKindLabelKey =
+  keyof typeof MASTER_DATA_LABELS.warehouses.kinds;
+
+export function warehouseKindLabel(kind: WarehouseKindLabelKey): string {
+  return MASTER_DATA_LABELS.warehouses.kinds[kind];
 }

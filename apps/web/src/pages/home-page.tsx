@@ -16,6 +16,11 @@ const SHORTCUTS = [
     description: 'Müştəri və təchizatçı qeydləri',
   },
   {
+    to: '/warehouses',
+    title: MASTER_DATA_LABELS.warehouses.nav,
+    description: 'Anbar istinad məlumatları',
+  },
+  {
     to: '/product-categories',
     title: MASTER_DATA_LABELS.categories.nav,
     description: 'Məhsul kateqoriyaları',

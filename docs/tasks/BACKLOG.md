@@ -10,13 +10,13 @@ Priority: **H** High · **M** Medium · **L** Low
 
 | ID | Title | Epic | Priority | Depends on | Task elaboration |
 | --- | --- | --- | --- | --- | --- |
-| [US-021](stories/US-021-inventory-movements-balances.md) | Inventory movements & balances | EPIC-008 | H | US-020 Done | Elaborated; activate after US-020 |
+| — | — | — | — | — | See Active |
 
 ## Active (see CURRENT.md)
 
 | ID | Title | Epic | Priority | Status | Next task |
 | --- | --- | --- | --- | --- | --- |
-| [US-020](stories/US-020-warehouse-master-data.md) | Warehouse master data | EPIC-008 | H | In Progress | [TASK-020-04](tasks/TASK-020-04-warehouse-api-e2e.md) |
+| [US-021](stories/US-021-inventory-movements-balances.md) | Inventory movements & balances | EPIC-008 | H | Ready | [TASK-021-01](tasks/TASK-021-01-stock-movement-balance-persistence.md) |
 
 ## EPIC-006 remaining (after US-016)
 
@@ -39,8 +39,8 @@ Priority: **H** High · **M** Medium · **L** Low
 
 | ID | Title | Epic | Priority | Major gate |
 | --- | --- | --- | --- | --- |
-| [US-020](stories/US-020-warehouse-master-data.md) | Warehouse master data | EPIC-008 | H | **Ready** (active — see CURRENT) |
-| [US-021](stories/US-021-inventory-movements-balances.md) | Inventory movements & balances | EPIC-008 | H | US-020 Done; OD-04 exceptions deferred (hard-block v1) |
+| [US-020](stories/US-020-warehouse-master-data.md) | Warehouse master data | EPIC-008 | H | **Done** |
+| [US-021](stories/US-021-inventory-movements-balances.md) | Inventory movements & balances | EPIC-008 | H | **Ready** (active — see CURRENT); OD-04 exceptions deferred |
 | [US-022](stories/US-022-purchase-draft-post.md) | Purchase draft→post | EPIC-009 | H | Inventory + partners |
 | [US-023](stories/US-023-sale-draft-post.md) | Sale draft→post | EPIC-010 | H | Inventory + partners |
 | [US-024](stories/US-024-money-accounts-cash-movements.md) | Money accounts & cash | EPIC-011 | H | BRD-OD-03/05 |
