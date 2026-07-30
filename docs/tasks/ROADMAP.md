@@ -6,9 +6,7 @@
 
 ## Current phase
 
-**Post–master-data UI** — [US-038](stories/US-038-frontend-master-data-screens.md) Done. Resume dependency spine (warehouses/inventory) or quality/identity enablers; do not invent open decisions.
-
-Likely next: [US-020](stories/US-020-warehouse-master-data.md) after BRD-OD-02 clarity, and/or [US-041](stories/US-041-quality-harness-expansion.md) / [US-018](stories/US-018-user-account-foundation.md). Identity ([EPIC-007](epics/EPIC-007-identity-authz.md)) remains blocked on auth open decisions for [US-019](stories/US-019-authentication-authorization.md).
+**Inventory module (EPIC-008)** — [ADR-026](../decisions/ADR-026-initial-warehouses-v1.md) Accepted; [US-020](stories/US-020-warehouse-master-data.md) Ready (next TASK-020-02). [US-021](stories/US-021-inventory-movements-balances.md) elaborated, waits US-020 Done. Yatı / purchase / sale / cash not in this phase.
 
 ## Phase map
 
@@ -59,7 +57,7 @@ Attachments minimum (EPIC-017 / US-031) before evidence-heavy acceptance where r
 
 | Epic | Status | Major dependency |
 | --- | --- | --- |
-| [EPIC-008](epics/EPIC-008-inventory-warehouses.md) Inventory & warehouses | Planned | Products; warehouse open decisions |
+| [EPIC-008](epics/EPIC-008-inventory-warehouses.md) Inventory & warehouses | In Progress | ADR-026; US-020 Ready |
 | [EPIC-009](epics/EPIC-009-purchasing.md) Purchasing | Planned | Partners, products, inventory |
 | [EPIC-010](epics/EPIC-010-sales.md) Sales | Planned | Partners, products, inventory; preferably purchasing |
 | [EPIC-011](epics/EPIC-011-cash-expenses.md) Cash & expenses | Planned | Partners; cash account open decisions |

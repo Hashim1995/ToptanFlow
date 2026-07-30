@@ -2,7 +2,7 @@
 
 - **ID:** EPIC-008
 - **Title:** Inventory and warehouses
-- **Status:** Planned
+- **Status:** In Progress
 
 ## Business objective
 
@@ -14,37 +14,47 @@ Stock truth before safe purchase receipt and sale issue.
 
 ## Scope
 
-Warehouse master; movement ledger; balances; negative-stock cases once decided.
+- Warehouse master (US-020)
+- Movement ledger, balances, one-step transfers, adjustments, write-offs, stock count (US-021)
+- Quantity-only; hard-block negative balances in v1 ([ADR-026](../../decisions/ADR-026-initial-warehouses-v1.md))
 
 ## Exclusions
 
-Costing engine (EPIC-013); Yatı vehicle warehouse orchestration (EPIC-014).
+- Costing engine (EPIC-013)
+- Yatı / vehicle warehouses (EPIC-014)
+- Purchase/sale posting into inventory (EPIC-009 / EPIC-010)
+- Controlled negative-stock exception cases (BRD-OD-04) — deferred; v1 hard-blocks only
+- Damaged goods-receipt destination policy (AD-05) — purchasing epic
 
 ## Dependencies
 
-EPIC-005; EPIC-007 recommended before production posting; BRD-OD-02/04.
+EPIC-005 Done; EPIC-007 Done; ADR-026.
 
 ## Related ADRs / docs
 
-invariants Inventory; inventory workflows; analysis M3.
+invariants Inventory; workflow-map Inventory; ADR-026; ADR-024; ADR-025.
 
 ## Child user stories
 
-- US-020
-- US-021
+- [US-020](../stories/US-020-warehouse-master-data.md) — **In Progress** (next TASK-020-04)
+- [US-021](../stories/US-021-inventory-movements-balances.md) — Planned (activate after US-020 Done)
 
 ## Completion definition
 
-Posted inventory effects auditable and reconcilable to movements.
+Warehouse master operable; posted inventory effects auditable and reconcilable to movements for in-module operations.
 
 ## Known risks
 
-Warehouses absent from schema; negative stock policy open.
+Initial stock may require adjustments until purchase posting exists.
 
 ## Open questions
 
-BRD-OD-02/04; AD-05/06.
+BRD-OD-04 exception policy; AD-05 (purchase). AD-06 accepted for v1 one-step transfers (ADR-026).
 
 ## Repository evidence
 
-Schema deliberately excludes warehouses/stock movements.
+ADR-026 accepted; `Warehouse` + `WarehouseKind` in Prisma; migration `20260731080000_add_warehouse`; seed default `Əsas anbar`. Stock movements still absent (US-021).
+
+## 2026-07-31 activation
+
+Owner: inventory module only. Tasks TASK-020-01..05 and TASK-021-01..05 elaborated.

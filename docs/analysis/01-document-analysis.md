@@ -1305,6 +1305,7 @@ The BRD open-decision table has topics but no decision IDs. This analysis assign
 
 - **Question:** How many warehouses are active at go-live, including vehicle and damaged locations?
 - **Current recommendation/safe default:** At least one warehouse with future multi-warehouse support; this recommendation is insufficient for initial Yatı.
+- **Status (2026-07-31):** **Resolved for v1 inventory** by Approved Human Decision [ADR-026](../decisions/ADR-026-initial-warehouses-v1.md): one seeded GENERAL warehouse; multi-warehouse schema; no VEHICLE kind in v1 (Yatı deferred); DAMAGED kind allowed but not required at seed.
 - **Business impact:** Custody, stock availability, counting, transfers, and trip operation.
 - **Technical impact:** Seed/configuration, warehouse types, assignment constraints, reporting.
 - **Decision deadline:** Before master-data and opening-stock design. [BRD §28 — “Open Decisions”] [BRD §17.1]

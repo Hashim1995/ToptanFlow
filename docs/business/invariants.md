@@ -174,4 +174,6 @@ The following business-relevant topics are referenced in the analysis but are ex
 
 **Partially superseded for v1 by Approved Human Decision (2026-07-29, ADR-025):** authentication mechanism (JWT + Argon2id, longer TTLs), single-company operation, and flat equal users (no roles/admin types). Still deferred / not decided by that entry: granular role packages, per-user permission overrides (AD-18), and multi-company membership if ever required later.
 
+**Partially resolved by Approved Human Decision (2026-07-31, ADR-026):** initial warehouse go-live topology (BRD-OD-02) — one seeded GENERAL warehouse, multi-warehouse support, no VEHICLE in v1. Still open: controlled negative-stock exceptions (BRD-OD-04), damaged receipt destination (AD-05), costing method.
+
 **Partially resolved by a subsequent Approved Human Decision:** "Multi-currency scope (single base currency versus per-document/per-account currency)" — recorded 2026-07-28 as an Approved Human Decision (see "## Currency" above): currency selection is optional and defaults to AZN, and foreign-currency documents may additionally record the selected currency, foreign amount, and exchange rate. Still unresolved and not decided by this entry: the exchange-rate source and timing, and whether a money account may hold a native non-AZN balance versus always being reported in AZN.

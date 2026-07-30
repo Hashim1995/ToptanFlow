@@ -13,6 +13,7 @@ import { ProductCategoriesModule } from './product-categories/product-categories
 import { BusinessPartnersModule } from './business-partners/business-partners.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { WarehousesModule } from './warehouses/warehouses.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 @Module({
@@ -28,6 +29,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
     ProductCategoriesModule,
     ProductsModule,
     BusinessPartnersModule,
+    WarehousesModule,
     UsersModule,
     AuthModule,
   ],

@@ -2,6 +2,15 @@
 
 Planning-history only. Not a product release-notes replacement.
 
+## 2026-07-31
+
+- **Task completed:** [TASK-020-03](tasks/TASK-020-03-warehouse-crud-api.md) Warehouse CRUD API (`/api/v1/warehouses`; code via `WAREHOUSE` sequence; 13 unit tests). Next: [TASK-020-04](tasks/TASK-020-04-warehouse-api-e2e.md).
+- **Task completed:** [TASK-020-02](tasks/TASK-020-02-warehouse-persistence-model.md) Warehouse Prisma model + migration + seed `Əsas anbar` / `WAREHOUSE` sequence. Next: [TASK-020-03](tasks/TASK-020-03-warehouse-crud-api.md).
+- **Epic activated:** [EPIC-008](epics/EPIC-008-inventory-warehouses.md) inventory only (Yatı/sales/purchases/cash deferred).
+- **Approved Human Decision → [ADR-026](../decisions/ADR-026-initial-warehouses-v1.md):** BRD-OD-02 v1 — one seeded GENERAL warehouse; multi-warehouse schema; no VEHICLE; one-step transfers; hard-block negative stock (OD-04 exceptions deferred).
+- **Story Ready:** [US-020](stories/US-020-warehouse-master-data.md); TASK-020-01 **Done**; TASK-020-02..05 elaborated. Next: TASK-020-02.
+- **Story elaborated (Planned):** [US-021](stories/US-021-inventory-movements-balances.md) TASK-021-01..05; activate after US-020 Done.
+
 ## 2026-07-30
 
 - **Epic completed:** [EPIC-007](epics/EPIC-007-identity-authz.md); [US-019](stories/US-019-authentication-authorization.md) **Done** (TASK-019-02 protect APIs; TASK-019-03 web login/session; TASK-019-04 auth e2e — 88 e2e / web 33 tests).

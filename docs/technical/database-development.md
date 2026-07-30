@@ -19,9 +19,9 @@ Bu dörd anlayış tez-tez qarışdırılır, ona görə aydın ayıraq:
 | **Schema** (`schema.prisma`) | Verilənlər bazasının **istənilən** son strukturunun təsviri (cədvəllər, sahələr, əlaqələr). Kod kimi versiyalaşdırılır. | `apps/api/prisma/schema.prisma` (git-ə commit olunur) |
 | **Migration** | Schema-nı bir vəziyyətdən digərinə aparan, faktiki icra olunan SQL addımlarının tarixi qeydi. Hər dəyişiklik öz qovluğunda saxlanılır. | `apps/api/prisma/migrations/` (git-ə commit olunur) |
 | **Database** (verilənlər bazası) | Faktiki, canlı, işləyən PostgreSQL nüsxəsi — həqiqi sətirlər (rows) burada yaşayır. | Sizin kompüterinizdəki PostgreSQL serverinin daxilində (git-ə **heç vaxt** commit olunmur) |
-| **Seed** (`prisma/seed.ts`) | Optional **bootstrap first user** when `BOOTSTRAP_USERNAME` + `BOOTSTRAP_PASSWORD` are set and the `User` table is empty (ADR-025). No other business reference data. | `apps/api/prisma/seed.ts` |
+| **Seed** (`prisma/seed.ts`) | (1) Default GENERAL warehouse `Əsas anbar` when `Warehouse` is empty (ADR-026). (2) Optional bootstrap user when `BOOTSTRAP_*` set and `User` empty (ADR-025). | `apps/api/prisma/seed.ts` |
 
-Qısaca: **Schema** = "necə olmalıdır", **Migration** = "necə oraya çatdıq" tarixçəsi, **Database** = "hazırda faktiki nə var", **Seed** = "istəyə bağlı ilk istifadəçi" (`BOOTSTRAP_*`).
+Qısaca: **Schema** = "necə olmalıdır", **Migration** = "necə oraya çatdıq" tarixçəsi, **Database** = "hazırda faktiki nə var", **Seed** = "ilkin anbar + istəyə bağlı ilk istifadəçi".
 
 ## 4. Lokal `DATABASE_URL` necə konfiqurasiya olunur?
 

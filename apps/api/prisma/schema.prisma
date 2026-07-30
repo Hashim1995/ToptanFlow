@@ -1,9 +1,4 @@
-// TOPTANFLOW — Initial Domain Model
-//
-// Scope: This schema implements ONLY the structural data model for the entities
-// explicitly requested for this task: products, business partners (customers/
-// suppliers), purchases, purchase items, sales, sale items, cash transactions,
-// currencies, units, a minimal user foundation, and audit timestamps.
+// TOPTANFLOW — Domain Prisma schema
 //
 // Source of truth: docs/business/invariants.md, docs/business/terminology.md,
 // docs/business/workflow-map.md (per AGENTS.md Source of Truth Hierarchy).
@@ -11,25 +6,22 @@
 // is implemented here — only structural fields, relations, keys, and indexes.
 // The backend application layer remains authoritative (ADR-003).
 //
-// Deliberately NOT modeled in this task (out of explicit scope; each is a
-// distinct future task, not invented here):
-//   - Warehouses / stock movements / inventory balances (Inventory module)
+// Deliberately NOT modeled yet (distinct future tasks):
+//   - Stock movements / inventory balances (US-021)
 //   - Receivables, payables, allocations, advances (Settlement module)
-//   - Sales returns, purchase returns, cancMovements as separate documents
+//   - Sales returns, purchase returns as separate documents
 //   - Bundles/components (Bundles and Promotions module)
 //   - Field Sales / Yatı trips, vehicle warehouses, vehicle cash accounts
 //   - Fixed assets
 //   - A full append-only Audit History log entity (docs/business/terminology.md,
 //     "Audit (Audit History)") — only per-record audit timestamps/actors are
-//     included here, per this task's explicit scope ("audit timestamps").
-//   - Authentication and authorization (explicitly forbidden by this task).
+//     included here where required.
 //
-// Money/quantity precision: the exact numeric precision/scale strategy is an
-// unresolved Open Decision (docs/technical/system-architecture.md, "Known Open
-// Decisions" — "Money and decimal implementation"). All monetary and quantity
-// fields therefore use Prisma's `Decimal` type WITHOUT a fixed @db.Decimal(p,s)
-// annotation, leaving the underlying PostgreSQL NUMERIC unconstrained rather
-// than silently deciding a precision/scale.
+// Warehouses (GENERAL | DAMAGED) are modeled per ADR-026 / US-020. VEHICLE
+// warehouse kind is deferred with Yatı (EPIC-014).
+//
+// Money/quantity precision: ADR-023 for annotated decimals; unconstrained
+// Decimal remains only where legacy initial models have not yet been refined.
 //
 // Currency handling (Approved Human Decision, recorded 2026-07-28; see
 // docs/business/invariants.md, "Currency"): currency selection is optional
@@ -68,6 +60,13 @@ enum ProductType {
   FINISHED_GOOD
   RAW_MATERIAL
   MIXED_USE
+}
+
+/// Warehouse kind for inventory custody (ADR-026 / US-020).
+/// VEHICLE is deferred with Yatı (EPIC-014) and must not be added here yet.
+enum WarehouseKind {
+  GENERAL
+  DAMAGED
 }
 
 /// Shared document lifecycle status for transactional documents.
@@ -128,12 +127,12 @@ enum CashTransactionType {
 // ---------------------------------------------------------------------------
 
 /// Internal, database-backed counter for automatic business codes
-/// (Product, BusinessPartner). Not exposed via HTTP. Allocation must run
-/// inside the same Prisma transaction as entity creation so a failed create
-/// rolls back the increment. See ADR-024.
+/// (Product, BusinessPartner, Warehouse). Not exposed via HTTP. Allocation
+/// must run inside the same Prisma transaction as entity creation so a failed
+/// create rolls back the increment. See ADR-024 / ADR-026.
 model NumberSequence {
-  /// Internal sequence key (e.g. PRODUCT, BUSINESS_PARTNER). Application
-  /// constants only — never accepted from HTTP input.
+  /// Internal sequence key (e.g. PRODUCT, BUSINESS_PARTNER, WAREHOUSE).
+  /// Application constants only — never accepted from HTTP input.
   key          String   @id
   /// Last allocated integer value. Next allocation returns currentValue + 1.
   currentValue BigInt   @default(0)
@@ -315,6 +314,26 @@ model Currency {
   purchases        Purchase[]
   moneyAccounts    MoneyAccount[]
   cashTransactions CashTransaction[]
+}
+
+// ---------------------------------------------------------------------------
+// Inventory foundation: Warehouses (US-020 / ADR-026)
+// ---------------------------------------------------------------------------
+
+/// Warehouse / stock location. Source: docs/business/terminology.md "Warehouse";
+/// ADR-026 (initial warehouses v1). Soft-deactivate via `isActive` only.
+/// Business `code` is backend-generated (ADR-024 pattern, sequence key WAREHOUSE).
+model Warehouse {
+  id        String        @id @default(uuid())
+  code      String        @unique
+  name      String
+  kind      WarehouseKind
+  isActive  Boolean       @default(true)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([isActive])
+  @@index([kind])
 }
 
 // ---------------------------------------------------------------------------
