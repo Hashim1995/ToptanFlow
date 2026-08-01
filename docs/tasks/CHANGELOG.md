@@ -4,6 +4,8 @@ Planning-history only. Not a product release-notes replacement.
 
 ## 2026-08-02
 
+- **US-049 Done:** Cash reports & statements. APIs: `GET /cash-accounts/:id/statement` (opening/running/closing; CANCELLED + REVERSAL rows for ledger reconstruction) and `GET /cash-accounts/reports/period-summary` (turnover excludes transfer/reversal; expenses by category). UI: `/cash/reports` with AZ labels, date/account filters, summary cards + statement table/cards. Tests: `cash-reports.service.spec.ts` green. PDF/Excel deferred.
+- **US-049 activated:** Cash reports & statements (TASK-049-01 API, TASK-049-02 UI). Running-balance statement + period summary; transfers/reversals handled per ADR-034/035.
 - **CHANGE-006 correction:** Cash In cancellation always allowed even if account balance would go negative; no ADR-037 override required for that cancel path. Ordinary Cash Out / Expense / Transfer creation remain gated. UI warns; tests cover cancel-into-negative.
 - **CHANGE-006 / US-046 Done:** Lifecycle cancel/edit/deactivate hardening for Purchase, Sale, Cash In/Out, Expense, Transfer. Documented: posted facts immutable (including notes); no deactivate on completed ops; linked POSTED cash must be cancelled before Sale/Purchase cancel; purchase cancel blocked on insufficient quantity with structured error. API/UI confirmations + regression tests. Formal cash reports remain US-049.
 

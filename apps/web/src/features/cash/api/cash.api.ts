@@ -309,3 +309,87 @@ export async function cancelCashTransaction(
   );
   return data;
 }
+
+export type CashReportDateRangeQuery = {
+  dateFrom?: string;
+  dateTo?: string;
+};
+
+export type CashPeriodSummaryQuery = CashReportDateRangeQuery & {
+  cashAccountId?: string;
+};
+
+export type CashStatementLine = {
+  id: string;
+  transactionNumber: string;
+  transactionDate: string;
+  type: string;
+  direction: string;
+  status: string;
+  amount: string;
+  signedEffect: string;
+  runningBalance: string;
+  partnerName: string | null;
+  expenseCategoryName: string | null;
+  notes: string | null;
+  cancelReason: string | null;
+  saleId: string | null;
+  purchaseId: string | null;
+};
+
+export type CashAccountStatement = {
+  cashAccountId: string;
+  cashAccountName: string;
+  cashAccountCode: string;
+  dateFrom: string | null;
+  dateTo: string | null;
+  openingBalance: string;
+  closingBalance: string;
+  currentBalance: string;
+  lines: CashStatementLine[];
+};
+
+export type ExpenseCategoryTotal = {
+  expenseCategoryId: string | null;
+  expenseCategoryName: string;
+  total: string;
+};
+
+export type CashPeriodSummary = {
+  dateFrom: string | null;
+  dateTo: string | null;
+  cashAccountId: string | null;
+  totalCompanyCash: string;
+  activeAccountCount: number;
+  negativeAccountCount: number;
+  cashInTotal: string;
+  cashOutTotal: string;
+  expenseTotal: string;
+  expensesByCategory: ExpenseCategoryTotal[];
+  partnerCashInTotal: string;
+  partnerCashOutTotal: string;
+  transferTotal: string;
+  cancelledCount: number;
+  reversalCount: number;
+};
+
+export async function getCashPeriodSummary(
+  query: CashPeriodSummaryQuery,
+): Promise<CashPeriodSummary> {
+  const { data } = await httpClient.get<CashPeriodSummary>(
+    '/cash-accounts/reports/period-summary',
+    { params: cleanQuery(query) },
+  );
+  return data;
+}
+
+export async function getCashAccountStatement(
+  cashAccountId: string,
+  query: CashReportDateRangeQuery,
+): Promise<CashAccountStatement> {
+  const { data } = await httpClient.get<CashAccountStatement>(
+    `/cash-accounts/${cashAccountId}/statement`,
+    { params: cleanQuery(query) },
+  );
+  return data;
+}

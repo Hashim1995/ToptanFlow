@@ -4,6 +4,7 @@ import { NumberSequencesModule } from '../number-sequences/number-sequences.modu
 import { CashAccountsController } from './cash-accounts.controller';
 import { CashAccountsService } from './cash-accounts.service';
 import { CashBalanceService } from './cash-balance.service';
+import { CashReportsService } from './cash-reports.service';
 import { CashTransactionsController } from './cash-transactions.controller';
 import { CashTransactionsService } from './cash-transactions.service';
 import { ExpenseCategoriesController } from './expense-categories.controller';
@@ -20,6 +21,7 @@ import { ExpenseCategoriesService } from './expense-categories.service';
     CashBalanceService,
     CashAccountsService,
     CashTransactionsService,
+    CashReportsService,
     ExpenseCategoriesService,
   ],
   exports: [

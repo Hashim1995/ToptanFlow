@@ -246,13 +246,19 @@ export function PurchaseFormModal({
     [values],
   );
 
+  const documentTotalAmount = totals.total.toFixed(2);
+
   const selectedPartnerDebt = useMemo(() => {
     const fromList = partners.data?.data.find(
       (partner) => partner.id === values.partnerId,
     )?.currentDebtBalance;
     if (fromList) return fromList;
-    if (purchase.data?.partner.id === values.partnerId) {
-      return purchase.data.partner.currentDebtBalance;
+    const purchaseData = purchase.data;
+    if (
+      purchaseData !== undefined &&
+      purchaseData.partner.id === values.partnerId
+    ) {
+      return purchaseData.partner.currentDebtBalance;
     }
     return '0';
   }, [partners.data?.data, values.partnerId, purchase.data?.partner]);
@@ -260,11 +266,11 @@ export function PurchaseFormModal({
   useEffect(() => {
     if (!immediatePayment.enabled) return;
     setImmediatePayment((previous) =>
-      previous.amount === totals.total
+      previous.amount === documentTotalAmount
         ? previous
-        : { ...previous, amount: totals.total },
+        : { ...previous, amount: documentTotalAmount },
     );
-  }, [totals.total, immediatePayment.enabled]);
+  }, [documentTotalAmount, immediatePayment.enabled]);
 
   const paymentValid = isPurchaseImmediatePaymentValid(
     immediatePayment,
@@ -741,7 +747,7 @@ export function PurchaseFormModal({
             <PurchaseImmediatePaymentSection
               value={immediatePayment}
               onChange={setImmediatePayment}
-              documentTotal={totals.total}
+              documentTotal={documentTotalAmount}
               partnerDebtBalance={selectedPartnerDebt}
             />
           </div>

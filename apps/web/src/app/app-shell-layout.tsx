@@ -13,6 +13,7 @@ import {
 } from 'antd';
 import type { MenuProps } from 'antd';
 import {
+  ChartLine,
   House,
   List,
   Package,
@@ -153,6 +154,14 @@ const NAV_ITEMS: MenuItem[] = [
         ),
       },
       {
+        key: '/cash/reports',
+        label: navLabel(
+          phIcon(ChartLine, { size: ICON_SIZE.md }),
+          CASH_LABELS.navReports,
+          '/cash/reports',
+        ),
+      },
+      {
         key: '/cash/expense-categories',
         label: navLabel(
           phIcon(Receipt, { size: ICON_SIZE.md }),
@@ -187,9 +196,11 @@ export function AppShellLayout() {
           ? '/sales'
           : location.pathname.startsWith('/cash/expense-categories')
             ? '/cash/expense-categories'
-            : location.pathname.startsWith('/cash')
-              ? '/cash/accounts'
-              : location.pathname,
+            : location.pathname.startsWith('/cash/reports')
+              ? '/cash/reports'
+              : location.pathname.startsWith('/cash')
+                ? '/cash/accounts'
+                : location.pathname,
   ];
 
   async function handleLogout() {

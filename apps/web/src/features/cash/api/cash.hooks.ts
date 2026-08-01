@@ -8,6 +8,8 @@ import {
   createCashTransfer,
   deactivateCashAccount,
   getCashAccount,
+  getCashAccountStatement,
+  getCashPeriodSummary,
   getCashWorkspaceOverview,
   getTotalCompanyCash,
   listCashAccounts,
@@ -15,6 +17,8 @@ import {
   reactivateCashAccount,
   updateCashAccount,
   type CashAccountListQuery,
+  type CashPeriodSummaryQuery,
+  type CashReportDateRangeQuery,
   type CashTransactionListQuery,
   type CreateCashAccountInput,
   type CreateCashInInput,
@@ -204,5 +208,23 @@ export function useReactivateExpenseCategory() {
   return useMutation({
     mutationFn: (id: string) => reactivateExpenseCategory(id),
     onSuccess: () => invalidate(),
+  });
+}
+
+export function useCashPeriodSummary(query: CashPeriodSummaryQuery) {
+  return useQuery({
+    queryKey: cashQueryKeys.reports.periodSummary(query),
+    queryFn: () => getCashPeriodSummary(query),
+  });
+}
+
+export function useCashAccountStatement(
+  cashAccountId: string | undefined,
+  query: CashReportDateRangeQuery,
+) {
+  return useQuery({
+    queryKey: cashQueryKeys.accounts.statement(cashAccountId ?? '', query),
+    queryFn: () => getCashAccountStatement(cashAccountId!, query),
+    enabled: Boolean(cashAccountId),
   });
 }

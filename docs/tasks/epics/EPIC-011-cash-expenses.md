@@ -72,7 +72,7 @@ Transfer; workflows 10–14, 33; impact report
 | [US-047](../stories/US-047-negative-cash-control.md) | Control Negative Cash Balance | 2+ | Done |
 | [US-026](../stories/US-026-payment-allocation-advances.md) | Allocate Payments (EPIC-012) | 6 | Planned |
 | [US-048](../stories/US-048-immediate-payment-sale-purchase.md) | Immediate Payment on Sale/Purchase | 7 | Done |
-| [US-049](../stories/US-049-cash-reports-statements.md) | Cash Reports & Statements | 8 | Planned |
+| [US-049](../stories/US-049-cash-reports-statements.md) | Cash Reports & Statements | 8 | Done |
 | [US-050](../stories/US-050-cash-permissions-catalog.md) | Cash Capabilities Catalog (ADR-025) | docs | Planned |
 
 ## Implementation stages

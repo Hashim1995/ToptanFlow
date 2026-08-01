@@ -2,9 +2,9 @@
 
 > Short operational snapshot. Details live in linked Epic/Story/Task/Unplanned files.
 
-- **Last meaningful update:** 2026-08-02 — CHANGE-006 correction: Cash In cancel always allowed into negative balance (no ADR-037 override). Lifecycle hardening Done; US-046 Done.
-- **Active epic:** [EPIC-011 Multi-Cash-Account](epics/EPIC-011-cash-expenses.md)
-- **Active unplanned:** none (CHANGE-006 Done)
-- **Active user story:** none (US-046 Done; US-043 / US-044 / US-045 Done)
+- **Last meaningful update:** 2026-08-02 — US-049 Cash reports/statements Done (TASK-049-01 / TASK-049-02).
+- **Active epic:** [EPIC-011 Multi-Cash-Account](epics/EPIC-011-cash-expenses.md) (Stage 8 reports complete)
+- **Active user story:** none (US-049 Done)
+- **Active tasks:** none
 - **Paused / Review:** US-024 Review; US-022 / US-023 Review (do not regress)
-- **Next recommended action:** US-049 Cash reports/statements.
+- **Next recommended action:** Accept US-024 Review, or activate [US-050](stories/US-050-cash-permissions-catalog.md) (docs catalog under ADR-025). EPIC-012 / US-026 allocation remains Planned.
