@@ -22,7 +22,13 @@ import {
   ShoppingBag,
   Trash,
 } from '@phosphor-icons/react';
-import dayjs from 'dayjs';
+import {
+  DATE_DISPLAY_FORMAT,
+  bakuTodayDateOnly,
+  dateOnlyPickerToApi,
+  dateOnlyPickerValue,
+  toDateOnlyApi,
+} from '../../../shared/datetime';
 import {
   Controller,
   useFieldArray,
@@ -52,6 +58,12 @@ import {
 import { SALES_LABELS } from './labels';
 import { computeQuantityShortages } from './quantity-shortage';
 import { SalePostConfirmModal } from './sale-post-confirm-modal';
+import {
+  emptySaleImmediatePayment,
+  isSaleImmediatePaymentValid,
+  SaleImmediatePaymentSection,
+  type SaleImmediatePaymentState,
+} from './sale-immediate-payment-section';
 
 const { Text } = Typography;
 
@@ -65,7 +77,7 @@ const emptyLine = {
 
 const emptyForm: SaleFormValues = {
   partnerId: '',
-  businessDate: dayjs().format('YYYY-MM-DD'),
+  businessDate: bakuTodayDateOnly(),
   notes: '',
   discountAmount: '',
   items: [emptyLine],
@@ -91,7 +103,7 @@ function toInput(values: SaleFormValues): SaleInput {
 function toFormValues(sale: Sale): SaleFormValues {
   return {
     partnerId: sale.partner.id,
-    businessDate: sale.businessDate.slice(0, 10),
+    businessDate: toDateOnlyApi(sale.businessDate) ?? '',
     notes: sale.notes ?? '',
     discountAmount: sale.discountAmount ?? '',
     items: sale.items.map((item) => ({
@@ -126,6 +138,8 @@ export function SaleFormModal({
   const [submitError, setSubmitError] = useState<string>();
   const [postConfirmOpen, setPostConfirmOpen] = useState(false);
   const [pendingPostSale, setPendingPostSale] = useState<Sale>();
+  const [immediatePayment, setImmediatePayment] =
+    useState<SaleImmediatePaymentState>(() => emptySaleImmediatePayment());
 
   const {
     control,
@@ -157,16 +171,16 @@ export function SaleFormModal({
   useEffect(() => {
     if (!open) {
       initializedId.current = undefined;
-      setPostConfirmOpen(false);
-      setPendingPostSale(undefined);
+      setImmediatePayment(emptySaleImmediatePayment());
       return;
     }
     if (!isEdit) {
       reset({
         ...emptyForm,
-        businessDate: dayjs().format('YYYY-MM-DD'),
+        businessDate: bakuTodayDateOnly(),
         items: [emptyLine],
       });
+      setImmediatePayment(emptySaleImmediatePayment());
       return;
     }
     if (!sale.data || initializedId.current === sale.data.id) return;
@@ -175,6 +189,7 @@ export function SaleFormModal({
     }
     initializedId.current = sale.data.id;
     reset(toFormValues(sale.data));
+    setImmediatePayment(emptySaleImmediatePayment(sale.data.totalAmount));
   }, [isEdit, open, sale.data, reset]);
 
   const partnerOptions = useMemo(() => {
@@ -234,6 +249,28 @@ export function SaleFormModal({
     [values],
   );
 
+  const selectedPartnerDebt = useMemo(() => {
+    const fromList = partners.data?.data.find(
+      (partner) => partner.id === values.partnerId,
+    )?.currentDebtBalance;
+    if (fromList) return fromList;
+    if (sale.data?.partner.id === values.partnerId) {
+      return sale.data.partner.currentDebtBalance;
+    }
+    return '0';
+  }, [partners.data?.data, values.partnerId, sale.data?.partner]);
+
+  useEffect(() => {
+    if (!immediatePayment.enabled) return;
+    setImmediatePayment((previous) =>
+      previous.amount === totals.total
+        ? previous
+        : { ...previous, amount: totals.total },
+    );
+  }, [totals.total, immediatePayment.enabled]);
+
+  const paymentValid = isSaleImmediatePaymentValid(immediatePayment);
+
   const draftBlocked =
     isEdit && sale.data && sale.data.status !== 'DRAFT';
   const displayError = draftBlocked
@@ -271,14 +308,19 @@ export function SaleFormModal({
     }
   }
 
-  async function handlePostConfirm(negativeQuantityReason?: string) {
+  async function handlePostConfirm(payload: {
+    negativeQuantityReason?: string;
+    immediatePayment?: {
+      cashAccountId: string;
+      amount: string;
+      notes?: string;
+    };
+  }) {
     if (!pendingPostSale) return;
     try {
       const posted = await postMutation.mutateAsync({
         id: pendingPostSale.id,
-        input: negativeQuantityReason
-          ? { negativeQuantityReason }
-          : undefined,
+        input: payload,
       });
       message.success(SALES_LABELS.post.success);
       setPostConfirmOpen(false);
@@ -302,18 +344,32 @@ export function SaleFormModal({
             {isEdit ? SALES_LABELS.edit : SALES_LABELS.create}
           </Space>
         }
-        open={open}
-        onCancel={onCancel}
+        open={open && !postConfirmOpen}
+        onCancel={() => {
+          setPostConfirmOpen(false);
+          setPendingPostSale(undefined);
+          onCancel();
+        }}
         width={960}
         destroyOnHidden
         forceRender
         styles={{ body: { maxHeight: '75vh', overflowY: 'auto', paddingTop: 12 } }}
         footer={
           <Space wrap style={{ width: '100%', justifyContent: 'flex-end' }}>
-            <Button onClick={onCancel}>{SALES_LABELS.actions.back}</Button>
+            <Button
+              onClick={() => {
+                setPostConfirmOpen(false);
+                setPendingPostSale(undefined);
+                onCancel();
+              }}
+            >
+              {SALES_LABELS.actions.back}
+            </Button>
             <Button
               loading={submitting}
-              disabled={loadingEdit || Boolean(loadError)}
+              disabled={
+                loadingEdit || Boolean(loadError) || !paymentValid
+              }
               icon={phIcon(CheckCircle, { size: ICON_SIZE.sm })}
               onClick={() =>
                 void handleSubmit((formValues) => save(formValues, true))()
@@ -402,11 +458,11 @@ export function SaleFormModal({
                       style={{ marginBottom: 12 }}
                     >
                       <DatePicker
-                        value={field.value ? dayjs(field.value) : null}
-                        format="DD.MM.YYYY"
+                        value={dateOnlyPickerValue(field.value)}
+                        format={DATE_DISPLAY_FORMAT}
                         style={{ width: '100%' }}
                         onChange={(date) =>
-                          field.onChange(date?.format('YYYY-MM-DD') ?? '')
+                          field.onChange(dateOnlyPickerToApi(date))
                         }
                       />
                     </Form.Item>
@@ -681,6 +737,15 @@ export function SaleFormModal({
               })}
             </Space>
 
+            <div style={{ marginTop: 16 }}>
+              <SaleImmediatePaymentSection
+                value={immediatePayment}
+                onChange={setImmediatePayment}
+                documentTotal={totals.total}
+                partnerDebtBalance={selectedPartnerDebt}
+              />
+            </div>
+
             <div
               style={{
                 marginTop: 12,
@@ -718,6 +783,9 @@ export function SaleFormModal({
               )
             : []
         }
+        documentTotal={pendingPostSale?.totalAmount}
+        partnerDebtBalance={pendingPostSale?.partner.currentDebtBalance}
+        initialPayment={immediatePayment}
         onCancel={() => {
           setPostConfirmOpen(false);
           if (pendingPostSale) {

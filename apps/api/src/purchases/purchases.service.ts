@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -10,7 +11,16 @@ import {
   PartnerDebtBalanceService,
   PartnerDebtMovementKind,
 } from '../business-partners/partner-debt-balance.service';
+import {
+  CashBalanceService,
+  CashTransactionDirectionValue,
+  CashTransactionTypeValue,
+} from '../cash/cash-balance.service';
 import { SortOrder } from '../common/sorting/sort-order.enum';
+import {
+  businessDateFilterRange,
+  businessDateToUtc,
+} from '../common/datetime/index.js';
 import { BusinessCodeSequenceKey } from '../number-sequences/business-code-sequence-key';
 import { NumberSequencesService } from '../number-sequences/number-sequences.service';
 import {
@@ -24,6 +34,7 @@ import { CreatePurchaseDto } from './dto/create-purchase.dto';
 import { DocumentStatusApi } from './dto/document-status.enum';
 import { ListPurchasesQueryDto } from './dto/list-purchases-query.dto';
 import { PaginatedPurchasesResponseDto } from './dto/paginated-purchases-response.dto';
+import { PostPurchaseDto } from './dto/post-purchase.dto';
 import { PurchaseListItemResponseDto } from './dto/purchase-list-item-response.dto';
 import { PurchaseResponseDto } from './dto/purchase-response.dto';
 import { UpdatePurchaseDto } from './dto/update-purchase.dto';
@@ -165,6 +176,11 @@ const purchaseListSelect = {
   partner: { select: partnerSummarySelect },
   createdBy: { select: userSummarySelect },
   _count: { select: { items: true } },
+  cashTransactions: {
+    where: { status: 'POSTED' },
+    select: { id: true },
+    take: 1,
+  },
 } satisfies Prisma.PurchaseSelect;
 
 const purchaseDetailSelect = {
@@ -197,6 +213,20 @@ const purchaseDetailSelect = {
   partnerDebtMovements: {
     select: debtMovementSelect,
     orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+  },
+  cashTransactions: {
+    select: {
+      id: true,
+      transactionNumber: true,
+      cashAccountId: true,
+      direction: true,
+      type: true,
+      status: true,
+      amount: true,
+      transactionDate: true,
+      cashAccount: { select: { id: true, name: true, code: true } },
+    },
+    orderBy: [{ transactionDate: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }],
   },
 } satisfies Prisma.PurchaseSelect;
 
@@ -253,6 +283,18 @@ type DebtMovementRecord = {
   createdAt: Date;
 };
 
+type LinkedCashTransactionRecord = {
+  id: string;
+  transactionNumber: string;
+  cashAccountId: string;
+  direction: string;
+  type: string;
+  status: string;
+  amount: Decimal;
+  transactionDate: Date;
+  cashAccount: { id: string; name: string; code: string };
+};
+
 type PurchaseListRecord = {
   id: string;
   documentNumber: string;
@@ -267,6 +309,7 @@ type PurchaseListRecord = {
   partner: PartnerSummaryRecord;
   createdBy: UserSummaryRecord;
   _count: { items: number };
+  cashTransactions: Array<{ id: string }>;
 };
 
 type PurchaseDetailRecord = {
@@ -291,6 +334,7 @@ type PurchaseDetailRecord = {
   items: PurchaseItemRecord[];
   productQuantityHistory: QuantityHistoryRecord[];
   partnerDebtMovements: DebtMovementRecord[];
+  cashTransactions: LinkedCashTransactionRecord[];
 };
 
 function decimalString(value: Decimal | { toString(): string }): string {
@@ -304,6 +348,7 @@ export class PurchasesService {
     private readonly numberSequences: NumberSequencesService,
     private readonly productQuantity: ProductQuantityService,
     private readonly partnerDebt: PartnerDebtBalanceService,
+    private readonly cashBalance: CashBalanceService,
   ) {}
 
   async create(
@@ -323,7 +368,7 @@ export class PurchasesService {
         data: {
           documentNumber: `PUR-${sequence}`,
           partnerId: dto.partnerId,
-          businessDate: new Date(dto.businessDate),
+          businessDate: businessDateToUtc(dto.businessDate),
           notes: normalizeOptionalText(dto.notes),
           supplierInvoiceNumber: normalizeOptionalText(
             dto.supplierInvoiceNumber,
@@ -450,7 +495,7 @@ export class PurchasesService {
           businessDate:
             dto.businessDate === undefined
               ? undefined
-              : new Date(dto.businessDate),
+              : businessDateToUtc(dto.businessDate),
           notes:
             dto.notes === undefined
               ? undefined
@@ -501,7 +546,11 @@ export class PurchasesService {
     });
   }
 
-  async post(id: string, userId: string): Promise<PurchaseResponseDto> {
+  async post(
+    id: string,
+    userId: string,
+    dto?: PostPurchaseDto,
+  ): Promise<PurchaseResponseDto> {
     await this.prisma.$transaction(async (tx) => {
       const purchase = await tx.purchase.findUnique({
         where: { id },
@@ -591,6 +640,32 @@ export class PurchasesService {
         relatedDocumentType: 'Purchase',
         relatedDocumentId: id,
       });
+
+      if (dto?.immediatePayment) {
+        const payment = dto.immediatePayment;
+        const cash = await this.cashBalance.applyPostedTransaction(tx, {
+          cashAccountId: payment.cashAccountId,
+          direction: CashTransactionDirectionValue.OUT,
+          type: CashTransactionTypeValue.SUPPLIER_PAYMENT,
+          amount: payment.amount,
+          transactionDate: purchase.businessDate,
+          notes: payment.notes,
+          createdByUserId: userId,
+          partnerId: purchase.partnerId,
+          purchaseId: id,
+          negativeBalanceOverrideReason: payment.negativeBalanceOverrideReason,
+        });
+        await this.partnerDebt.applyChange(tx, {
+          partnerId: purchase.partnerId,
+          signedAmount: payment.amount,
+          kind: PartnerDebtMovementKind.CASH_PAYMENT,
+          createdByUserId: userId,
+          cashTransactionId: cash.id,
+          purchaseId: id,
+          relatedDocumentType: 'Purchase',
+          relatedDocumentId: id,
+        });
+      }
     });
     return this.findOne(id);
   }
@@ -612,6 +687,22 @@ export class PurchasesService {
       if (!purchase) {
         throw new NotFoundException('Purchase not found');
       }
+
+      const linkedCash = await tx.cashTransaction.count({
+        where: {
+          purchaseId: id,
+          status: 'POSTED',
+          type: { not: 'REVERSAL' },
+        },
+      });
+      if (linkedCash > 0) {
+        throw new ConflictException({
+          message:
+            'Cancel linked cash transactions before cancelling this purchase',
+          code: 'PURCHASE_HAS_LINKED_POSTED_CASH',
+        });
+      }
+
       const transitioned = await tx.purchase.updateMany({
         where: { id, status: 'POSTED' },
         data: {
@@ -625,17 +716,30 @@ export class PurchasesService {
         throw new ConflictException('Only posted purchases can be cancelled');
       }
       for (const item of purchase.items) {
-        await this.productQuantity.applyChange(tx, {
-          productId: item.productId,
-          quantityChange: item.receivedQuantity.negated(),
-          kind: ProductQuantityKind.CANCELLATION_REVERSAL,
-          createdByUserId: userId,
-          reason,
-          purchaseId: id,
-          relatedDocumentType: 'PurchaseItem',
-          relatedDocumentId: item.id,
-          allowNegativeQuantity: false,
-        });
+        try {
+          await this.productQuantity.applyChange(tx, {
+            productId: item.productId,
+            quantityChange: item.receivedQuantity.negated(),
+            kind: ProductQuantityKind.CANCELLATION_REVERSAL,
+            createdByUserId: userId,
+            reason,
+            purchaseId: id,
+            relatedDocumentType: 'PurchaseItem',
+            relatedDocumentId: item.id,
+            allowNegativeQuantity: false,
+          });
+        } catch (error) {
+          if (error instanceof ForbiddenException) {
+            throw new ConflictException({
+              message:
+                'Purchase cancellation is blocked because product quantity is insufficient to reverse the original receipt. Resolve later sales or consumption first, or adjust quantity with an authorized reason.',
+              code: 'PURCHASE_CANCEL_INSUFFICIENT_QUANTITY',
+              productId: item.productId,
+              productCode: item.productCodeSnapshot,
+            });
+          }
+          throw error;
+        }
       }
       const original = await tx.businessPartnerDebtMovement.findFirst({
         where: { purchaseId: id, kind: 'PURCHASE' },
@@ -715,12 +819,10 @@ export class PurchasesService {
     if (query.createdByUserId) where.createdByUserId = query.createdByUserId;
     if (query.productId) where.items = { some: { productId: query.productId } };
     if (query.businessDateFrom || query.businessDateTo) {
-      where.businessDate = {
-        gte: query.businessDateFrom
-          ? new Date(query.businessDateFrom)
-          : undefined,
-        lte: query.businessDateTo ? new Date(query.businessDateTo) : undefined,
-      };
+      where.businessDate = businessDateFilterRange(
+        query.businessDateFrom,
+        query.businessDateTo,
+      );
     }
     if (query.minTotal || query.maxTotal) {
       where.totalAmount = {
@@ -751,6 +853,7 @@ export class PurchasesService {
       },
       createdBy: row.createdBy,
       itemCount: row._count.items,
+      hasLinkedCashOperation: row.cashTransactions.length > 0,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };
@@ -817,6 +920,18 @@ export class PurchasesService {
         reason: movement.reason,
         reversalOfId: movement.reversalOfId,
         createdAt: movement.createdAt,
+      })),
+      cashTransactions: row.cashTransactions.map((txn) => ({
+        id: txn.id,
+        transactionNumber: txn.transactionNumber,
+        cashAccountId: txn.cashAccountId,
+        cashAccountName: txn.cashAccount.name,
+        cashAccountCode: txn.cashAccount.code,
+        direction: txn.direction,
+        type: txn.type,
+        status: txn.status,
+        amount: new Decimal(txn.amount.toString()).toFixed(2),
+        transactionDate: txn.transactionDate,
       })),
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,

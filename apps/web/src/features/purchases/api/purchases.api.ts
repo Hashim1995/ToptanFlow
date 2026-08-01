@@ -44,6 +44,7 @@ export type PurchaseListItem = {
   createdBy?: PurchaseUser;
   createdAt: string;
   updatedAt: string;
+  hasLinkedCashOperation?: boolean;
 };
 
 export type PurchaseUser = {
@@ -101,6 +102,19 @@ export type PurchaseDebtMovement = {
   createdByUserId?: string;
 };
 
+export type PurchaseLinkedCashTransaction = {
+  id: string;
+  transactionNumber: string;
+  cashAccountId: string;
+  cashAccountName: string;
+  cashAccountCode: string;
+  direction: string;
+  type: string;
+  status: string;
+  amount: string;
+  transactionDate: string;
+};
+
 export type Purchase = {
   id: string;
   documentNumber: string;
@@ -127,6 +141,7 @@ export type Purchase = {
   items: PurchaseItem[];
   productQuantityHistory: PurchaseQuantityHistory[];
   partnerDebtMovements: PurchaseDebtMovement[];
+  cashTransactions: PurchaseLinkedCashTransaction[];
 };
 
 export type PurchaseItemInput = {
@@ -144,6 +159,17 @@ export type PurchaseInput = {
   supplierInvoiceNumber?: string;
   discountAmount?: string;
   items: PurchaseItemInput[];
+};
+
+export type ImmediatePaymentInput = {
+  cashAccountId: string;
+  amount: string;
+  notes?: string;
+  negativeBalanceOverrideReason?: string;
+};
+
+export type PostPurchaseInput = {
+  immediatePayment?: ImmediatePaymentInput;
 };
 
 function cleanQuery(query: PurchaseListQuery) {
@@ -184,8 +210,18 @@ export async function removePurchase(id: string): Promise<void> {
   await httpClient.delete(`/purchases/${id}`);
 }
 
-export async function postPurchase(id: string): Promise<Purchase> {
-  const { data } = await httpClient.post<Purchase>(`/purchases/${id}/post`);
+export async function postPurchase(
+  id: string,
+  input: PostPurchaseInput = {},
+): Promise<Purchase> {
+  const body: PostPurchaseInput = {};
+  if (input.immediatePayment) {
+    body.immediatePayment = input.immediatePayment;
+  }
+  const { data } = await httpClient.post<Purchase>(
+    `/purchases/${id}/post`,
+    Object.keys(body).length > 0 ? body : undefined,
+  );
   return data;
 }
 

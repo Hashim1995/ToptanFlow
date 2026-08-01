@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { cashQueryKeys } from '../../cash/api/cash-query-keys';
 import { masterDataQueryKeys } from '../../master-data/api/master-data-query-keys';
 import {
   cancelPurchase,
@@ -8,15 +9,20 @@ import {
   postPurchase,
   removePurchase,
   updatePurchase,
+  type PostPurchaseInput,
   type PurchaseInput,
   type PurchaseListQuery,
 } from './purchases.api';
 import { purchasesQueryKeys } from './purchases-query-keys';
 
-export function usePurchasesList(query: PurchaseListQuery) {
+export function usePurchasesList(
+  query: PurchaseListQuery,
+  options?: { enabled?: boolean },
+) {
   return useQuery({
     queryKey: purchasesQueryKeys.list(query),
     queryFn: () => listPurchases(query),
+    enabled: options?.enabled ?? true,
   });
 }
 
@@ -42,6 +48,7 @@ function usePurchaseInvalidation() {
         queryClient.invalidateQueries({
           queryKey: masterDataQueryKeys.businessPartners.all,
         }),
+        queryClient.invalidateQueries({ queryKey: cashQueryKeys.all }),
       );
     }
     await Promise.all(invalidations);
@@ -76,7 +83,8 @@ export function useRemovePurchase() {
 export function usePostPurchase() {
   const invalidate = usePurchaseInvalidation();
   return useMutation({
-    mutationFn: postPurchase,
+    mutationFn: ({ id, input }: { id: string; input?: PostPurchaseInput }) =>
+      postPurchase(id, input),
     onSuccess: () => invalidate(true),
   });
 }

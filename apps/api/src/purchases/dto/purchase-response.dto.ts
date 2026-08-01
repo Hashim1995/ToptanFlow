@@ -44,6 +44,29 @@ export class PurchaseDebtMovementResponseDto {
   createdAt!: Date;
 }
 
+export class PurchaseLinkedCashTransactionDto {
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+  @ApiProperty()
+  transactionNumber!: string;
+  @ApiProperty()
+  cashAccountId!: string;
+  @ApiProperty()
+  cashAccountName!: string;
+  @ApiProperty()
+  cashAccountCode!: string;
+  @ApiProperty()
+  direction!: string;
+  @ApiProperty()
+  type!: string;
+  @ApiProperty()
+  status!: string;
+  @ApiProperty()
+  amount!: string;
+  @ApiProperty()
+  transactionDate!: Date;
+}
+
 export class PurchaseResponseDto {
   @ApiProperty({ format: 'uuid' })
   id!: string;
@@ -83,6 +106,8 @@ export class PurchaseResponseDto {
   productQuantityHistory!: PurchaseQuantityHistoryResponseDto[];
   @ApiProperty({ type: [PurchaseDebtMovementResponseDto] })
   partnerDebtMovements!: PurchaseDebtMovementResponseDto[];
+  @ApiProperty({ type: [PurchaseLinkedCashTransactionDto] })
+  cashTransactions!: PurchaseLinkedCashTransactionDto[];
   @ApiProperty()
   createdAt!: Date;
   @ApiProperty()

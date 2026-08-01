@@ -22,6 +22,10 @@ import {
 import type { MenuProps, TableProps } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type { Dayjs } from 'dayjs';
+import {
+  DATE_DISPLAY_FORMAT,
+  dateOnlyPickerToApi,
+} from '../../../shared/datetime';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowCounterClockwise,
@@ -40,7 +44,7 @@ import {
 } from '@phosphor-icons/react';
 import { mapApiError } from '../../../api/map-api-error';
 import { formatMoney } from '../../../shared/money/format-money';
-import { formatDate } from '../../../shared/ui/format';
+import { formatDateTime } from '../../../shared/ui/format';
 import { phIcon, ICON_SIZE } from '../../../shared/ui/ph-icon';
 import {
   CodeText,
@@ -336,7 +340,7 @@ export function SalesPage() {
       render: (value: string) => (
         <Space size={6}>
           {phIcon(CalendarBlank, { size: ICON_SIZE.sm })}
-          <Text>{formatDate(value)}</Text>
+          <Text>{formatDateTime(value)}</Text>
         </Space>
       ),
     },
@@ -493,13 +497,13 @@ export function SalesPage() {
           </FilterField>
           <FilterField label={SALES_LABELS.filters.dateRange}>
             <DatePicker.RangePicker
-              format="DD.MM.YYYY"
+              format={DATE_DISPLAY_FORMAT}
               onChange={(values: null | [Dayjs | null, Dayjs | null]) => {
                 setDateRange(
                   values?.[0] && values[1]
                     ? [
-                        values[0].format('YYYY-MM-DD'),
-                        values[1].format('YYYY-MM-DD'),
+                        dateOnlyPickerToApi(values[0]),
+                        dateOnlyPickerToApi(values[1]),
                       ]
                     : undefined,
                 );
@@ -601,7 +605,7 @@ export function SalesPage() {
                 />
                 <Space wrap size={[12, 4]}>
                   <Text type="secondary">
-                    {phIcon(CalendarBlank, { size: 12 })} {formatDate(record.businessDate)}
+                    {phIcon(CalendarBlank, { size: 12 })} {formatDateTime(record.businessDate)}
                   </Text>
                   <Popover content={`${record.itemCount} sətir`}>
                     <Space size={4}>
@@ -664,18 +668,31 @@ export function SalesPage() {
           }
         }}
       >
-        <Text>{SALES_LABELS.cancel.text}</Text>
-        <div style={{ marginTop: 16 }}>
-          <Text strong>{SALES_LABELS.cancel.reason}</Text>
-          <Input.TextArea
-            value={cancelReason}
-            onChange={(event) => setCancelReason(event.target.value)}
-            placeholder={SALES_LABELS.cancel.reasonPlaceholder}
-            rows={3}
-            maxLength={1000}
-            showCount
-          />
-        </div>
+        <Space direction="vertical" size={12} style={{ width: '100%' }}>
+          <Text>{SALES_LABELS.cancel.text}</Text>
+          <div>
+            <Text strong>{SALES_LABELS.cancel.effectsTitle}</Text>
+            <ul style={{ margin: '8px 0 0', paddingLeft: 20 }}>
+              {SALES_LABELS.cancel.effects.map((effect) => (
+                <li key={effect}>
+                  <Text type="secondary">{effect}</Text>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <Text strong>{SALES_LABELS.cancel.reason}</Text>
+            <Input.TextArea
+              value={cancelReason}
+              onChange={(event) => setCancelReason(event.target.value)}
+              placeholder={SALES_LABELS.cancel.reasonPlaceholder}
+              rows={3}
+              maxLength={1000}
+              showCount
+              style={{ marginTop: 8 }}
+            />
+          </div>
+        </Space>
       </Modal>
 
       <SalePostConfirmModal
@@ -685,15 +702,18 @@ export function SalesPage() {
           (Boolean(postTarget) && postTargetDetail.isLoading)
         }
         shortages={postShortages}
+        documentTotal={postTargetDetail.data?.totalAmount ?? postTarget?.totalAmount}
+        partnerDebtBalance={
+          postTargetDetail.data?.partner.currentDebtBalance ??
+          postTarget?.partner?.currentDebtBalance
+        }
         onCancel={() => setPostTarget(undefined)}
-        onConfirm={async (negativeQuantityReason) => {
+        onConfirm={async (payload) => {
           if (!postTarget) return;
           try {
             await postMutation.mutateAsync({
               id: postTarget.id,
-              input: negativeQuantityReason
-                ? { negativeQuantityReason }
-                : undefined,
+              input: payload,
             });
             message.success(SALES_LABELS.post.success);
             setPostTarget(undefined);

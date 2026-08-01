@@ -53,8 +53,8 @@ Products (incl. quantity / history) — CHANGE-002 / EPIC-005
     → Business Partners (EPIC-006; signed debt per ADR-030 / CHANGE-003)
     → Purchases (EPIC-009)
     → Sales (EPIC-010)
-Cash/Expenses (EPIC-011) alongside / after documents start posting
-    → Settlement (EPIC-012; signed balance, not dual AR/AP)
+Cash Multi-Account (EPIC-011 / CHANGE-004) after Purchases/Sales posting exists
+    → Settlement allocation (EPIC-012; signed balance, not dual AR/AP)
 Fixed Assets (EPIC-015) — future; separate from Products
 Costing (EPIC-013) — Blocked until costing method decision
 Attachments minimum (EPIC-017 / US-031) before evidence-heavy acceptance where required
@@ -66,7 +66,7 @@ Currency CRUD is not on this spine (ADR-031); future multi-currency only under C
 | [EPIC-008](epics/EPIC-008-inventory-warehouses.md) Inventory & warehouses | **Cancelled** | Superseded by ADR-029 / CHANGE-002 |
 | [EPIC-009](epics/EPIC-009-purchasing.md) Purchasing | Planned | Partners, products + quantity; signed debt; AZN-only; no warehouse |
 | [EPIC-010](epics/EPIC-010-sales.md) Sales | Planned | Partners, products + quantity; signed debt; AZN-only; preferably purchasing |
-| [EPIC-011](epics/EPIC-011-cash-expenses.md) Cash & expenses | Planned | Partners; cash account open decisions; future Currency ownership (ADR-031) |
+| [EPIC-011](epics/EPIC-011-cash-expenses.md) Multi-Cash-Account | In Progress | CHANGE-004 / ADR-032–037; AZN; Currency runtime still future (ADR-031) |
 | [EPIC-012](epics/EPIC-012-settlement.md) Settlement | Planned | Posted sales/purchases/cash; **retargeted** to signed balance (ADR-030) |
 | [EPIC-013](epics/EPIC-013-costing.md) Costing | Blocked | Open decision / conflict |
 | [EPIC-019](epics/EPIC-019-audit-period-control.md) Audit & period control | Planned | Grows with posting modules |

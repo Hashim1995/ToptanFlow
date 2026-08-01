@@ -8,7 +8,9 @@ import {
   ShoppingCart,
   SquaresFour,
   UsersThree,
+  Wallet,
 } from '@phosphor-icons/react';
+import { CASH_LABELS } from '../features/cash/ui/labels';
 import { MASTER_DATA_LABELS } from '../features/master-data/ui/labels';
 import { PURCHASE_LABELS } from '../features/purchases/ui/labels';
 import { SALES_LABELS } from '../features/sales/ui/labels';
@@ -17,6 +19,13 @@ import { ICON_SIZE, phIcon } from '../shared/ui/ph-icon';
 const { Title, Paragraph, Text } = Typography;
 
 const SHORTCUTS = [
+  {
+    to: '/cash/accounts',
+    title: CASH_LABELS.nav,
+    description: 'Kassa hesabları, mədaxil və məxaric əməliyyatları',
+    icon: Wallet,
+    color: '#faad14',
+  },
   {
     to: '/sales',
     title: SALES_LABELS.nav,
@@ -71,8 +80,7 @@ export function HomePage() {
         Ana səhifə
       </Title>
       <Paragraph type="secondary" style={{ marginBottom: 28, maxWidth: 560 }}>
-        Əsas iş axınlarına buradan keçin. Kassa modulu növbəti hekayələrdə
-        əlavə olunacaq.
+        Əsas iş axınlarına buradan keçin.
       </Paragraph>
 
       <Row gutter={[16, 16]}>

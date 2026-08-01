@@ -1,8 +1,12 @@
 /**
  * Keeps ADR-023 decimal strings string-safe while blocking non-numeric typing.
- * Allows digits and at most one `.`, with max 4 fractional digits.
+ * Allows digits and at most one `.`, with a configurable fractional limit
+ * (default 4 for quantity; money screens pass 2).
  */
-export function sanitizeDecimalInput(raw: string): string {
+export function sanitizeDecimalInput(
+  raw: string,
+  maxFractionDigits = 4,
+): string {
   const withoutInvalid = raw.replace(/[^\d.]/g, '');
   const firstDot = withoutInvalid.indexOf('.');
   const cleaned =
@@ -16,5 +20,6 @@ export function sanitizeDecimalInput(raw: string): string {
   if (fractionalPart === undefined) {
     return integerPart;
   }
-  return `${integerPart}.${fractionalPart.slice(0, 4)}`;
+  const limit = Math.max(0, maxFractionDigits);
+  return `${integerPart}.${fractionalPart.slice(0, limit)}`;
 }

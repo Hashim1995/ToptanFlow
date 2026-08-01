@@ -22,10 +22,13 @@ import {
   SignOut,
   SquaresFour,
   UsersThree,
+  Wallet,
+  Receipt,
 } from '@phosphor-icons/react';
 import { MASTER_DATA_LABELS } from '../features/master-data/ui/labels';
 import { AUTH_LABELS } from '../features/auth/ui/labels';
 import { useAuth } from '../features/auth/use-auth';
+import { CASH_LABELS } from '../features/cash/ui/labels';
 import { PURCHASE_LABELS } from '../features/purchases/ui/labels';
 import { SALES_LABELS } from '../features/sales/ui/labels';
 import { ICON_SIZE, phIcon } from '../shared/ui/ph-icon';
@@ -136,6 +139,29 @@ const NAV_ITEMS: MenuItem[] = [
       },
     ],
   },
+  {
+    key: 'group-cash',
+    type: 'group',
+    label: CASH_LABELS.nav,
+    children: [
+      {
+        key: '/cash/accounts',
+        label: navLabel(
+          phIcon(Wallet, { size: ICON_SIZE.md }),
+          CASH_LABELS.navAccounts,
+          '/cash/accounts',
+        ),
+      },
+      {
+        key: '/cash/expense-categories',
+        label: navLabel(
+          phIcon(Receipt, { size: ICON_SIZE.md }),
+          CASH_LABELS.expenseCategories,
+          '/cash/expense-categories',
+        ),
+      },
+    ],
+  },
 ];
 
 /**
@@ -159,7 +185,11 @@ export function AppShellLayout() {
         ? '/purchases'
         : location.pathname.startsWith('/sales')
           ? '/sales'
-          : location.pathname,
+          : location.pathname.startsWith('/cash/expense-categories')
+            ? '/cash/expense-categories'
+            : location.pathname.startsWith('/cash')
+              ? '/cash/accounts'
+              : location.pathname,
   ];
 
   async function handleLogout() {

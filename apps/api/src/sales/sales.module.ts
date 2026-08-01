@@ -1,12 +1,18 @@
 import { Module } from '@nestjs/common';
 import { BusinessPartnersModule } from '../business-partners/business-partners.module';
+import { CashModule } from '../cash/cash.module';
 import { NumberSequencesModule } from '../number-sequences/number-sequences.module';
 import { ProductsModule } from '../products/products.module';
 import { SalesController } from './sales.controller';
 import { SalesService } from './sales.service';
 
 @Module({
-  imports: [NumberSequencesModule, ProductsModule, BusinessPartnersModule],
+  imports: [
+    NumberSequencesModule,
+    ProductsModule,
+    BusinessPartnersModule,
+    CashModule,
+  ],
   controllers: [SalesController],
   providers: [SalesService],
   exports: [SalesService],

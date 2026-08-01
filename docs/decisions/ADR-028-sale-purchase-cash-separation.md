@@ -54,9 +54,11 @@ or auto-advance application (those remain gated by existing open decisions).
   as an intrinsic field of the document.
 - Optional “also record payment” UI creates a distinct CashTransaction (+
   allocation rows when applicable), never a cash column on Sale/Purchase.
-- Cancellation of a Sale/Purchase reverses stock and receivable/payable; linked
-  cash is resolved via unallocation / separate cash reversal — not by silently
-  deleting cash into the document row.
+- Cancellation of a Sale/Purchase reverses stock and partner debt; linked cash
+  is resolved via **separate cash cancellation (ADR-035)** — not by silently
+  deleting cash into the document row. **v1 rule (CHANGE-006 / US-048):** Sale
+  or Purchase cancel is **blocked** while any linked non-reversal Cash
+  Transaction remains `POSTED`; the operator cancels that cash first.
 - Knowledge docs (`invariants`, `terminology`, `workflow-map`) and epic/story
   acceptance criteria reference this ADR.
 

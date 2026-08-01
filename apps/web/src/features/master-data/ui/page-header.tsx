@@ -5,7 +5,7 @@ const { Title, Text } = Typography;
 
 type PageHeaderProps = {
   title: string;
-  description?: string;
+  description?: ReactNode;
   icon?: ReactNode;
   extra?: ReactNode;
 };
@@ -53,16 +53,18 @@ export function PageHeader({
           </Title>
         </Space>
         {description ? (
-          <Text
-            type="secondary"
+          <div
             style={{
-              display: 'block',
               marginTop: 4,
               marginLeft: icon ? 46 : 0,
             }}
           >
-            {description}
-          </Text>
+            {typeof description === 'string' ? (
+              <Text type="secondary">{description}</Text>
+            ) : (
+              description
+            )}
+          </div>
         ) : null}
       </div>
       {extra ? <div>{extra}</div> : null}

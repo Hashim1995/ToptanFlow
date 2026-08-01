@@ -22,7 +22,13 @@ import {
   ShoppingCart,
   Trash,
 } from '@phosphor-icons/react';
-import dayjs from 'dayjs';
+import {
+  DATE_DISPLAY_FORMAT,
+  bakuTodayDateOnly,
+  dateOnlyPickerToApi,
+  dateOnlyPickerValue,
+  toDateOnlyApi,
+} from '../../../shared/datetime';
 import {
   Controller,
   useFieldArray,
@@ -49,6 +55,13 @@ import {
   type PurchaseFormValues,
 } from '../forms/purchase.schemas';
 import { PURCHASE_LABELS } from './labels';
+import { PurchasePostConfirmModal } from './purchase-post-confirm-modal';
+import {
+  emptyPurchaseImmediatePayment,
+  isPurchaseImmediatePaymentValid,
+  PurchaseImmediatePaymentSection,
+  type PurchaseImmediatePaymentState,
+} from './purchase-immediate-payment-section';
 
 const { Text } = Typography;
 
@@ -62,7 +75,7 @@ const emptyLine = {
 
 const emptyForm: PurchaseFormValues = {
   partnerId: '',
-  businessDate: dayjs().format('YYYY-MM-DD'),
+  businessDate: bakuTodayDateOnly(),
   notes: '',
   supplierInvoiceNumber: '',
   discountAmount: '',
@@ -90,7 +103,7 @@ function toInput(values: PurchaseFormValues): PurchaseInput {
 function toFormValues(purchase: Purchase): PurchaseFormValues {
   return {
     partnerId: purchase.partner.id,
-    businessDate: purchase.businessDate.slice(0, 10),
+    businessDate: toDateOnlyApi(purchase.businessDate) ?? '',
     notes: purchase.notes ?? '',
     supplierInvoiceNumber: purchase.supplierInvoiceNumber ?? '',
     discountAmount: purchase.discountAmount ?? '',
@@ -124,6 +137,12 @@ export function PurchaseFormModal({
   const postMutation = usePostPurchase();
   const initializedId = useRef<string | undefined>(undefined);
   const [submitError, setSubmitError] = useState<string>();
+  const [postConfirmOpen, setPostConfirmOpen] = useState(false);
+  const [pendingPostPurchase, setPendingPostPurchase] = useState<Purchase>();
+  const [immediatePayment, setImmediatePayment] =
+    useState<PurchaseImmediatePaymentState>(() =>
+      emptyPurchaseImmediatePayment(),
+    );
 
   const {
     control,
@@ -155,14 +174,16 @@ export function PurchaseFormModal({
   useEffect(() => {
     if (!open) {
       initializedId.current = undefined;
+      setImmediatePayment(emptyPurchaseImmediatePayment());
       return;
     }
     if (!isEdit) {
       reset({
         ...emptyForm,
-        businessDate: dayjs().format('YYYY-MM-DD'),
+        businessDate: bakuTodayDateOnly(),
         items: [emptyLine],
       });
+      setImmediatePayment(emptyPurchaseImmediatePayment());
       return;
     }
     if (!purchase.data || initializedId.current === purchase.data.id) return;
@@ -171,6 +192,7 @@ export function PurchaseFormModal({
     }
     initializedId.current = purchase.data.id;
     reset(toFormValues(purchase.data));
+    setImmediatePayment(emptyPurchaseImmediatePayment(purchase.data.totalAmount));
   }, [isEdit, open, purchase.data, reset]);
 
   const partnerOptions = useMemo(() => {
@@ -224,6 +246,31 @@ export function PurchaseFormModal({
     [values],
   );
 
+  const selectedPartnerDebt = useMemo(() => {
+    const fromList = partners.data?.data.find(
+      (partner) => partner.id === values.partnerId,
+    )?.currentDebtBalance;
+    if (fromList) return fromList;
+    if (purchase.data?.partner.id === values.partnerId) {
+      return purchase.data.partner.currentDebtBalance;
+    }
+    return '0';
+  }, [partners.data?.data, values.partnerId, purchase.data?.partner]);
+
+  useEffect(() => {
+    if (!immediatePayment.enabled) return;
+    setImmediatePayment((previous) =>
+      previous.amount === totals.total
+        ? previous
+        : { ...previous, amount: totals.total },
+    );
+  }, [totals.total, immediatePayment.enabled]);
+
+  const paymentValid = isPurchaseImmediatePaymentValid(
+    immediatePayment,
+    false,
+  );
+
   const draftBlocked =
     isEdit && purchase.data && purchase.data.status !== 'DRAFT';
   const displayError = draftBlocked
@@ -254,27 +301,34 @@ export function PurchaseFormModal({
         return;
       }
 
-      Modal.confirm({
-        title: PURCHASE_LABELS.post.title,
-        content: PURCHASE_LABELS.post.text,
-        okText: PURCHASE_LABELS.actions.post,
-        cancelText: PURCHASE_LABELS.actions.back,
-        onOk: async () => {
-          try {
-            const posted = await postMutation.mutateAsync(saved.id);
-            message.success(PURCHASE_LABELS.post.success);
-            onSaved(posted);
-          } catch (error) {
-            message.error(mapApiError(error).userMessage);
-            throw error;
-          }
-        },
-        onCancel: () => {
-          onSaved(saved);
-        },
-      });
+      setPendingPostPurchase(saved);
+      setPostConfirmOpen(true);
     } catch (error) {
       setSubmitError(mapApiError(error).userMessage);
+    }
+  }
+
+  async function handlePostConfirm(payload: {
+    immediatePayment?: {
+      cashAccountId: string;
+      amount: string;
+      notes?: string;
+      negativeBalanceOverrideReason?: string;
+    };
+  }) {
+    if (!pendingPostPurchase) return;
+    try {
+      const posted = await postMutation.mutateAsync({
+        id: pendingPostPurchase.id,
+        input: payload,
+      });
+      message.success(PURCHASE_LABELS.post.success);
+      setPostConfirmOpen(false);
+      setPendingPostPurchase(undefined);
+      onSaved(posted);
+    } catch (error) {
+      message.error(mapApiError(error).userMessage);
+      throw error;
     }
   }
 
@@ -282,14 +336,15 @@ export function PurchaseFormModal({
   const loadError = isEdit && purchase.isError;
 
   return (
-    <Modal
-      title={
-        <Space>
-          {phIcon(ShoppingCart, { size: ICON_SIZE.lg, weight: 'duotone' })}
-          {isEdit ? PURCHASE_LABELS.edit : PURCHASE_LABELS.create}
-        </Space>
-      }
-      open={open}
+    <>
+      <Modal
+        title={
+          <Space>
+            {phIcon(ShoppingCart, { size: ICON_SIZE.lg, weight: 'duotone' })}
+            {isEdit ? PURCHASE_LABELS.edit : PURCHASE_LABELS.create}
+          </Space>
+        }
+      open={open && !postConfirmOpen}
       onCancel={onCancel}
       width={960}
       destroyOnHidden
@@ -300,7 +355,7 @@ export function PurchaseFormModal({
           <Button onClick={onCancel}>{PURCHASE_LABELS.actions.back}</Button>
           <Button
             loading={submitting}
-            disabled={loadingEdit || Boolean(loadError)}
+            disabled={loadingEdit || Boolean(loadError) || !paymentValid}
             icon={phIcon(CheckCircle, { size: ICON_SIZE.sm })}
             onClick={() =>
               void handleSubmit((formValues) => save(formValues, true))()
@@ -389,11 +444,11 @@ export function PurchaseFormModal({
                     style={{ marginBottom: 12 }}
                   >
                     <DatePicker
-                      value={field.value ? dayjs(field.value) : null}
-                      format="DD.MM.YYYY"
+                      value={dateOnlyPickerValue(field.value)}
+                      format={DATE_DISPLAY_FORMAT}
                       style={{ width: '100%' }}
                       onChange={(date) =>
-                        field.onChange(date?.format('YYYY-MM-DD') ?? '')
+                        field.onChange(dateOnlyPickerToApi(date))
                       }
                     />
                   </Form.Item>
@@ -682,6 +737,15 @@ export function PurchaseFormModal({
             })}
           </Space>
 
+          <div style={{ marginTop: 16 }}>
+            <PurchaseImmediatePaymentSection
+              value={immediatePayment}
+              onChange={setImmediatePayment}
+              documentTotal={totals.total}
+              partnerDebtBalance={selectedPartnerDebt}
+            />
+          </div>
+
           <div
             style={{
               marginTop: 12,
@@ -707,5 +771,22 @@ export function PurchaseFormModal({
         </Form>
       ) : null}
     </Modal>
+
+      <PurchasePostConfirmModal
+        open={postConfirmOpen}
+        confirmLoading={postMutation.isPending}
+        documentTotal={pendingPostPurchase?.totalAmount}
+        partnerDebtBalance={pendingPostPurchase?.partner.currentDebtBalance}
+        initialPayment={immediatePayment}
+        onCancel={() => {
+          setPostConfirmOpen(false);
+          if (pendingPostPurchase) {
+            onSaved(pendingPostPurchase);
+          }
+          setPendingPostPurchase(undefined);
+        }}
+        onConfirm={handlePostConfirm}
+      />
+    </>
   );
 }

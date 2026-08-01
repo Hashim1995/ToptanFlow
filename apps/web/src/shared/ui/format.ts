@@ -1,20 +1,14 @@
 /**
  * Shared display formatting for dense ERP tables and cards.
+ * Date/time display is fixed to Asia/Baku via `../datetime`.
  */
-
-export function formatDate(value: string | Date | null | undefined): string {
-  if (!value) return '—';
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) return '—';
-  return date.toLocaleDateString('az-AZ');
-}
-
-export function formatDateTime(value: string | Date | null | undefined): string {
-  if (!value) return '—';
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) return '—';
-  return date.toLocaleString('az-AZ');
-}
+export {
+  formatDate,
+  formatDateTime,
+  DATE_DISPLAY_FORMAT,
+  DATETIME_DISPLAY_FORMAT,
+  APP_TIMEZONE,
+} from '../datetime';
 
 export function formatQuantity(value: string | number | null | undefined): string {
   if (value === null || value === undefined || value === '') return '—';

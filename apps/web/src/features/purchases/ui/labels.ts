@@ -77,12 +77,36 @@ export const PURCHASE_LABELS = {
   },
   post: {
     title: 'Alışı təsdiqləyirsiniz?',
-    text: 'Təsdiqdən sonra məhsul miqdarı artacaq, tərəfdaşın borc qalığı azalacaq, alış redaktə üçün bağlanacaq və pul qalığı dəyişməyəcək.',
+    text: 'Təsdiqdən sonra məhsul miqdarı artacaq, tərəfdaşın borc qalığı azalacaq, alış redaktə üçün bağlanacaq. «İndi ödə» seçildikdə ayrıca Məxaric kassa əməliyyatı yaradılır.',
+    payNow: 'İndi ödə',
+    payNowHint:
+      'Yalnız «Yadda saxla və təsdiqlə» / «Təsdiqlə» zamanı ayrıca Məxaric kassa əməliyyatı yaradılır.',
+    cashAccount: 'Kassa hesabı',
+    cashAccountPlaceholder: 'Kassa hesabı seçin',
+    paymentAmount: 'Ödəniş məbləği',
+    paymentAmountPlaceholder: '0.00',
+    paymentAmountHint:
+      'Qismən və ya sənəd məbləğindən artıq ödənişə icazə verilir.',
+    immediatePaymentRequired: 'Ödəniş üçün kassa hesabı və məbləğ mütləqdir.',
+    previewTitle: 'Təsdiqdən sonra təxmini qalıqlar',
+    partnerDebtBefore: 'Tərəfdaş borcu (əvvəl)',
+    partnerDebtAfter: 'Tərəfdaş borcu (sonra)',
+    cashBefore: 'Kassa qalığı (əvvəl)',
+    cashAfter: 'Kassa qalığı (sonra)',
     success: 'Alış təsdiqləndi.',
   },
   cancel: {
     title: 'Alışı ləğv edirsiniz?',
-    text: 'Ləğv etmə məhsul miqdarı və tərəfdaş borcu təsirlərini geri qaytaracaq. Pul qalığı dəyişməyəcək.',
+    text: 'Bu tamamlanmış alışı ləğv etmək geri qaytarıla bilməz. Aşağıdakı təsirlər eyni vaxtda tətbiq olunacaq.',
+    effectsTitle: 'Ləğv nəticələri',
+    effects: [
+      'Məhsul miqdarı orijinal qəbul qədər azalacaq (tarixçə saxlanılır).',
+      'Tərəfdaş borcu orijinal alış məbləği qədər artacaq (borc hərəkəti saxlanılır).',
+      'Kassa balansı bu ləğvdən dəyişmir — əlaqəli tamamlanmış məxarici əvvəlcə ayrıca ləğv edin.',
+      'Sənəd «Ləğv edilib» statusunda qalır; yenidən təsdiq edilə bilməz.',
+    ],
+    insufficientQuantityHint:
+      'Əgər məhsul sonradan satılıbsa və ya sərf olunubsa, ləğv bloklanacaq. Əvvəlcə həmin hərəkətləri həll edin.',
     reason: 'Ləğv səbəbi',
     reasonPlaceholder: 'Ləğv səbəbini daxil edin',
     reasonRequired: 'Ləğv səbəbi mütləqdir.',
@@ -113,12 +137,18 @@ export const PURCHASE_LABELS = {
   history: {
     quantity: 'Miqdar tarixçəsi',
     debt: 'Borc hərəkətləri',
+    cash: 'Əlaqəli kassa əməliyyatları',
+    cashCancelledHint:
+      'Ləğv edilmiş kassa əməliyyatları aktiv ödəniş sayılmır; tarixçə üçün saxlanılır.',
     change: 'Dəyişiklik',
     before: 'Əvvəl',
     after: 'Sonra',
     reason: 'Səbəb',
     date: 'Tarix',
     signedAmount: 'Məbləğ təsiri',
+    transactionNumber: 'Əməliyyat №',
+    cashAccount: 'Kassa hesabı',
+    amount: 'Məbləğ',
   },
   formatMoney,
 } as const;

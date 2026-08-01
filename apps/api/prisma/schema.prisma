@@ -18,16 +18,16 @@
 //   - Purchase/Sale Nest posting services (EPIC-009 / EPIC-010) — schema ready;
 //     quantity → ProductQuantityHistory; debt → BusinessPartnerDebtMovement
 //   - Full NegativeStockCase machinery (BRD-OD-04)
-//   - Multi-currency Cash accounts (ADR-031 — future Cash only; YAGNI now)
+//   - Multi-currency on Cash Accounts (ADR-031 — documented future; YAGNI now)
+//   - Multi-document payment allocation table (EPIC-012 / US-026)
 //
 // Product quantity (ADR-029): one currentQuantity per Product + history.
 // Partner debt (ADR-030): one signed currentDebtBalance per BusinessPartner +
 // auditable BusinessPartnerDebtMovement. Sign: >0 partner owes us; <0 we owe
 // partner; =0 none.
 //
-// Money amounts (ADR-031): static base currency AZN for all current domains.
-// No Currency reference model. Currency may return only under future Cash.
-// Precision: ADR-023 for annotated decimals.
+// Cash (ADR-032–037 / CHANGE-004): multiple named Cash Accounts; balance only
+// via Cash Transactions; AZN only (ADR-031). Precision: ADR-023.
 //
 // UUID version/storage representation is not decided by ADR-020 ("Future
 // Structure Decisions"). This schema uses Prisma's default `uuid()` (v4) as a
@@ -97,43 +97,31 @@ enum DocumentStatus {
   CANCELLED
 }
 
-/// Classification of a money account.
-/// Source: docs/business/invariants.md, "Cash" —
-/// "The main cash account, bank account, vehicle cash accounts, and personal
-/// funds are separate; a movement recorded in one account is never used to
-/// silently increase another."
-/// TODO: VEHICLE_CASH is included for terminology completeness (docs/business/
-/// terminology.md, "Vehicle Cash Account"), but the Field Sales (Yatı) trip
-/// structure that would normally own such an account is out of scope for this
-/// task and is not modeled here.
-enum MoneyAccountType {
-  MAIN_CASH
-  BANK
-  VEHICLE_CASH
-  PERSONAL_FUNDS
+/// Cash movement direction relative to one Cash Account (ADR-032 / ADR-033).
+/// `amount` on CashTransaction is always stored as a positive Decimal;
+/// signed balance effect is +amount for IN and -amount for OUT.
+enum CashTransactionDirection {
+  IN
+  OUT
 }
 
-/// Classification of a cash movement's business nature.
-/// Source: docs/business/invariants.md, "Cash" — "Every money movement
-/// identifies the account, amount, date, movement type, actor, and business
-/// reason or source," and the specific movement kinds named throughout that
-/// section (opening entry, adjustment, transfer, owner contribution/
-/// withdrawal) and "Sales"/"Purchasing" (receipt/payment against a document).
-/// TODO: Settlement-layer distinctions (e.g., a receipt applied to a specific
-/// document vs. retained as an advance) are not modeled as separate types
-/// here, since Allocation/Advance entities are out of this task's scope
-/// (docs/business/terminology.md, "Allocation", "Customer Advance",
-/// "Supplier Advance").
+/// Business classification of a Cash Transaction (CHANGE-004 / EPIC-011).
+/// UI must show Azerbaijani labels — never raw enum keys (ADR-005).
+/// TRANSFER_OUT / TRANSFER_IN are produced by the CashTransfer aggregate
+/// (ADR-034), not as unrelated manual pairs. Partner settlement types
+/// (CUSTOMER_RECEIPT / SUPPLIER_PAYMENT) update signed debt (ADR-030).
 enum CashTransactionType {
-  OPENING_BALANCE
-  SALE_RECEIPT
-  PURCHASE_PAYMENT
-  EXPENSE_PAYMENT
-  TRANSFER
-  ADJUSTMENT
-  OWNER_CONTRIBUTION
+  CUSTOMER_RECEIPT
+  SUPPLIER_PAYMENT
+  OTHER_INCOME
+  EXPENSE
+  OWNER_DEPOSIT
   OWNER_WITHDRAWAL
-  REFUND
+  OPENING_BALANCE
+  MANUAL_ADJUSTMENT
+  TRANSFER_OUT
+  TRANSFER_IN
+  REVERSAL
 }
 
 // ---------------------------------------------------------------------------
@@ -189,6 +177,12 @@ model User {
   createdCashTxns              CashTransaction[]         @relation("CashTransactionCreatedBy")
   postedCashTxns               CashTransaction[]         @relation("CashTransactionPostedBy")
   cancelledCashTxns            CashTransaction[]         @relation("CashTransactionCancelledBy")
+  responsibleCashAccounts      CashAccount[]             @relation("CashAccountResponsibleUser")
+  createdCashAccounts          CashAccount[]             @relation("CashAccountCreatedBy")
+  deactivatedCashAccounts      CashAccount[]             @relation("CashAccountDeactivatedBy")
+  createdExpenseCategories     ExpenseCategory[]         @relation("ExpenseCategoryCreatedBy")
+  createdCashTransfers         CashTransfer[]            @relation("CashTransferCreatedBy")
+  cancelledCashTransfers       CashTransfer[]            @relation("CashTransferCancelledBy")
   createdProductQuantityHistory ProductQuantityHistory[] @relation("ProductQuantityHistoryCreatedBy")
   createdPartnerDebtMovements  BusinessPartnerDebtMovement[] @relation("PartnerDebtMovementCreatedBy")
   refreshTokens                RefreshToken[]
@@ -635,75 +629,175 @@ model PurchaseItem {
 }
 
 // ---------------------------------------------------------------------------
-// Cash
+// Cash (ADR-032–037 / CHANGE-004)
 // ---------------------------------------------------------------------------
 
-/// Source: docs/business/invariants.md, "Cash" — "The main cash account,
-/// bank account, vehicle cash accounts, and personal funds are separate."
-model MoneyAccount {
-  id         String           @id @default(uuid())
-  name       String
-  type       MoneyAccountType
-  /// Current release: all money is AZN (ADR-031). Multi-currency cash
-  /// accounts are a future Cash-domain extension — not modeled here (YAGNI).
-  isActive   Boolean          @default(true)
-  createdAt  DateTime         @default(now())
-  updatedAt  DateTime         @updatedAt
+/// Operating expense classification (US-025). Required on EXPENSE cash-outs.
+/// Soft-deactivate only — historical Cash Transactions keep the FK.
+model ExpenseCategory {
+  id                  String    @id @default(uuid())
+  name                String    @unique
+  isActive            Boolean   @default(true)
+  deactivatedAt       DateTime?
+  deactivationReason  String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  createdByUserId     String
+  createdBy           User      @relation("ExpenseCategoryCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
 
-  cashTransactions CashTransaction[] @relation("CashTransactionAccount")
+  cashTransactions CashTransaction[]
 
-  @@index([type])
   @@index([isActive])
+  @@index([createdByUserId])
 }
 
-/// Source: docs/business/invariants.md, "Cash" — "Every money movement
-/// identifies the account, amount, date, movement type, actor, and business
-/// reason or source." `amount` is signed (positive = increase, negative =
-/// decrease) at the account identified by `moneyAccountId`. Amounts are AZN
-/// (ADR-031). Optional links to Sale/Purchase remain (ADR-028).
-model CashTransaction {
-  id                    String              @id @default(uuid())
-  moneyAccountId        String
-  moneyAccount          MoneyAccount        @relation("CashTransactionAccount", fields: [moneyAccountId], references: [id])
-  type                  CashTransactionType
-  amount                Decimal
-  transactionDate       DateTime
-  reason                String?
+/// Separately managed pool of company money (ADR-032). Person names are data
+/// only — never hardcoded modules. Current amounts are AZN (ADR-031).
+/// `currentBalance` changes only via Cash Transactions (ADR-033).
+model CashAccount {
+  id     String @id @default(uuid())
+  name   String @unique
+  /// Backend-generated business code (e.g. CA-0000001). Read-only to clients.
+  code   String @unique
+  notes  String?
 
-  partnerId String?
-  partner   BusinessPartner? @relation(fields: [partnerId], references: [id])
+  /// Transactionally maintained AZN balance (ADR-023 money scale).
+  currentBalance Decimal @default(0) @db.Decimal(18, 2)
 
-  saleId     String?
-  sale       Sale?     @relation(fields: [saleId], references: [id])
-  purchaseId String?
-  purchase   Purchase? @relation(fields: [purchaseId], references: [id])
+  responsibleUserId String?
+  responsibleUser   User?   @relation("CashAccountResponsibleUser", fields: [responsibleUserId], references: [id], onDelete: SetNull)
 
-  pairedTransactionId String?          @unique
-  pairedTransaction   CashTransaction? @relation("CashTransactionPair", fields: [pairedTransactionId], references: [id])
-  pairedWith          CashTransaction? @relation("CashTransactionPair")
+  isActive            Boolean   @default(true)
+  deactivatedAt       DateTime?
+  deactivatedByUserId String?
+  deactivatedBy       User?     @relation("CashAccountDeactivatedBy", fields: [deactivatedByUserId], references: [id], onDelete: SetNull)
+  deactivationReason  String?
 
-  status DocumentStatus @default(DRAFT)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdByUserId String
+  createdBy       User     @relation("CashAccountCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
 
-  postedAt       DateTime?
-  postedByUserId String?
-  postedBy       User?     @relation("CashTransactionPostedBy", fields: [postedByUserId], references: [id])
+  cashTransactions CashTransaction[]
+  transfersOut     CashTransfer[]    @relation("CashTransferSource")
+  transfersIn      CashTransfer[]    @relation("CashTransferDestination")
+
+  @@index([isActive])
+  @@index([responsibleUserId])
+  @@index([createdByUserId])
+}
+
+/// Atomic internal transfer aggregate (ADR-034 / US-044). Produces linked
+/// TRANSFER_OUT + TRANSFER_IN movements; Total Company Cash unchanged.
+model CashTransfer {
+  id             String @id @default(uuid())
+  transferNumber String @unique
+
+  sourceCashAccountId String
+  sourceCashAccount   CashAccount @relation("CashTransferSource", fields: [sourceCashAccountId], references: [id], onDelete: Restrict)
+
+  destinationCashAccountId String
+  destinationCashAccount   CashAccount @relation("CashTransferDestination", fields: [destinationCashAccountId], references: [id], onDelete: Restrict)
+
+  /// Positive AZN amount (ADR-023 money scale).
+  amount          Decimal @db.Decimal(18, 2)
+  transactionDate DateTime
+  notes           String?
+
+  /// v1: POSTED or CANCELLED (ADR-036 pattern).
+  status DocumentStatus @default(POSTED)
+
+  negativeBalanceOverrideReason String?
 
   cancelledAt       DateTime?
   cancelledByUserId String?
-  cancelledBy       User?     @relation("CashTransactionCancelledBy", fields: [cancelledByUserId], references: [id])
+  cancelledBy       User?     @relation("CashTransferCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: Restrict)
   cancelReason      String?
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   createdByUserId String
-  createdBy       User     @relation("CashTransactionCreatedBy", fields: [createdByUserId], references: [id])
+  createdBy       User     @relation("CashTransferCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  legs CashTransaction[]
+
+  @@index([sourceCashAccountId])
+  @@index([destinationCashAccountId])
+  @@index([status])
+  @@index([transactionDate])
+  @@index([createdByUserId])
+}
+
+/// Posted cash movement against one Cash Account (ADR-033, ADR-035, ADR-036).
+/// Ordinary create completes as POSTED in one step (no Draft workflow in v1).
+/// `amount` is always positive; use `direction` for signed effect.
+model CashTransaction {
+  id                String                   @id @default(uuid())
+  transactionNumber String                   @unique
+  cashAccountId     String
+  cashAccount       CashAccount              @relation(fields: [cashAccountId], references: [id], onDelete: Restrict)
+  direction         CashTransactionDirection
+  type              CashTransactionType
+  /// v1 services use POSTED or CANCELLED only (ADR-036).
+  status            DocumentStatus           @default(POSTED)
+  /// Positive AZN amount (ADR-023 money scale).
+  amount            Decimal                  @db.Decimal(18, 2)
+  transactionDate   DateTime
+  notes             String?
+
+  balanceBefore Decimal @db.Decimal(18, 2)
+  balanceAfter  Decimal @db.Decimal(18, 2)
+
+  /// Required when posting would make balance negative (ADR-037).
+  negativeBalanceOverrideReason String?
+
+  /// Required when type = EXPENSE (US-025). Null for other cash types.
+  expenseCategoryId String?
+  expenseCategory   ExpenseCategory? @relation(fields: [expenseCategoryId], references: [id], onDelete: Restrict)
+
+  partnerId String?
+  partner   BusinessPartner? @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+
+  /// Optional single-document link (ADR-028). Multi-document allocation is
+  /// a later table (EPIC-012 / US-026).
+  saleId     String?
+  sale       Sale?     @relation(fields: [saleId], references: [id], onDelete: Restrict)
+  purchaseId String?
+  purchase   Purchase? @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
+
+  /// Set when this row is a TRANSFER_OUT / TRANSFER_IN leg (ADR-034).
+  cashTransferId String?
+  cashTransfer   CashTransfer? @relation(fields: [cashTransferId], references: [id], onDelete: Restrict)
+
+  reversalOfTransactionId String?          @unique
+  reversalOf              CashTransaction? @relation("CashTransactionReversal", fields: [reversalOfTransactionId], references: [id], onDelete: Restrict)
+  reversedBy              CashTransaction? @relation("CashTransactionReversal")
+
+  postedAt       DateTime?
+  postedByUserId String?
+  postedBy       User?     @relation("CashTransactionPostedBy", fields: [postedByUserId], references: [id], onDelete: Restrict)
+
+  cancelledAt       DateTime?
+  cancelledByUserId String?
+  cancelledBy       User?     @relation("CashTransactionCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: Restrict)
+  cancelReason      String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdByUserId String
+  createdBy       User     @relation("CashTransactionCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
 
   partnerDebtMovements BusinessPartnerDebtMovement[]
 
-  @@index([moneyAccountId, transactionDate])
+  @@index([cashAccountId, transactionDate])
   @@index([type])
+  @@index([direction])
   @@index([status])
   @@index([partnerId])
   @@index([saleId])
   @@index([purchaseId])
+  @@index([expenseCategoryId])
+  @@index([cashTransferId])
+  @@index([createdByUserId])
+  @@index([postedAt])
 }

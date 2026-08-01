@@ -22,6 +22,10 @@ import {
 import type { MenuProps, TableProps } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type { Dayjs } from 'dayjs';
+import {
+  DATE_DISPLAY_FORMAT,
+  dateOnlyPickerToApi,
+} from '../../../shared/datetime';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowCounterClockwise,
@@ -40,7 +44,7 @@ import {
 } from '@phosphor-icons/react';
 import { mapApiError } from '../../../api/map-api-error';
 import { formatMoney } from '../../../shared/money/format-money';
-import { formatDate } from '../../../shared/ui/format';
+import { formatDateTime } from '../../../shared/ui/format';
 import { phIcon, ICON_SIZE } from '../../../shared/ui/ph-icon';
 import {
   CodeText,
@@ -63,11 +67,13 @@ import type {
 import {
   useCancelPurchase,
   usePostPurchase,
+  usePurchase,
   usePurchasesList,
   useRemovePurchase,
 } from '../api/purchases.hooks';
 import { PURCHASE_LABELS, purchaseStatusLabel } from '../ui/labels';
 import { PurchaseFormModal } from '../ui/purchase-form-modal';
+import { PurchasePostConfirmModal } from '../ui/purchase-post-confirm-modal';
 
 const { Text } = Typography;
 
@@ -113,6 +119,7 @@ export function PurchasesPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [cancelTarget, setCancelTarget] = useState<PurchaseListItem>();
   const [cancelReason, setCancelReason] = useState('');
+  const [postTarget, setPostTarget] = useState<PurchaseListItem>();
   const [formMode, setFormMode] = useState<
     { kind: 'closed' } | { kind: 'create' } | { kind: 'edit'; purchaseId: string }
   >({ kind: 'closed' });
@@ -162,6 +169,7 @@ export function PurchasesPage() {
   const postMutation = usePostPurchase();
   const removeMutation = useRemovePurchase();
   const cancelMutation = useCancelPurchase();
+  const postTargetDetail = usePurchase(postTarget?.id);
 
   const partnerOptions = (partners.data?.data ?? [])
     .filter((partner) => partner.isSupplier)
@@ -185,22 +193,7 @@ export function PurchasesPage() {
   ].filter(Boolean).length;
 
   function confirmPost(record: PurchaseListItem) {
-    Modal.confirm({
-      title: PURCHASE_LABELS.post.title,
-      content: PURCHASE_LABELS.post.text,
-      okText: PURCHASE_LABELS.actions.post,
-      cancelText: PURCHASE_LABELS.actions.back,
-      icon: phIcon(CheckCircle, { size: ICON_SIZE.xl, weight: 'fill' }),
-      onOk: async () => {
-        try {
-          await postMutation.mutateAsync(record.id);
-          message.success(PURCHASE_LABELS.post.success);
-        } catch (error) {
-          message.error(mapApiError(error).userMessage);
-          throw error;
-        }
-      },
-    });
+    setPostTarget(record);
   }
 
   function confirmRemove(record: PurchaseListItem) {
@@ -340,7 +333,7 @@ export function PurchasesPage() {
       render: (value: string) => (
         <Space size={6}>
           {phIcon(CalendarBlank, { size: ICON_SIZE.sm })}
-          <Text>{formatDate(value)}</Text>
+          <Text>{formatDateTime(value)}</Text>
         </Space>
       ),
     },
@@ -497,13 +490,13 @@ export function PurchasesPage() {
           </FilterField>
           <FilterField label={PURCHASE_LABELS.filters.dateRange}>
             <DatePicker.RangePicker
-              format="DD.MM.YYYY"
+              format={DATE_DISPLAY_FORMAT}
               onChange={(values: null | [Dayjs | null, Dayjs | null]) => {
                 setDateRange(
                   values?.[0] && values[1]
                     ? [
-                        values[0].format('YYYY-MM-DD'),
-                        values[1].format('YYYY-MM-DD'),
+                        dateOnlyPickerToApi(values[0]),
+                        dateOnlyPickerToApi(values[1]),
                       ]
                     : undefined,
                 );
@@ -605,7 +598,7 @@ export function PurchasesPage() {
                 />
                 <Space wrap size={[12, 4]}>
                   <Text type="secondary">
-                    {phIcon(CalendarBlank, { size: 12 })} {formatDate(record.businessDate)}
+                    {phIcon(CalendarBlank, { size: 12 })} {formatDateTime(record.businessDate)}
                   </Text>
                   <Popover content={`${record.itemCount} sətir`}>
                     <Space size={4}>
@@ -668,19 +661,65 @@ export function PurchasesPage() {
           }
         }}
       >
-        <Text>{PURCHASE_LABELS.cancel.text}</Text>
-        <div style={{ marginTop: 16 }}>
-          <Text strong>{PURCHASE_LABELS.cancel.reason}</Text>
-          <Input.TextArea
-            value={cancelReason}
-            onChange={(event) => setCancelReason(event.target.value)}
-            placeholder={PURCHASE_LABELS.cancel.reasonPlaceholder}
-            rows={3}
-            maxLength={1000}
-            showCount
-          />
-        </div>
+        <Space direction="vertical" size={12} style={{ width: '100%' }}>
+          <Text>{PURCHASE_LABELS.cancel.text}</Text>
+          <div>
+            <Text strong>{PURCHASE_LABELS.cancel.effectsTitle}</Text>
+            <ul style={{ margin: '8px 0 0', paddingLeft: 20 }}>
+              {PURCHASE_LABELS.cancel.effects.map((effect) => (
+                <li key={effect}>
+                  <Text type="secondary">{effect}</Text>
+                </li>
+              ))}
+            </ul>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              {PURCHASE_LABELS.cancel.insufficientQuantityHint}
+            </Text>
+          </div>
+          <div>
+            <Text strong>{PURCHASE_LABELS.cancel.reason}</Text>
+            <Input.TextArea
+              value={cancelReason}
+              onChange={(event) => setCancelReason(event.target.value)}
+              placeholder={PURCHASE_LABELS.cancel.reasonPlaceholder}
+              rows={3}
+              maxLength={1000}
+              showCount
+              style={{ marginTop: 8 }}
+            />
+          </div>
+        </Space>
       </Modal>
+
+      <PurchasePostConfirmModal
+        open={Boolean(postTarget)}
+        confirmLoading={
+          postMutation.isPending ||
+          (Boolean(postTarget) && postTargetDetail.isLoading)
+        }
+        documentTotal={
+          postTargetDetail.data?.totalAmount ?? postTarget?.totalAmount
+        }
+        partnerDebtBalance={
+          postTargetDetail.data?.partner.currentDebtBalance ??
+          postTarget?.partner?.currentDebtBalance
+        }
+        onCancel={() => setPostTarget(undefined)}
+        onConfirm={async (payload) => {
+          if (!postTarget) return;
+          try {
+            await postMutation.mutateAsync({
+              id: postTarget.id,
+              input: payload,
+            });
+            message.success(PURCHASE_LABELS.post.success);
+            setPostTarget(undefined);
+          } catch (error) {
+            message.error(mapApiError(error).userMessage);
+            throw error;
+          }
+        }}
+      />
 
       <PurchaseFormModal
         key={

@@ -57,9 +57,7 @@ export class SalesController {
   @Get()
   @ApiOperation({ summary: 'List sales with pagination and filters' })
   @ApiOkResponse({ type: PaginatedSalesResponseDto })
-  list(
-    @Query() query: ListSalesQueryDto,
-  ): Promise<PaginatedSalesResponseDto> {
+  list(@Query() query: ListSalesQueryDto): Promise<PaginatedSalesResponseDto> {
     return this.salesService.list(query);
   }
 

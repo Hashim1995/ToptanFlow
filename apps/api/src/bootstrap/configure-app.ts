@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import cookieParser from 'cookie-parser';
+import { BakuDateSerializationInterceptor } from '../common/datetime/baku-date-serialization.interceptor.js';
 
 export interface AppBootstrapSettings {
   apiPrefix: string;
@@ -41,6 +42,7 @@ export function configureApp(app: INestApplication): AppBootstrapSettings {
       transform: true,
     }),
   );
+  app.useGlobalInterceptors(new BakuDateSerializationInterceptor());
 
   const allowedOrigins = corsOrigins
     .split(',')

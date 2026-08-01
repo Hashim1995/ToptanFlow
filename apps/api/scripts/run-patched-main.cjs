@@ -3,6 +3,7 @@
  * Nest may append Node flags (e.g. --enable-source-maps) plus the compiled
  * entry path; patch the Prisma client, then load the entry.
  */
+process.env.TZ = 'UTC';
 require('./patch-prisma-client-dist.cjs');
 
 const entry = process.argv.slice(2).find((arg) => !arg.startsWith('-'));

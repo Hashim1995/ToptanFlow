@@ -14,7 +14,7 @@ import {
   message,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
   CheckCircle,
@@ -26,6 +26,7 @@ import {
   ShoppingBag,
   Trash,
   WarningCircle,
+  Wallet,
   XCircle,
 } from '@phosphor-icons/react';
 import { mapApiError } from '../../../api/map-api-error';
@@ -33,7 +34,6 @@ import { debtBalanceSignLabel } from '../../../shared/money/debt-balance-label';
 import { formatMoney } from '../../../shared/money/format-money';
 import {
   emptyDash,
-  formatDate,
   formatDateTime,
   formatQuantity,
 } from '../../../shared/ui/format';
@@ -43,11 +43,13 @@ import {
   EntityCell,
   MoneyCell,
 } from '../../../shared/ui/table-cells';
+import { CASH_LABELS } from '../../cash/ui/labels';
 import { useProductsList } from '../../master-data/api/products.hooks';
 import { PageHeader } from '../../master-data/ui/page-header';
 import type {
   SaleDebtMovement,
   SaleItem,
+  SaleLinkedCashTransaction,
   SaleQuantityHistory,
   SaleStatus,
 } from '../api/sales.api';
@@ -367,6 +369,70 @@ export function SaleDetailPage() {
     },
   ];
 
+  const cashColumns: ColumnsType<SaleLinkedCashTransaction> = [
+    {
+      title: SALES_LABELS.history.transactionNumber,
+      dataIndex: 'transactionNumber',
+      key: 'transactionNumber',
+      render: (value: string) => <CodeText value={value} />,
+    },
+    {
+      title: SALES_LABELS.history.cashAccount,
+      key: 'cashAccount',
+      render: (_: unknown, row) => (
+        <Link to={`/cash/accounts/${row.cashAccountId}`}>
+          {row.cashAccountName} ({row.cashAccountCode})
+        </Link>
+      ),
+    },
+    {
+      title: 'Növ',
+      dataIndex: 'type',
+      key: 'type',
+      render: (value: string) => (
+        <Tag>
+          {CASH_LABELS.types[value as keyof typeof CASH_LABELS.types] ??
+            'Digər'}
+        </Tag>
+      ),
+    },
+    {
+      title: SALES_LABELS.history.amount,
+      dataIndex: 'amount',
+      key: 'amount',
+      align: 'right',
+      render: (value: string) => (
+        <MoneyCell value={value} format={formatMoney} emphasize />
+      ),
+    },
+    {
+      title: SALES_LABELS.columns.status,
+      dataIndex: 'status',
+      key: 'status',
+      render: (value: string) => (
+        <Tag
+          color={
+            value === 'POSTED'
+              ? 'success'
+              : value === 'CANCELLED'
+                ? 'error'
+                : 'default'
+          }
+        >
+          {CASH_LABELS.statuses[value as keyof typeof CASH_LABELS.statuses] ??
+            value}
+        </Tag>
+      ),
+    },
+    {
+      title: SALES_LABELS.history.date,
+      dataIndex: 'transactionDate',
+      key: 'transactionDate',
+      width: 140,
+      render: (value: string) => formatDateTime(value),
+    },
+  ];
+
   const auditItems = [
     {
       key: 'status',
@@ -385,7 +451,7 @@ export function SaleDetailPage() {
     {
       key: 'date',
       label: SALES_LABELS.columns.businessDate,
-      children: formatDate(record.businessDate),
+      children: formatDateTime(record.businessDate),
     },
     {
       key: 'partner',
@@ -632,6 +698,26 @@ export function SaleDetailPage() {
         pagination={false}
         locale={{ emptyText: 'Borc hərəkəti yoxdur.' }}
         scroll={{ x: 800 }}
+        style={{ marginBottom: 20 }}
+      />
+
+      <Space align="center" style={{ marginBottom: 8 }}>
+        {phIcon(Wallet, { size: ICON_SIZE.md })}
+        <Title level={5} style={{ margin: 0 }}>
+          {SALES_LABELS.history.cash}
+        </Title>
+      </Space>
+      <Text type="secondary" style={{ display: 'block', marginBottom: 8, fontSize: 12 }}>
+        {SALES_LABELS.history.cashCancelledHint}
+      </Text>
+      <Table
+        rowKey="id"
+        size="small"
+        columns={cashColumns}
+        dataSource={record.cashTransactions ?? []}
+        pagination={false}
+        locale={{ emptyText: 'Əlaqəli kassa əməliyyatı yoxdur.' }}
+        scroll={{ x: 800 }}
       />
 
       <Modal
@@ -665,32 +751,45 @@ export function SaleDetailPage() {
           }
         }}
       >
-        <Text>{SALES_LABELS.cancel.text}</Text>
-        <div style={{ marginTop: 16 }}>
-          <Text strong>{SALES_LABELS.cancel.reason}</Text>
-          <Input.TextArea
-            value={cancelReason}
-            onChange={(event) => setCancelReason(event.target.value)}
-            placeholder={SALES_LABELS.cancel.reasonPlaceholder}
-            rows={3}
-            maxLength={1000}
-            showCount
-          />
-        </div>
+        <Space direction="vertical" size={12} style={{ width: '100%' }}>
+          <Text>{SALES_LABELS.cancel.text}</Text>
+          <div>
+            <Text strong>{SALES_LABELS.cancel.effectsTitle}</Text>
+            <ul style={{ margin: '8px 0 0', paddingLeft: 20 }}>
+              {SALES_LABELS.cancel.effects.map((effect) => (
+                <li key={effect}>
+                  <Text type="secondary">{effect}</Text>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <Text strong>{SALES_LABELS.cancel.reason}</Text>
+            <Input.TextArea
+              value={cancelReason}
+              onChange={(event) => setCancelReason(event.target.value)}
+              placeholder={SALES_LABELS.cancel.reasonPlaceholder}
+              rows={3}
+              maxLength={1000}
+              showCount
+              style={{ marginTop: 8 }}
+            />
+          </div>
+        </Space>
       </Modal>
 
       <SalePostConfirmModal
         open={postOpen}
         confirmLoading={postMutation.isPending}
         shortages={shortages}
+        documentTotal={record.totalAmount}
+        partnerDebtBalance={record.partner.currentDebtBalance}
         onCancel={() => setPostOpen(false)}
-        onConfirm={async (negativeQuantityReason) => {
+        onConfirm={async (payload) => {
           try {
             await postMutation.mutateAsync({
               id: record.id,
-              input: negativeQuantityReason
-                ? { negativeQuantityReason }
-                : undefined,
+              input: payload,
             });
             message.success(SALES_LABELS.post.success);
             setPostOpen(false);
