@@ -4,17 +4,26 @@ import {
   ArrowRight,
   Package,
   Ruler,
+  ShoppingBag,
   ShoppingCart,
   SquaresFour,
   UsersThree,
 } from '@phosphor-icons/react';
 import { MASTER_DATA_LABELS } from '../features/master-data/ui/labels';
 import { PURCHASE_LABELS } from '../features/purchases/ui/labels';
+import { SALES_LABELS } from '../features/sales/ui/labels';
 import { ICON_SIZE, phIcon } from '../shared/ui/ph-icon';
 
 const { Title, Paragraph, Text } = Typography;
 
 const SHORTCUTS = [
+  {
+    to: '/sales',
+    title: SALES_LABELS.nav,
+    description: 'Satış qaralamaları, təsdiq və ləğv əməliyyatları',
+    icon: ShoppingBag,
+    color: '#eb2f96',
+  },
   {
     to: '/purchases',
     title: PURCHASE_LABELS.nav,
@@ -62,8 +71,8 @@ export function HomePage() {
         Ana səhifə
       </Title>
       <Paragraph type="secondary" style={{ marginBottom: 28, maxWidth: 560 }}>
-        Əsas iş axınlarına buradan keçin. Satış və kassa modulları növbəti
-        hekayələrdə əlavə olunacaq.
+        Əsas iş axınlarına buradan keçin. Kassa modulu növbəti hekayələrdə
+        əlavə olunacaq.
       </Paragraph>
 
       <Row gutter={[16, 16]}>

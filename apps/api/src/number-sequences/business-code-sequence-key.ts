@@ -12,6 +12,7 @@ export const BusinessCodeSequenceKey = {
   PRODUCT: 'PRODUCT',
   BUSINESS_PARTNER: 'BUSINESS_PARTNER',
   PURCHASE: 'PURCHASE',
+  SALE: 'SALE',
 } as const;
 
 export type BusinessCodeSequenceKey =

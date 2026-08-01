@@ -23,7 +23,7 @@ import {
   Package,
   PencilSimple,
   Scales,
-  ShoppingCart,
+  ShoppingBag,
   Trash,
   WarningCircle,
   XCircle,
@@ -46,23 +46,25 @@ import {
 import { useProductsList } from '../../master-data/api/products.hooks';
 import { PageHeader } from '../../master-data/ui/page-header';
 import type {
-  PurchaseDebtMovement,
-  PurchaseItem,
-  PurchaseQuantityHistory,
-  PurchaseStatus,
-} from '../api/purchases.api';
+  SaleDebtMovement,
+  SaleItem,
+  SaleQuantityHistory,
+  SaleStatus,
+} from '../api/sales.api';
 import {
-  useCancelPurchase,
-  usePostPurchase,
-  usePurchase,
-  useRemovePurchase,
-} from '../api/purchases.hooks';
-import { PURCHASE_LABELS, purchaseStatusLabel } from '../ui/labels';
-import { PurchaseFormModal } from '../ui/purchase-form-modal';
+  useCancelSale,
+  usePostSale,
+  useRemoveSale,
+  useSale,
+} from '../api/sales.hooks';
+import { SaleFormModal } from '../ui/sale-form-modal';
+import { SALES_LABELS, saleStatusLabel } from '../ui/labels';
+import { computeQuantityShortages } from '../ui/quantity-shortage';
+import { SalePostConfirmModal } from '../ui/sale-post-confirm-modal';
 
 const { Text, Title } = Typography;
 
-function statusColor(status: PurchaseStatus) {
+function statusColor(status: SaleStatus) {
   return status === 'POSTED' ? 'success' : status === 'CANCELLED' ? 'error' : 'warning';
 }
 
@@ -89,21 +91,22 @@ const debtKindLabels: Record<string, string> = {
   REVERSAL: 'Geri qaytarma',
 };
 
-export function PurchaseDetailPage() {
+export function SaleDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const purchase = usePurchase(id);
+  const sale = useSale(id);
   const products = useProductsList({
     pageSize: 100,
     sortBy: 'name',
     sortOrder: 'asc',
   });
-  const postMutation = usePostPurchase();
-  const removeMutation = useRemovePurchase();
-  const cancelMutation = useCancelPurchase();
+  const postMutation = usePostSale();
+  const removeMutation = useRemoveSale();
+  const cancelMutation = useCancelSale();
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [editOpen, setEditOpen] = useState(false);
+  const [postOpen, setPostOpen] = useState(false);
 
   const productById = useMemo(() => {
     const map = new Map<string, { currentQuantity: string }>();
@@ -113,33 +116,33 @@ export function PurchaseDetailPage() {
     return map;
   }, [products.data?.data]);
 
-  if (purchase.isLoading) {
+  if (sale.isLoading) {
     return (
       <div style={{ textAlign: 'center', padding: 48 }}>
-        <Spin tip={PURCHASE_LABELS.messages.loading} />
+        <Spin tip={SALES_LABELS.messages.loading} />
       </div>
     );
   }
-  if (purchase.isError || !purchase.data) {
+  if (sale.isError || !sale.data) {
     return (
       <Alert
         type="error"
         showIcon
         icon={phIcon(WarningCircle, { weight: 'fill' })}
         message={
-          purchase.error
-            ? mapApiError(purchase.error).userMessage
-            : PURCHASE_LABELS.messages.loadError
+          sale.error
+            ? mapApiError(sale.error).userMessage
+            : SALES_LABELS.messages.loadError
         }
         action={
-          <Button onClick={() => void purchase.refetch()}>
-            {PURCHASE_LABELS.actions.retry}
+          <Button onClick={() => void sale.refetch()}>
+            {SALES_LABELS.actions.retry}
           </Button>
         }
       />
     );
   }
-  const record = purchase.data;
+  const record = sale.data;
   const totalLineQuantity = record.items.reduce(
     (sum, item) => sum + (Number.parseFloat(item.quantity) || 0),
     0,
@@ -147,40 +150,25 @@ export function PurchaseDetailPage() {
   const currentDebt = Number.parseFloat(record.partner.currentDebtBalance) || 0;
   const documentTotal = Number.parseFloat(record.totalAmount) || 0;
   const projectedDebt =
-    record.status === 'DRAFT' ? currentDebt - documentTotal : undefined;
-
-  function confirmPost() {
-    Modal.confirm({
-      title: PURCHASE_LABELS.post.title,
-      content: PURCHASE_LABELS.post.text,
-      okText: PURCHASE_LABELS.actions.post,
-      cancelText: PURCHASE_LABELS.actions.back,
-      icon: phIcon(CheckCircle, { size: ICON_SIZE.xl, weight: 'fill' }),
-      onOk: async () => {
-        try {
-          await postMutation.mutateAsync(record.id);
-          message.success(PURCHASE_LABELS.post.success);
-        } catch (error) {
-          message.error(mapApiError(error).userMessage);
-          throw error;
-        }
-      },
-    });
-  }
+    record.status === 'DRAFT' ? currentDebt + documentTotal : undefined;
+  const shortages = computeQuantityShortages(
+    record.items,
+    products.data?.data ?? [],
+  );
 
   function confirmRemove() {
     Modal.confirm({
-      title: PURCHASE_LABELS.remove.title,
-      content: PURCHASE_LABELS.remove.text,
-      okText: PURCHASE_LABELS.actions.remove,
-      cancelText: PURCHASE_LABELS.actions.back,
+      title: SALES_LABELS.remove.title,
+      content: SALES_LABELS.remove.text,
+      okText: SALES_LABELS.actions.remove,
+      cancelText: SALES_LABELS.actions.back,
       okButtonProps: { danger: true },
       icon: phIcon(WarningCircle, { size: ICON_SIZE.xl, weight: 'fill' }),
       onOk: async () => {
         try {
           await removeMutation.mutateAsync(record.id);
-          message.success(PURCHASE_LABELS.remove.success);
-          navigate('/purchases');
+          message.success(SALES_LABELS.remove.success);
+          navigate('/sales');
         } catch (error) {
           message.error(mapApiError(error).userMessage);
           throw error;
@@ -189,7 +177,7 @@ export function PurchaseDetailPage() {
     });
   }
 
-  const itemColumns: ColumnsType<PurchaseItem> = [
+  const itemColumns: ColumnsType<SaleItem> = [
     {
       title: '#',
       key: 'index',
@@ -199,7 +187,7 @@ export function PurchaseDetailPage() {
       ),
     },
     {
-      title: PURCHASE_LABELS.fields.product,
+      title: SALES_LABELS.fields.product,
       key: 'product',
       render: (_, item) => (
         <EntityCell
@@ -210,7 +198,7 @@ export function PurchaseDetailPage() {
       ),
     },
     {
-      title: PURCHASE_LABELS.fields.availableQuantity,
+      title: SALES_LABELS.fields.availableQuantity,
       key: 'availableQuantity',
       width: 120,
       align: 'right',
@@ -220,7 +208,7 @@ export function PurchaseDetailPage() {
       },
     },
     {
-      title: PURCHASE_LABELS.fields.quantity,
+      title: SALES_LABELS.fields.quantity,
       dataIndex: 'quantity',
       key: 'quantity',
       width: 110,
@@ -228,7 +216,7 @@ export function PurchaseDetailPage() {
       render: (value: string) => formatQuantity(value),
     },
     {
-      title: PURCHASE_LABELS.fields.unitPrice,
+      title: SALES_LABELS.fields.unitPrice,
       dataIndex: 'unitPrice',
       key: 'unitPrice',
       width: 130,
@@ -238,7 +226,7 @@ export function PurchaseDetailPage() {
       ),
     },
     {
-      title: PURCHASE_LABELS.fields.lineDiscount,
+      title: SALES_LABELS.fields.lineDiscount,
       dataIndex: 'discountAmount',
       key: 'discount',
       width: 120,
@@ -248,7 +236,7 @@ export function PurchaseDetailPage() {
       ),
     },
     {
-      title: PURCHASE_LABELS.fields.lineTotal,
+      title: SALES_LABELS.fields.lineTotal,
       dataIndex: 'lineTotal',
       key: 'lineTotal',
       width: 130,
@@ -257,8 +245,25 @@ export function PurchaseDetailPage() {
         <MoneyCell value={value} format={formatMoney} emphasize />
       ),
     },
+    ...(record.status === 'POSTED'
+      ? [
+          {
+            title: SALES_LABELS.fields.costAtPosting,
+            dataIndex: 'costAtPosting',
+            key: 'costAtPosting',
+            width: 150,
+            align: 'right' as const,
+            render: (value: string | null) =>
+              value ? (
+                <MoneyCell value={value} format={formatMoney} />
+              ) : (
+                emptyDash(value)
+              ),
+          },
+        ]
+      : []),
     {
-      title: PURCHASE_LABELS.fields.lineNotes,
+      title: SALES_LABELS.fields.lineNotes,
       dataIndex: 'notes',
       key: 'notes',
       ellipsis: true,
@@ -266,7 +271,7 @@ export function PurchaseDetailPage() {
     },
   ];
 
-  const quantityColumns: ColumnsType<PurchaseQuantityHistory> = [
+  const quantityColumns: ColumnsType<SaleQuantityHistory> = [
     {
       title: 'Hərəkət',
       dataIndex: 'kind',
@@ -276,34 +281,34 @@ export function PurchaseDetailPage() {
       ),
     },
     {
-      title: PURCHASE_LABELS.history.change,
+      title: SALES_LABELS.history.change,
       dataIndex: 'quantityChange',
       key: 'change',
       align: 'right',
       render: (value: string) => formatQuantity(value),
     },
     {
-      title: PURCHASE_LABELS.history.before,
+      title: SALES_LABELS.history.before,
       dataIndex: 'quantityBefore',
       key: 'before',
       align: 'right',
       render: (value: string) => formatQuantity(value),
     },
     {
-      title: PURCHASE_LABELS.history.after,
+      title: SALES_LABELS.history.after,
       dataIndex: 'quantityAfter',
       key: 'after',
       align: 'right',
       render: (value: string) => formatQuantity(value),
     },
     {
-      title: PURCHASE_LABELS.history.reason,
+      title: SALES_LABELS.history.reason,
       dataIndex: 'reason',
       key: 'reason',
       render: (value: string | null) => emptyDash(value),
     },
     {
-      title: PURCHASE_LABELS.history.date,
+      title: SALES_LABELS.history.date,
       dataIndex: 'createdAt',
       key: 'createdAt',
       width: 170,
@@ -311,7 +316,7 @@ export function PurchaseDetailPage() {
     },
   ];
 
-  const debtColumns: ColumnsType<PurchaseDebtMovement> = [
+  const debtColumns: ColumnsType<SaleDebtMovement> = [
     {
       title: 'Hərəkət',
       dataIndex: 'kind',
@@ -321,7 +326,7 @@ export function PurchaseDetailPage() {
       ),
     },
     {
-      title: PURCHASE_LABELS.history.signedAmount,
+      title: SALES_LABELS.history.signedAmount,
       dataIndex: 'signedAmount',
       key: 'signedAmount',
       align: 'right',
@@ -330,7 +335,7 @@ export function PurchaseDetailPage() {
       ),
     },
     {
-      title: PURCHASE_LABELS.history.before,
+      title: SALES_LABELS.history.before,
       dataIndex: 'balanceBefore',
       key: 'before',
       align: 'right',
@@ -339,7 +344,7 @@ export function PurchaseDetailPage() {
       ),
     },
     {
-      title: PURCHASE_LABELS.history.after,
+      title: SALES_LABELS.history.after,
       dataIndex: 'balanceAfter',
       key: 'after',
       align: 'right',
@@ -348,13 +353,13 @@ export function PurchaseDetailPage() {
       ),
     },
     {
-      title: PURCHASE_LABELS.history.reason,
+      title: SALES_LABELS.history.reason,
       dataIndex: 'reason',
       key: 'reason',
       render: (value: string | null) => emptyDash(value),
     },
     {
-      title: PURCHASE_LABELS.history.date,
+      title: SALES_LABELS.history.date,
       dataIndex: 'createdAt',
       key: 'createdAt',
       width: 170,
@@ -362,19 +367,146 @@ export function PurchaseDetailPage() {
     },
   ];
 
+  const auditItems = [
+    {
+      key: 'status',
+      label: SALES_LABELS.columns.status,
+      children: (
+        <Tag color={statusColor(record.status)}>
+          {saleStatusLabel(record.status)}
+        </Tag>
+      ),
+    },
+    {
+      key: 'document',
+      label: SALES_LABELS.columns.documentNumber,
+      children: <CodeText value={record.documentNumber} strong />,
+    },
+    {
+      key: 'date',
+      label: SALES_LABELS.columns.businessDate,
+      children: formatDate(record.businessDate),
+    },
+    {
+      key: 'partner',
+      label: SALES_LABELS.columns.partner,
+      children: (
+        <EntityCell
+          code={record.partner.code}
+          name={record.partner.name}
+        />
+      ),
+    },
+    {
+      key: 'debt',
+      label: SALES_LABELS.fields.partnerDebt,
+      children: (
+        <Space direction="vertical" size={0}>
+          <Text strong>
+            {formatMoney(record.partner.currentDebtBalance)}
+          </Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            {debtBalanceSignLabel(record.partner.currentDebtBalance)}
+          </Text>
+        </Space>
+      ),
+    },
+    {
+      key: 'itemCount',
+      label: SALES_LABELS.fields.itemCount,
+      children: record.items.length,
+    },
+    {
+      key: 'totalQuantity',
+      label: SALES_LABELS.fields.totalQuantity,
+      children: formatQuantity(totalLineQuantity),
+    },
+    ...(projectedDebt != null
+      ? [
+          {
+            key: 'projectedDebt',
+            label: SALES_LABELS.fields.projectedDebt,
+            children: (
+              <Space direction="vertical" size={0}>
+                <Text strong>{formatMoney(projectedDebt)}</Text>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  {debtBalanceSignLabel(projectedDebt)}
+                </Text>
+              </Space>
+            ),
+          },
+        ]
+      : []),
+    {
+      key: 'notes',
+      label: SALES_LABELS.fields.notes,
+      children: emptyDash(record.notes),
+      span: 2,
+    },
+  ];
+
+  const auditTrailItems = [
+    {
+      key: 'createdBy',
+      label: SALES_LABELS.audit.createdBy,
+      children: record.createdBy.fullName,
+    },
+    {
+      key: 'createdAt',
+      label: SALES_LABELS.columns.createdAt,
+      children: formatDateTime(record.createdAt),
+    },
+    {
+      key: 'postedBy',
+      label: SALES_LABELS.audit.postedBy,
+      children: emptyDash(record.postedBy?.fullName),
+    },
+    {
+      key: 'postedAt',
+      label: SALES_LABELS.audit.postedAt,
+      children: formatDateTime(record.postedAt),
+    },
+    {
+      key: 'cancelledBy',
+      label: SALES_LABELS.audit.cancelledBy,
+      children: emptyDash(record.cancelledBy?.fullName),
+    },
+    {
+      key: 'cancelledAt',
+      label: SALES_LABELS.audit.cancelledAt,
+      children: formatDateTime(record.cancelledAt),
+    },
+    {
+      key: 'cancelReason',
+      label: SALES_LABELS.audit.cancelReason,
+      children: emptyDash(record.cancelReason),
+      span: 2,
+    },
+    ...(record.negativeQuantityOverrideReason
+      ? [
+          {
+            key: 'negativeQuantityOverrideReason',
+            label: SALES_LABELS.audit.negativeQuantityOverrideReason,
+            children: record.negativeQuantityOverrideReason,
+            span: 2 as const,
+          },
+        ]
+      : []),
+  ];
+
   return (
     <div>
       <PageHeader
         title={record.documentNumber}
-        description={PURCHASE_LABELS.detail}
-        icon={phIcon(ShoppingCart, { size: ICON_SIZE.xl, weight: 'duotone' })}
+        description={SALES_LABELS.detail}
+        icon={phIcon(ShoppingBag, { size: ICON_SIZE.xl, weight: 'duotone' })}
         extra={
           <Space wrap>
             <Button
               icon={phIcon(ArrowLeft, { size: ICON_SIZE.md })}
-              onClick={() => navigate('/purchases')}
+              onClick={() => navigate('/sales')}
             >
-              {PURCHASE_LABELS.actions.back}
+              {SALES_LABELS.actions.back}
             </Button>
             {record.status === 'DRAFT' ? (
               <>
@@ -382,21 +514,21 @@ export function PurchaseDetailPage() {
                   icon={phIcon(PencilSimple, { size: ICON_SIZE.md })}
                   onClick={() => setEditOpen(true)}
                 >
-                  {PURCHASE_LABELS.actions.edit}
+                  {SALES_LABELS.actions.edit}
                 </Button>
                 <Button
                   type="primary"
                   icon={phIcon(CheckCircle, { size: ICON_SIZE.md })}
-                  onClick={confirmPost}
+                  onClick={() => setPostOpen(true)}
                 >
-                  {PURCHASE_LABELS.actions.post}
+                  {SALES_LABELS.actions.post}
                 </Button>
                 <Button
                   danger
                   icon={phIcon(Trash, { size: ICON_SIZE.md })}
                   onClick={confirmRemove}
                 >
-                  {PURCHASE_LABELS.actions.remove}
+                  {SALES_LABELS.actions.remove}
                 </Button>
               </>
             ) : null}
@@ -406,7 +538,7 @@ export function PurchaseDetailPage() {
                 icon={phIcon(XCircle, { size: ICON_SIZE.md })}
                 onClick={() => setCancelOpen(true)}
               >
-                {PURCHASE_LABELS.actions.cancel}
+                {SALES_LABELS.actions.cancel}
               </Button>
             ) : null}
           </Space>
@@ -417,95 +549,14 @@ export function PurchaseDetailPage() {
         <Descriptions
           size="small"
           column={{ xs: 1, sm: 2, lg: 3 }}
-          items={[
-            {
-              key: 'status',
-              label: PURCHASE_LABELS.columns.status,
-              children: (
-                <Tag color={statusColor(record.status)}>
-                  {purchaseStatusLabel(record.status)}
-                </Tag>
-              ),
-            },
-            {
-              key: 'document',
-              label: PURCHASE_LABELS.columns.documentNumber,
-              children: <CodeText value={record.documentNumber} strong />,
-            },
-            {
-              key: 'date',
-              label: PURCHASE_LABELS.columns.businessDate,
-              children: formatDate(record.businessDate),
-            },
-            {
-              key: 'partner',
-              label: PURCHASE_LABELS.columns.partner,
-              children: (
-                <EntityCell
-                  code={record.partner.code}
-                  name={record.partner.name}
-                />
-              ),
-            },
-            {
-              key: 'debt',
-              label: PURCHASE_LABELS.fields.partnerDebt,
-              children: (
-                <Space direction="vertical" size={0}>
-                  <Text strong>
-                    {formatMoney(record.partner.currentDebtBalance)}
-                  </Text>
-                  <Text type="secondary" style={{ fontSize: 12 }}>
-                    {debtBalanceSignLabel(record.partner.currentDebtBalance)}
-                  </Text>
-                </Space>
-              ),
-            },
-            {
-              key: 'itemCount',
-              label: PURCHASE_LABELS.fields.itemCount,
-              children: record.items.length,
-            },
-            {
-              key: 'totalQuantity',
-              label: PURCHASE_LABELS.fields.totalQuantity,
-              children: formatQuantity(totalLineQuantity),
-            },
-            ...(projectedDebt != null
-              ? [
-                  {
-                    key: 'projectedDebt',
-                    label: PURCHASE_LABELS.fields.projectedDebt,
-                    children: (
-                      <Space direction="vertical" size={0}>
-                        <Text strong>{formatMoney(projectedDebt)}</Text>
-                        <Text type="secondary" style={{ fontSize: 12 }}>
-                          {debtBalanceSignLabel(projectedDebt)}
-                        </Text>
-                      </Space>
-                    ),
-                  },
-                ]
-              : []),
-            {
-              key: 'invoice',
-              label: PURCHASE_LABELS.fields.supplierInvoiceNumber,
-              children: emptyDash(record.supplierInvoiceNumber),
-            },
-            {
-              key: 'notes',
-              label: PURCHASE_LABELS.fields.notes,
-              children: emptyDash(record.notes),
-              span: 2,
-            },
-          ]}
+          items={auditItems}
         />
       </Card>
 
       <Space align="center" style={{ marginBottom: 8 }}>
         {phIcon(Package, { size: ICON_SIZE.md })}
         <Title level={5} style={{ margin: 0 }}>
-          {PURCHASE_LABELS.fields.items}
+          {SALES_LABELS.fields.items}
         </Title>
       </Space>
       <Table
@@ -514,7 +565,7 @@ export function PurchaseDetailPage() {
         columns={itemColumns}
         dataSource={record.items}
         pagination={false}
-        scroll={{ x: 1040 }}
+        scroll={{ x: record.status === 'POSTED' ? 1140 : 1040 }}
       />
       <Card size="small" style={{ marginTop: 12, marginBottom: 20 }}>
         <Space
@@ -523,15 +574,15 @@ export function PurchaseDetailPage() {
           wrap
         >
           <Text type="secondary">
-            {PURCHASE_LABELS.columns.subtotal}:{' '}
+            {SALES_LABELS.columns.subtotal}:{' '}
             {formatMoney(record.subtotalAmount)}
           </Text>
           <Text type="secondary">
-            {PURCHASE_LABELS.columns.discount}:{' '}
+            {SALES_LABELS.columns.discount}:{' '}
             {formatMoney(record.discountAmount ?? 0)}
           </Text>
           <Text strong style={{ fontSize: 16 }}>
-            {PURCHASE_LABELS.columns.total}: {formatMoney(record.totalAmount)}
+            {SALES_LABELS.columns.total}: {formatMoney(record.totalAmount)}
           </Text>
         </Space>
       </Card>
@@ -539,58 +590,21 @@ export function PurchaseDetailPage() {
       <Space align="center" style={{ marginBottom: 8 }}>
         {phIcon(FileText, { size: ICON_SIZE.md })}
         <Title level={5} style={{ margin: 0 }}>
-          {PURCHASE_LABELS.audit.title}
+          {SALES_LABELS.audit.title}
         </Title>
       </Space>
       <Card size="small" style={{ marginBottom: 20 }}>
         <Descriptions
           size="small"
           column={{ xs: 1, md: 2 }}
-          items={[
-            {
-              key: 'createdBy',
-              label: PURCHASE_LABELS.audit.createdBy,
-              children: record.createdBy.fullName,
-            },
-            {
-              key: 'createdAt',
-              label: PURCHASE_LABELS.columns.createdAt,
-              children: formatDateTime(record.createdAt),
-            },
-            {
-              key: 'postedBy',
-              label: PURCHASE_LABELS.audit.postedBy,
-              children: emptyDash(record.postedBy?.fullName),
-            },
-            {
-              key: 'postedAt',
-              label: PURCHASE_LABELS.audit.postedAt,
-              children: formatDateTime(record.postedAt),
-            },
-            {
-              key: 'cancelledBy',
-              label: PURCHASE_LABELS.audit.cancelledBy,
-              children: emptyDash(record.cancelledBy?.fullName),
-            },
-            {
-              key: 'cancelledAt',
-              label: PURCHASE_LABELS.audit.cancelledAt,
-              children: formatDateTime(record.cancelledAt),
-            },
-            {
-              key: 'cancelReason',
-              label: PURCHASE_LABELS.audit.cancelReason,
-              children: emptyDash(record.cancelReason),
-              span: 2,
-            },
-          ]}
+          items={auditTrailItems}
         />
       </Card>
 
       <Space align="center" style={{ marginBottom: 8 }}>
         {phIcon(Scales, { size: ICON_SIZE.md })}
         <Title level={5} style={{ margin: 0 }}>
-          {PURCHASE_LABELS.history.quantity}
+          {SALES_LABELS.history.quantity}
         </Title>
       </Space>
       <Table
@@ -607,7 +621,7 @@ export function PurchaseDetailPage() {
       <Space align="center" style={{ marginBottom: 8 }}>
         {phIcon(NoteBlank, { size: ICON_SIZE.md })}
         <Title level={5} style={{ margin: 0 }}>
-          {PURCHASE_LABELS.history.debt}
+          {SALES_LABELS.history.debt}
         </Title>
       </Space>
       <Table
@@ -625,11 +639,11 @@ export function PurchaseDetailPage() {
         title={
           <Space>
             {phIcon(XCircle, { weight: 'fill', size: ICON_SIZE.lg })}
-            {PURCHASE_LABELS.cancel.title}
+            {SALES_LABELS.cancel.title}
           </Space>
         }
-        okText={PURCHASE_LABELS.actions.cancel}
-        cancelText={PURCHASE_LABELS.actions.back}
+        okText={SALES_LABELS.actions.cancel}
+        cancelText={SALES_LABELS.actions.back}
         okButtonProps={{ danger: true, disabled: !cancelReason.trim() }}
         confirmLoading={cancelMutation.isPending}
         onCancel={() => {
@@ -643,7 +657,7 @@ export function PurchaseDetailPage() {
               id: record.id,
               reason: cancelReason.trim(),
             });
-            message.success(PURCHASE_LABELS.cancel.success);
+            message.success(SALES_LABELS.cancel.success);
             setCancelOpen(false);
             setCancelReason('');
           } catch (error) {
@@ -651,13 +665,13 @@ export function PurchaseDetailPage() {
           }
         }}
       >
-        <Text>{PURCHASE_LABELS.cancel.text}</Text>
+        <Text>{SALES_LABELS.cancel.text}</Text>
         <div style={{ marginTop: 16 }}>
-          <Text strong>{PURCHASE_LABELS.cancel.reason}</Text>
+          <Text strong>{SALES_LABELS.cancel.reason}</Text>
           <Input.TextArea
             value={cancelReason}
             onChange={(event) => setCancelReason(event.target.value)}
-            placeholder={PURCHASE_LABELS.cancel.reasonPlaceholder}
+            placeholder={SALES_LABELS.cancel.reasonPlaceholder}
             rows={3}
             maxLength={1000}
             showCount
@@ -665,13 +679,35 @@ export function PurchaseDetailPage() {
         </div>
       </Modal>
 
-      <PurchaseFormModal
+      <SalePostConfirmModal
+        open={postOpen}
+        confirmLoading={postMutation.isPending}
+        shortages={shortages}
+        onCancel={() => setPostOpen(false)}
+        onConfirm={async (negativeQuantityReason) => {
+          try {
+            await postMutation.mutateAsync({
+              id: record.id,
+              input: negativeQuantityReason
+                ? { negativeQuantityReason }
+                : undefined,
+            });
+            message.success(SALES_LABELS.post.success);
+            setPostOpen(false);
+          } catch (error) {
+            message.error(mapApiError(error).userMessage);
+            throw error;
+          }
+        }}
+      />
+
+      <SaleFormModal
         open={editOpen}
-        purchaseId={record.id}
+        saleId={record.id}
         onCancel={() => setEditOpen(false)}
         onSaved={() => {
           setEditOpen(false);
-          void purchase.refetch();
+          void sale.refetch();
         }}
       />
     </div>

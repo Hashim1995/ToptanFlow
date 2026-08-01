@@ -1,22 +1,22 @@
 import { formatMoney } from '../../../shared/money/format-money';
-import type { PurchaseStatus } from '../api/purchases.api';
+import type { SaleStatus } from '../api/sales.api';
 
-export const PURCHASE_LABELS = {
-  nav: 'Alışlar',
-  title: 'Alışlar',
-  description: 'Məhsul alışlarını yaradın, təsdiqləyin və izləyin.',
-  create: 'Yeni alış',
-  edit: 'Alışı redaktə et',
-  detail: 'Alış məlumatları',
+export const SALES_LABELS = {
+  nav: 'Satışlar',
+  title: 'Satışlar',
+  description: 'Məhsul satışlarını yaradın, təsdiqləyin və izləyin.',
+  create: 'Yeni satış',
+  edit: 'Satışı redaktə et',
+  detail: 'Satış məlumatları',
   statuses: {
     DRAFT: 'Qaralama',
     POSTED: 'Təsdiqlənib',
     CANCELLED: 'Ləğv edilib',
-  } satisfies Record<PurchaseStatus, string>,
+  } satisfies Record<SaleStatus, string>,
   columns: {
     documentNumber: 'Sənəd nömrəsi',
     businessDate: 'Əməliyyat tarixi',
-    partner: 'Təchizatçı',
+    partner: 'Müştəri',
     status: 'Status',
     itemCount: 'Sətir sayı',
     subtotal: 'Ara cəm',
@@ -29,7 +29,7 @@ export const PURCHASE_LABELS = {
   filters: {
     documentNumber: 'Sənəd nömrəsi',
     documentNumberPlaceholder: 'Sənəd nömrəsini axtarın',
-    partner: 'Təchizatçı',
+    partner: 'Müştəri',
     status: 'Status',
     dateRange: 'Əməliyyat tarixi',
     product: 'Məhsul',
@@ -38,13 +38,11 @@ export const PURCHASE_LABELS = {
     all: 'Hamısı',
   },
   fields: {
-    partner: 'Təchizatçı',
-    partnerPlaceholder: 'Təchizatçı seçin',
+    partner: 'Müştəri',
+    partnerPlaceholder: 'Müştəri seçin',
     businessDate: 'Əməliyyat tarixi',
     notes: 'Qeyd',
-    notesPlaceholder: 'Alış barədə qeyd daxil edin',
-    supplierInvoiceNumber: 'Təchizatçı faktura nömrəsi',
-    supplierInvoicePlaceholder: 'Faktura nömrəsini daxil edin',
+    notesPlaceholder: 'Satış barədə qeyd daxil edin',
     documentDiscount: 'Sənəd endirimi',
     product: 'Məhsul',
     productPlaceholder: 'Məhsul seçin',
@@ -56,6 +54,7 @@ export const PURCHASE_LABELS = {
     lineNotes: 'Sətir qeydi',
     lineNotesPlaceholder: 'Sətir barədə qeyd',
     items: 'Məhsul sətirləri',
+    costAtPosting: 'Təsdiq anı maya dəyəri',
     partnerDebt: 'Cari borc qalığı',
     itemCount: 'Sətir sayı',
     totalQuantity: 'Ümumi miqdar',
@@ -76,30 +75,35 @@ export const PURCHASE_LABELS = {
     confirm: 'Təsdiqlə',
   },
   post: {
-    title: 'Alışı təsdiqləyirsiniz?',
-    text: 'Təsdiqdən sonra məhsul miqdarı artacaq, tərəfdaşın borc qalığı azalacaq, alış redaktə üçün bağlanacaq və pul qalığı dəyişməyəcək.',
-    success: 'Alış təsdiqləndi.',
+    title: 'Satışı təsdiqləyirsiniz?',
+    text: 'Təsdiqdən sonra məhsul miqdarı azalacaq, satış redaktə üçün bağlanacaq və pul qalığı dəyişməyəcək.',
+    negativeQuantityAlert:
+      'Bəzi məhsulların miqdarı mənfiyə düşəcək. Davam etmək üçün səbəb daxil edin.',
+    negativeQuantityReason: 'Mənfi miqdar səbəbi',
+    negativeQuantityReasonPlaceholder: 'Mənfi miqdar səbəbini daxil edin',
+    negativeQuantityReasonRequired: 'Mənfi miqdar səbəbi mütləqdir.',
+    success: 'Satış təsdiqləndi.',
   },
   cancel: {
-    title: 'Alışı ləğv edirsiniz?',
+    title: 'Satışı ləğv edirsiniz?',
     text: 'Ləğv etmə məhsul miqdarı və tərəfdaş borcu təsirlərini geri qaytaracaq. Pul qalığı dəyişməyəcək.',
     reason: 'Ləğv səbəbi',
     reasonPlaceholder: 'Ləğv səbəbini daxil edin',
     reasonRequired: 'Ləğv səbəbi mütləqdir.',
-    success: 'Alış ləğv edildi.',
+    success: 'Satış ləğv edildi.',
   },
   remove: {
-    title: 'Qaralama alış silinsin?',
+    title: 'Qaralama satış silinsin?',
     text: 'Bu əməliyyatı geri qaytarmaq mümkün deyil.',
-    success: 'Qaralama alış silindi.',
+    success: 'Qaralama satış silindi.',
   },
   messages: {
-    empty: 'Alış tapılmadı.',
+    empty: 'Satış tapılmadı.',
     loading: 'Məlumatlar yüklənir...',
-    loadError: 'Alış məlumatlarını yükləmək mümkün olmadı.',
-    createSuccess: 'Qaralama alış yaradıldı.',
-    updateSuccess: 'Qaralama alış yeniləndi.',
-    draftOnly: 'Yalnız qaralama alış redaktə edilə bilər.',
+    loadError: 'Satış məlumatlarını yükləmək mümkün olmadı.',
+    createSuccess: 'Qaralama satış yaradıldı.',
+    updateSuccess: 'Qaralama satış yeniləndi.',
+    draftOnly: 'Yalnız qaralama satış redaktə edilə bilər.',
   },
   audit: {
     title: 'Audit məlumatları',
@@ -109,6 +113,7 @@ export const PURCHASE_LABELS = {
     postedAt: 'Təsdiq vaxtı',
     cancelledAt: 'Ləğv vaxtı',
     cancelReason: 'Ləğv səbəbi',
+    negativeQuantityOverrideReason: 'Mənfi miqdar səbəbi',
   },
   history: {
     quantity: 'Miqdar tarixçəsi',
@@ -123,6 +128,6 @@ export const PURCHASE_LABELS = {
   formatMoney,
 } as const;
 
-export function purchaseStatusLabel(status: PurchaseStatus): string {
-  return PURCHASE_LABELS.statuses[status];
+export function saleStatusLabel(status: SaleStatus): string {
+  return SALES_LABELS.statuses[status];
 }

@@ -452,29 +452,26 @@ model Product {
 
 /// Source: docs/business/invariants.md, "Sales"; docs/business/workflow-map.md,
 /// "1. Sale: Draft to Posted Sale".
+/// Document numbers are backend-allocated via NumberSequence key SALE as `SAL-` +
+/// zero-padded sequence (ADR-024 allocation pattern).
+/// Status lifecycle: DRAFT → POSTED → CANCELLED (DocumentStatus).
 model Sale {
-  id                    String          @id @default(uuid())
-  /// A human-facing sale document number, globally unique across all
-  /// history. [Approved Human Decision, recorded 2026-07-28.] Source:
-  /// docs/business/invariants.md, "Global Invariants" — "a cancelled
-  /// document's number is never reused"; a hard, permanent `@unique`
-  /// constraint enforces this, consistent with `Sale` rows never being
-  /// physically deleted (only cancelled).
-  documentNumber        String          @unique
-  partnerId             String
-  partner               BusinessPartner @relation(fields: [partnerId], references: [id])
-  /// The date the sale is considered to have occurred for business purposes,
-  /// distinct from `createdAt` (when it was recorded in the system).
-  /// Source: docs/business/terminology.md, "Business Date".
-  businessDate          DateTime
-  status                DocumentStatus  @default(DRAFT)
+  id             String          @id @default(uuid())
+  documentNumber String          @unique
+  partnerId      String
+  partner        BusinessPartner @relation(fields: [partnerId], references: [id])
+  businessDate   DateTime
+  status         DocumentStatus  @default(DRAFT)
 
-  /// Amounts are static AZN (ADR-031). Scale follows ADR-023 when refined.
-  totalAmount    Decimal
-  discountAmount Decimal?
-  /// Open debt effect of a posted sale is applied to BusinessPartner
-  /// currentDebtBalance (ADR-030), not stored as a separate receivable field.
+  /// Amounts are static AZN (ADR-031). Scale: ADR-023 → Decimal(18, 4).
+  /// Backend recalculates; client-supplied totals are ignored.
+  subtotalAmount Decimal  @db.Decimal(18, 4)
+  discountAmount Decimal? @db.Decimal(18, 4)
+  totalAmount    Decimal  @db.Decimal(18, 4)
   notes          String?
+
+  /// Stored when posting with a negative-quantity override reason (ADR-025 v1).
+  negativeQuantityOverrideReason String?
 
   postedAt       DateTime?
   postedByUserId String?
@@ -497,37 +494,41 @@ model Sale {
   createdByUserId String
   createdBy       User     @relation("SaleCreatedBy", fields: [createdByUserId], references: [id])
 
-  items                     SaleItem[]
-  cashTransactions          CashTransaction[]
-  productQuantityHistory    ProductQuantityHistory[]
-  partnerDebtMovements      BusinessPartnerDebtMovement[]
+  items                  SaleItem[]
+  cashTransactions       CashTransaction[]
+  productQuantityHistory ProductQuantityHistory[]
+  partnerDebtMovements   BusinessPartnerDebtMovement[]
 
   @@index([partnerId, businessDate])
   @@index([status])
+  @@index([createdByUserId])
+  @@index([createdAt])
 }
 
 /// Source: docs/business/invariants.md, "Products" — "each posted document
 /// line keeps its own price and cost as recorded at posting time, regardless
 /// of later master-data changes."
 model SaleItem {
-  id        String  @id @default(uuid())
-  saleId    String
-  sale      Sale    @relation(fields: [saleId], references: [id])
+  id     String @id @default(uuid())
+  saleId String
+  sale   Sale   @relation(fields: [saleId], references: [id], onDelete: Cascade)
   productId String
-  product   Product @relation(fields: [productId], references: [id])
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
   unitId    String
-  unit      Unit    @relation(fields: [unitId], references: [id])
+  unit      Unit    @relation(fields: [unitId], references: [id], onDelete: Restrict)
 
-  quantity       Decimal
-  unitPrice      Decimal
-  discountAmount Decimal?
-  lineTotal      Decimal
-  /// Source: docs/business/invariants.md, "Costing" — "A sale's cost is
-  /// recorded (snapshotted) at the cost applicable at the time of posting;
-  /// this snapshot does not change afterward even if the product's cost
-  /// later changes." Nullable because a draft line has no posting-time cost
-  /// yet.
-  costAtPosting  Decimal?
+  productCodeSnapshot String
+  productNameSnapshot String
+  unitNameSnapshot    String
+
+  quantity       Decimal  @db.Decimal(18, 4)
+  unitPrice      Decimal  @db.Decimal(18, 4)
+  discountAmount Decimal? @db.Decimal(18, 4)
+  lineSubtotal   Decimal  @db.Decimal(18, 4)
+  lineTotal      Decimal  @db.Decimal(18, 4)
+  notes          String?
+  /// Snapshotted at posting from Product.latestPurchasePrice when available.
+  costAtPosting  Decimal? @db.Decimal(18, 4)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

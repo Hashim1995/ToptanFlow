@@ -17,6 +17,7 @@ import {
   List,
   Package,
   Ruler,
+  ShoppingBag,
   ShoppingCart,
   SignOut,
   SquaresFour,
@@ -26,6 +27,7 @@ import { MASTER_DATA_LABELS } from '../features/master-data/ui/labels';
 import { AUTH_LABELS } from '../features/auth/ui/labels';
 import { useAuth } from '../features/auth/use-auth';
 import { PURCHASE_LABELS } from '../features/purchases/ui/labels';
+import { SALES_LABELS } from '../features/sales/ui/labels';
 import { ICON_SIZE, phIcon } from '../shared/ui/ph-icon';
 
 const { Header, Sider, Content } = Layout;
@@ -119,6 +121,21 @@ const NAV_ITEMS: MenuItem[] = [
       },
     ],
   },
+  {
+    key: 'group-sales',
+    type: 'group',
+    label: SALES_LABELS.nav,
+    children: [
+      {
+        key: '/sales',
+        label: navLabel(
+          phIcon(ShoppingBag, { size: ICON_SIZE.md }),
+          SALES_LABELS.nav,
+          '/sales',
+        ),
+      },
+    ],
+  },
 ];
 
 /**
@@ -140,7 +157,9 @@ export function AppShellLayout() {
       ? '/'
       : location.pathname.startsWith('/purchases')
         ? '/purchases'
-        : location.pathname,
+        : location.pathname.startsWith('/sales')
+          ? '/sales'
+          : location.pathname,
   ];
 
   async function handleLogout() {

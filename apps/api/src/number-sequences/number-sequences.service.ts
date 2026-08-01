@@ -59,7 +59,8 @@ export class NumberSequencesService {
     return (
       key === BusinessCodeSequenceKey.PRODUCT ||
       key === BusinessCodeSequenceKey.BUSINESS_PARTNER ||
-      key === BusinessCodeSequenceKey.PURCHASE
+      key === BusinessCodeSequenceKey.PURCHASE ||
+      key === BusinessCodeSequenceKey.SALE
     );
   }
 }

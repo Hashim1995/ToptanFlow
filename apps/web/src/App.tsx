@@ -8,6 +8,8 @@ import { ProductsPage } from './features/master-data/pages/products-page';
 import { UnitsPage } from './features/master-data/pages/units-page';
 import { PurchaseDetailPage } from './features/purchases/pages/purchase-detail-page';
 import { PurchasesPage } from './features/purchases/pages/purchases-page';
+import { SaleDetailPage } from './features/sales/pages/sale-detail-page';
+import { SalesPage } from './features/sales/pages/sales-page';
 import { HomePage } from './pages/home-page';
 
 /**
@@ -34,6 +36,8 @@ function App() {
             />
             <Route path="purchases" element={<PurchasesPage />} />
             <Route path="purchases/:id" element={<PurchaseDetailPage />} />
+            <Route path="sales" element={<SalesPage />} />
+            <Route path="sales/:id" element={<SaleDetailPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Route>

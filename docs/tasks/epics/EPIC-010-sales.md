@@ -2,11 +2,11 @@
 
 - **ID:** EPIC-010
 - **Title:** Sales
-- **Status:** Planned
+- **Status:** Review
 
 ## Business objective
 
-Sale draft/post/cancel/return with product-quantity and signed partner debt
+Sale draft/post/cancel with product-quantity and signed partner debt
 effects. Completing a sale must never directly mutate cash
 ([ADR-028](../../decisions/ADR-028-sale-purchase-cash-separation.md)).
 Partner obligation uses one signed debt balance
@@ -20,16 +20,17 @@ Core wholesale revenue cycle.
 
 ## Scope
 
-Sale APIs/posting; coordination with cash/settlement for optional linked
-receipts; discount guards later. Optional same-flow UI action that also creates
-a **separate** Cash In + allocation is coordination with EPIC-011 / EPIC-012,
+Sale APIs/posting; list UI; draft CRUD; explicit post/cancel. Coordination
+with cash/settlement for optional linked receipts is EPIC-011 / EPIC-012,
 not cash mutation inside the sale. No currency fields on sale documents.
+Sales Returns deferred.
 
 ## Exclusions
 
-Bundles (EPIC-016); Yatı field sale (EPIC-014). Direct cash balance updates on
-the Sale record (forbidden by ADR-028). Currency selectors / FX (ADR-031).
-Separate receivable-only primary balance (superseded by ADR-030).
+Bundles (EPIC-016); Yatı field sale (EPIC-014); Sales Returns (deferred);
+direct cash balance updates on the Sale record (forbidden by ADR-028);
+Currency selectors / FX (ADR-031); separate receivable-only primary balance
+(superseded by ADR-030).
 
 ## Dependencies
 
@@ -47,6 +48,8 @@ dependency (ADR-031).
 - Posted sale increases the signed partner debt balance
   (`partnerBalance += saleAmount` per ADR-030).
 - All amounts AZN-only; no currency / FX columns.
+- Negative quantity on post requires mandatory reason (ADR-025: all active
+  users authorized in v1).
 
 ## Related ADRs / docs
 
@@ -55,17 +58,17 @@ ADR-030; ADR-031; CHANGE-003.
 
 ## Child user stories
 
-- US-023
+- [US-023](../stories/US-023-sale-draft-post.md) — Review
 
 ## Completion definition
 
 Posted sales decrease product quantity and update the signed partner debt
 balance per ADR-030, without mutating money-account balances as an intrinsic
-sale effect.
+sale effect. List UI and draft/post/cancel workflows ship for US-023.
 
 ## Known risks
 
-Discount/zero-price/cancellation settlement open items.
+Discount/zero-price/cancellation settlement open items (BRD-OD-07/09).
 
 ## Open questions
 
@@ -74,4 +77,5 @@ rule is decided (ADR-030).
 
 ## Repository evidence
 
-Sale models exist; no sales module/API.
+Nest `apps/api/src/sales/**`; web `apps/web/src/features/sales/**`; migration
+`20260801120000_sale_line_snapshots_and_sequence`.

@@ -2,9 +2,13 @@
 
 Planning-history only. Not a product release-notes replacement.
 
+## 2026-08-01
+
+- **US-023 / EPIC-010 activated → In Progress:** Sale Nest module + web list/form/detail (`TASK-023-01` / `TASK-023-02`). Draft CRUD; `POST /sales/:id/post` (negative-qty reason when needed); `POST /sales/:id/cancel`; `SAL-` document numbers; ProductQuantityHistory + BusinessPartnerDebtMovement; no cash/warehouse/currency. Sales Returns deferred. Mirrors US-022 purchase patterns.
+- **UI polish:** Added `@phosphor-icons/react`; icons across shell, home, login, purchases, and master-data lists; denser tables with logical column order, badges/tags, dropdown actions, and shared format cells (`CodeText` / `EntityCell` / `MoneyCell`).
+
 ## 2026-07-31
 
-- **UI polish:** Added `@phosphor-icons/react`; icons across shell, home, login, purchases, and master-data lists; denser tables with logical column order, badges/tags, dropdown actions, and shared format cells (`CodeText` / `EntityCell` / `MoneyCell`).
 - **Owner decision / US-022 follow-up:** Same product may appear on multiple purchase lines (different prices/discounts allowed). Purchase create/edit moved from dedicated pages into a compact modal on the list/detail screens. Invariant Purchasing updated; TASK-022-01/02 acceptance wording updated.
 - **US-022 implementation → Review:** Purchase Nest module + web list/form/detail (`TASK-022-01` / `TASK-022-02`). Draft CRUD; `POST /purchases/:id/post`; `POST /purchases/:id/cancel`; `PUR-` document numbers; ProductQuantityHistory + BusinessPartnerDebtMovement; no cash/warehouse/currency. Purchase Returns deferred. Tests: purchases.service.spec (11), purchases.e2e (7), web purchase schema/labels.
 - **Epic/Story activated → [EPIC-009](epics/EPIC-009-purchasing.md) / [US-022](stories/US-022-purchase-draft-post.md):** Purchase list module — Draft CRUD, post (`POSTED`), cancel; product quantity ↑ + partner debt ↓ on post; no cash/warehouse/currency. Tasks [TASK-022-01](tasks/TASK-022-01-purchase-draft-post-cancel-apis.md), [TASK-022-02](tasks/TASK-022-02-purchase-list-form-details-ui.md). Document numbers: `PUR-` + NumberSequence `PURCHASE` (Approved Human Decision). Purchase Returns deferred. ADR-025: no granular `purchase.*` permissions in v1.
