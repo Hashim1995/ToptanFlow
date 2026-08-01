@@ -67,6 +67,48 @@ To give every agent and human working on TOPTANFLOW's frontend a single, concret
 - Wider screens may use multi-column layouts where it improves usability, without changing field behavior, order of required information, or validation logic.
 - Field labels, help text, and validation errors must stay legible and correctly positioned relative to their field at every width.
 
+### Forms / Filters / Ant Design quality bar (mandatory for `apps/web`)
+
+Owner decision 2026-07-29 ([CHANGE-001](../tasks/unplanned/CHANGE-001-product-category-and-frontend-ux-uplift.md)):
+functional-but-bare screens are **not** acceptable. Every user-facing frontend
+task that adds or changes screens must meet all of the following:
+
+- **Label + placeholder:** every editable field has an Azerbaijani label and a
+  useful placeholder (or an explicit reason why a placeholder would hurt clarity).
+- **Field-level validation:** React Hook Form + Zod (ADR-017) show errors on
+  the field via Ant Design `Form.Item` `help` / `validateStatus`; do not rely on
+  toasts alone for validation failures.
+- **Input semantics:** use correct Ant Design controls and HTML affordances
+  (`Input`, `Input.TextArea`, `Input.Password`, `Select` with `showSearch` for
+  long lists, `Switch`/`Checkbox` for booleans, `inputMode`/`type`/`autoComplete`
+  where they improve mobile entry). Decimal money/quantity fields stay
+  string-safe (ADR-023) with `inputMode="decimal"` **and must reject non-numeric
+  keystrokes** (sanitize to digits + optional `.`, max 4 fractional digits) —
+  `inputMode` alone is not enough. Empty Select values must be `undefined` so
+  placeholders remain visible.
+- **Required marks:** required fields are visibly marked; optional fields are
+  not implied required.
+- **Read-only business codes:** backend-generated codes (ADR-024) are visible,
+  disabled/read-only, never submitted, with a short Azerbaijani hint.
+- **List FilterBar:** every list screen has a usable filter row (at least
+  search + active status when the API supports them, plus domain filters such
+  as type/role/category/currency). Filters must reset pagination to page 1.
+  Every filter control has a **visible label** above it (`FilterField`) — do not
+  rely on Select placeholders alone when a value is always selected (e.g. “all”).
+- **Tables:** desktop tables may use column sort when the API `sortBy` allows
+  it; dense tables use `scroll.x` and/or mobile cards so no action/value is lost
+  (see Tables section).
+- **States:** loading, empty, success, and failure are Azerbaijani and reachable
+  (retry on failure). Soft-deactivate uses an explicit confirm dialog.
+- **Ant Design usage:** prefer full useful Ant Design capabilities already in
+  the stack (ADR-009) — Form, Modal/Drawer, Select, Table, Tag, Space, Grid,
+  Pagination `showSizeChanger` — rather than under-specified bare inputs.
+- **Shell:** navigation is grouped, spacing/typography are intentional, and
+  large-desktop layouts use available width without a permanently cramped column.
+
+A PR/task that ships a new master-data or operational screen without this bar
+is incomplete, even if build/lint pass.
+
 ## Tables and Data-Dense Screens
 
 Acceptable responsive strategies for dense ERP tables include:
@@ -136,7 +178,8 @@ At minimum, testing for user-facing work must cover:
 - Tablet viewport behavior.
 - Laptop/desktop viewport behavior.
 - Large desktop viewport behavior.
-- Form behavior (completion without horizontal scrolling, validation visibility).
+- Form behavior (completion without horizontal scrolling, validation visibility,
+  placeholders, field-level errors, FilterBar usefulness — see Forms/Filters bar).
 - Table behavior (chosen responsive strategy preserves all data access).
 - Dialog behavior (fits small screens, keyboard-accessible on larger screens).
 - Navigation behavior across viewport categories.
@@ -154,6 +197,7 @@ A reviewer checking user-facing work must confirm:
 - Azerbaijani language compliance across all new/changed user-facing text.
 - Canonical business terminology (`docs/business/terminology.md`) is used consistently.
 - No internal technical identifier (enum key, permission key, API field, database name, status code) is exposed directly.
+- Forms/Filters/Ant Design quality bar is met for any changed `apps/web` screen.
 - Backend errors are mapped to Azerbaijani messages, not passed through raw.
 - Azerbaijani character safety (no corruption in storage, comparison, search, sort, filter, export, display).
 - Mobile-first behavior is implemented and verified.

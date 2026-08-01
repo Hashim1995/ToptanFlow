@@ -7,9 +7,13 @@ import { validateEnv } from './config/env.validation';
 import { PrismaModule } from './prisma/prisma.module';
 import { HealthModule } from './health/health.module';
 import { UnitsModule } from './units/units.module';
-import { CurrenciesModule } from './currencies/currencies.module';
 import { ProductsModule } from './products/products.module';
+import { ProductCategoriesModule } from './product-categories/product-categories.module';
 import { BusinessPartnersModule } from './business-partners/business-partners.module';
+import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
+import { PurchasesModule } from './purchases/purchases.module';
+import { SalesModule } from './sales/sales.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 @Module({
@@ -21,9 +25,13 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
     PrismaModule,
     HealthModule,
     UnitsModule,
-    CurrenciesModule,
+    ProductCategoriesModule,
     ProductsModule,
     BusinessPartnersModule,
+    PurchasesModule,
+    SalesModule,
+    UsersModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [

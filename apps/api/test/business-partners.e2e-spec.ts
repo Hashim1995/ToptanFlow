@@ -1,25 +1,18 @@
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { Decimal } from '@prisma/client/runtime/client';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/bootstrap/configure-app';
 import { NumberSequencesService } from '../src/number-sequences/number-sequences.service';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { attachAuthUserMock, withAuth } from './auth-e2e.helper';
 
 describe('BusinessPartners (e2e)', () => {
   const partnerId = '11111111-1111-4111-8111-111111111111';
-  const currencyId = '22222222-2222-4222-8222-222222222222';
   const createdAt = new Date('2026-07-28T00:00:00.000Z');
   const updatedAt = new Date('2026-07-28T00:00:00.000Z');
-
-  const currencySummary = {
-    id: currencyId,
-    code: 'USD',
-    name: 'ABŞ dolları',
-    symbol: '$',
-    isActive: true,
-  };
 
   const basePartner = {
     id: partnerId,
@@ -32,11 +25,10 @@ describe('BusinessPartners (e2e)', () => {
     taxNumber: '1234567891',
     address: 'Bakı',
     notes: 'Note',
-    defaultCurrencyId: currencyId,
+    currentDebtBalance: new Decimal('0'),
     isActive: true,
     createdAt,
     updatedAt,
-    defaultCurrency: currencySummary,
   };
 
   const expectedPartnerBody = {
@@ -50,8 +42,7 @@ describe('BusinessPartners (e2e)', () => {
     taxNumber: '1234567891',
     address: 'Bakı',
     notes: 'Note',
-    defaultCurrencyId: currencyId,
-    defaultCurrency: currencySummary,
+    currentDebtBalance: '0.0000',
     isActive: true,
     createdAt: createdAt.toISOString(),
     updatedAt: updatedAt.toISOString(),
@@ -64,7 +55,7 @@ describe('BusinessPartners (e2e)', () => {
   const prisma = {
     onModuleInit: jest.fn().mockResolvedValue(undefined),
     onModuleDestroy: jest.fn().mockResolvedValue(undefined),
-    $transaction: jest.fn((fn: (tx: typeof prisma) => unknown) =>
+    $transaction: jest.fn((fn: (tx: unknown) => unknown) =>
       Promise.resolve(fn(prisma)),
     ),
     businessPartner: {
@@ -74,9 +65,6 @@ describe('BusinessPartners (e2e)', () => {
       findUnique: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
-    },
-    currency: {
-      findUnique: jest.fn(),
     },
   };
 
@@ -93,8 +81,7 @@ describe('BusinessPartners (e2e)', () => {
     taxNumber: string | null;
     address: string | null;
     notes: string | null;
-    defaultCurrencyId: string;
-    defaultCurrency: typeof currencySummary;
+    currentDebtBalance: string;
     isActive: boolean;
     createdAt: string;
     updatedAt: string;
@@ -114,7 +101,6 @@ describe('BusinessPartners (e2e)', () => {
     name: ' Yeni tərəfdaş ',
     isCustomer: true,
     isSupplier: false,
-    defaultCurrencyId: currencyId,
   };
 
   function assertNoInternalLeak(body: unknown): void {
@@ -124,7 +110,9 @@ describe('BusinessPartners (e2e)', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    attachAuthUserMock(prisma);
     numberSequences.nextCode.mockResolvedValue('0000001');
+    prisma.businessPartner.findMany.mockResolvedValue([]);
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -146,16 +134,12 @@ describe('BusinessPartners (e2e)', () => {
 
   describe('POST /api/v1/business-partners', () => {
     it('creates a partner with backend-generated code and trimmed name', async () => {
-      prisma.currency.findUnique.mockResolvedValue({
-        id: currencyId,
-        isActive: true,
-      });
       prisma.businessPartner.create.mockResolvedValue({
         ...basePartner,
         name: 'Yeni tərəfdaş',
       });
 
-      const response = await request(app.getHttpServer())
+      const response = await withAuth(request(app.getHttpServer()))
         .post('/api/v1/business-partners')
         .send(validCreatePayload)
         .expect(201);
@@ -163,12 +147,15 @@ describe('BusinessPartners (e2e)', () => {
       const body = response.body as PartnerJson;
       expect(body.code).toBe('0000001');
       expect(body.name).toBe('Yeni tərəfdaş');
+      expect(body.currentDebtBalance).toBe('0.0000');
+      expect(body).not.toHaveProperty('defaultCurrencyId');
       expect(numberSequences.nextCode).toHaveBeenCalled();
       expect(prisma.businessPartner.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             code: '0000001',
             name: 'Yeni tərəfdaş',
+            currentDebtBalance: expect.any(Decimal) as Decimal,
           }) as object,
         }),
       );
@@ -176,23 +163,17 @@ describe('BusinessPartners (e2e)', () => {
     });
 
     it('creates customer-only, supplier-only, and both-role partners', async () => {
-      prisma.currency.findUnique.mockResolvedValue({
-        id: currencyId,
-        isActive: true,
-      });
-
       prisma.businessPartner.create.mockResolvedValueOnce({
         ...basePartner,
         isCustomer: true,
         isSupplier: false,
       });
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .post('/api/v1/business-partners')
         .send({
           name: 'Müştəri',
           isCustomer: true,
           isSupplier: false,
-          defaultCurrencyId: currencyId,
         })
         .expect(201);
 
@@ -201,13 +182,12 @@ describe('BusinessPartners (e2e)', () => {
         isCustomer: false,
         isSupplier: true,
       });
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .post('/api/v1/business-partners')
         .send({
           name: 'Təchizatçı',
           isCustomer: false,
           isSupplier: true,
-          defaultCurrencyId: currencyId,
         })
         .expect(201);
 
@@ -216,13 +196,12 @@ describe('BusinessPartners (e2e)', () => {
         isCustomer: true,
         isSupplier: true,
       });
-      const both = await request(app.getHttpServer())
+      const both = await withAuth(request(app.getHttpServer()))
         .post('/api/v1/business-partners')
         .send({
           name: 'Hər ikisi',
           isCustomer: true,
           isSupplier: true,
-          defaultCurrencyId: currencyId,
         })
         .expect(201);
 
@@ -231,7 +210,7 @@ describe('BusinessPartners (e2e)', () => {
     });
 
     it('rejects client-supplied code with 400', async () => {
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .post('/api/v1/business-partners')
         .send({ ...validCreatePayload, code: 'BP-999' })
         .expect(400);
@@ -240,7 +219,7 @@ describe('BusinessPartners (e2e)', () => {
     });
 
     it('rejects both roles false with 400', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await withAuth(request(app.getHttpServer()))
         .post('/api/v1/business-partners')
         .send({
           ...validCreatePayload,
@@ -256,30 +235,7 @@ describe('BusinessPartners (e2e)', () => {
       );
     });
 
-    it('maps missing currency to 404 and inactive currency to 400', async () => {
-      prisma.currency.findUnique.mockResolvedValue(null);
-
-      await request(app.getHttpServer())
-        .post('/api/v1/business-partners')
-        .send(validCreatePayload)
-        .expect(404);
-
-      prisma.currency.findUnique.mockResolvedValue({
-        id: currencyId,
-        isActive: false,
-      });
-
-      await request(app.getHttpServer())
-        .post('/api/v1/business-partners')
-        .send(validCreatePayload)
-        .expect(400);
-    });
-
     it('assigns increasing backend codes on consecutive creates', async () => {
-      prisma.currency.findUnique.mockResolvedValue({
-        id: currencyId,
-        isActive: true,
-      });
       numberSequences.nextCode
         .mockResolvedValueOnce('0000001')
         .mockResolvedValueOnce('0000002');
@@ -297,11 +253,11 @@ describe('BusinessPartners (e2e)', () => {
           name: 'İkinci',
         });
 
-      const first = await request(app.getHttpServer())
+      const first = await withAuth(request(app.getHttpServer()))
         .post('/api/v1/business-partners')
         .send({ ...validCreatePayload, name: 'Birinci' })
         .expect(201);
-      const second = await request(app.getHttpServer())
+      const second = await withAuth(request(app.getHttpServer()))
         .post('/api/v1/business-partners')
         .send({ ...validCreatePayload, name: 'İkinci' })
         .expect(201);
@@ -316,12 +272,13 @@ describe('BusinessPartners (e2e)', () => {
       prisma.businessPartner.findMany.mockResolvedValue([basePartner]);
       prisma.businessPartner.count.mockResolvedValue(1);
 
-      const response = await request(app.getHttpServer())
+      const response = await withAuth(request(app.getHttpServer()))
         .get('/api/v1/business-partners')
         .expect(200);
 
       const body = response.body as PaginatedPartnersJson;
       expect(body.data[0].code).toBe('0000001');
+      expect(body.data[0].currentDebtBalance).toBe('0.0000');
       expect(prisma.businessPartner.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           orderBy: [{ code: 'asc' }, { id: 'asc' }],
@@ -333,7 +290,7 @@ describe('BusinessPartners (e2e)', () => {
       prisma.businessPartner.findMany.mockResolvedValue([]);
       prisma.businessPartner.count.mockResolvedValue(0);
 
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .get('/api/v1/business-partners')
         .query({ search: '0000001' })
         .expect(200);
@@ -354,7 +311,7 @@ describe('BusinessPartners (e2e)', () => {
     it('returns partner with generated code in response', async () => {
       prisma.businessPartner.findUnique.mockResolvedValue(basePartner);
 
-      const response = await request(app.getHttpServer())
+      const response = await withAuth(request(app.getHttpServer()))
         .get(`/api/v1/business-partners/${partnerId}`)
         .expect(200);
 
@@ -367,7 +324,7 @@ describe('BusinessPartners (e2e)', () => {
         isActive: false,
       });
 
-      const response = await request(app.getHttpServer())
+      const response = await withAuth(request(app.getHttpServer()))
         .get(`/api/v1/business-partners/${partnerId}`)
         .expect(200);
 
@@ -391,7 +348,7 @@ describe('BusinessPartners (e2e)', () => {
         isSupplier: true,
       });
 
-      const response = await request(app.getHttpServer())
+      const response = await withAuth(request(app.getHttpServer()))
         .patch(`/api/v1/business-partners/${partnerId}`)
         .send({
           name: ' Yenilənmiş ',
@@ -408,6 +365,7 @@ describe('BusinessPartners (e2e)', () => {
           phone: null,
           isCustomer: true,
           isSupplier: true,
+          currentDebtBalance: '0.0000',
         }),
       );
       expect(prisma.businessPartner.update).toHaveBeenCalledWith(
@@ -419,7 +377,7 @@ describe('BusinessPartners (e2e)', () => {
     });
 
     it('rejects empty body and client-supplied code with 400', async () => {
-      const empty = await request(app.getHttpServer())
+      const empty = await withAuth(request(app.getHttpServer()))
         .patch(`/api/v1/business-partners/${partnerId}`)
         .send({})
         .expect(400);
@@ -430,7 +388,7 @@ describe('BusinessPartners (e2e)', () => {
         }),
       );
 
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .patch(`/api/v1/business-partners/${partnerId}`)
         .send({ code: 'BP-999' })
         .expect(400);
@@ -441,7 +399,7 @@ describe('BusinessPartners (e2e)', () => {
     it('maps missing partner to 404', async () => {
       prisma.businessPartner.findUnique.mockResolvedValue(null);
 
-      const response = await request(app.getHttpServer())
+      const response = await withAuth(request(app.getHttpServer()))
         .patch(`/api/v1/business-partners/${partnerId}`)
         .send({ name: 'X' })
         .expect(404);
@@ -453,6 +411,30 @@ describe('BusinessPartners (e2e)', () => {
       );
       expect(prisma.businessPartner.update).not.toHaveBeenCalled();
     });
+
+    it('reactivates an inactive partner via isActive true', async () => {
+      prisma.businessPartner.findUnique.mockResolvedValue({
+        ...basePartner,
+        isActive: false,
+      });
+      prisma.businessPartner.update.mockResolvedValue({
+        ...basePartner,
+        isActive: true,
+      });
+
+      const response = await withAuth(request(app.getHttpServer()))
+        .patch(`/api/v1/business-partners/${partnerId}`)
+        .send({ isActive: true })
+        .expect(200);
+
+      const body = response.body as PartnerJson;
+      expect(body.isActive).toBe(true);
+      expect(prisma.businessPartner.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { isActive: true },
+        }),
+      );
+    });
   });
 
   describe('DELETE /api/v1/business-partners/:id', () => {
@@ -463,7 +445,7 @@ describe('BusinessPartners (e2e)', () => {
         isActive: false,
       });
 
-      const first = await request(app.getHttpServer())
+      const first = await withAuth(request(app.getHttpServer()))
         .delete(`/api/v1/business-partners/${partnerId}`)
         .expect(200);
 
@@ -485,13 +467,129 @@ describe('BusinessPartners (e2e)', () => {
       });
       prisma.businessPartner.update.mockClear();
 
-      const second = await request(app.getHttpServer())
+      const second = await withAuth(request(app.getHttpServer()))
         .delete(`/api/v1/business-partners/${partnerId}`)
         .expect(200);
 
       expect((second.body as PartnerJson).isActive).toBe(false);
       expect((second.body as PartnerJson).code).toBe('0000001');
       expect(prisma.businessPartner.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('soft duplicate flag (US-016)', () => {
+    const otherPartnerId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    const otherPartner = {
+      id: otherPartnerId,
+      code: '0000002',
+      name: 'Nümunə MMC',
+      phone: '+994 50 123 45 67',
+      taxNumber: '1234567891',
+      isCustomer: true,
+      isSupplier: false,
+      isActive: true,
+    };
+
+    it('returns 409 on create when possible duplicates match', async () => {
+      prisma.businessPartner.findMany.mockResolvedValue([otherPartner]);
+
+      const response = await withAuth(request(app.getHttpServer()))
+        .post('/api/v1/business-partners')
+        .send({
+          name: '  NÜMUNƏ   MMC  ',
+          isCustomer: true,
+          isSupplier: false,
+        })
+        .expect(409);
+
+      expect(response.body).toEqual(
+        expect.objectContaining({
+          statusCode: 409,
+          message: 'Possible duplicate business partners found',
+          code: 'BUSINESS_PARTNER_DUPLICATE_SUSPECTED',
+          candidates: [
+            expect.objectContaining({
+              id: otherPartnerId,
+              code: '0000002',
+              matchedFields: ['name'],
+            }),
+          ],
+        }),
+      );
+      expect(prisma.businessPartner.create).not.toHaveBeenCalled();
+      assertNoInternalLeak(response.body);
+    });
+
+    it('creates when acknowledgeDuplicate is true despite matches', async () => {
+      prisma.businessPartner.findMany.mockResolvedValue([otherPartner]);
+      prisma.businessPartner.create.mockResolvedValue({
+        ...basePartner,
+        name: 'Nümunə MMC',
+      });
+
+      const response = await withAuth(request(app.getHttpServer()))
+        .post('/api/v1/business-partners')
+        .send({
+          name: 'Nümunə MMC',
+          isCustomer: true,
+          isSupplier: false,
+          acknowledgeDuplicate: true,
+        })
+        .expect(201);
+
+      expect((response.body as PartnerJson).code).toBe('0000001');
+      expect(prisma.businessPartner.create).toHaveBeenCalled();
+    });
+
+    it('returns 409 on PATCH identity change when duplicates match', async () => {
+      prisma.businessPartner.findUnique.mockResolvedValue({
+        ...basePartner,
+        name: 'Başqa ad',
+      });
+      prisma.businessPartner.findMany.mockResolvedValue([otherPartner]);
+
+      const response = await withAuth(request(app.getHttpServer()))
+        .patch(`/api/v1/business-partners/${partnerId}`)
+        .send({ name: 'Nümunə MMC' })
+        .expect(409);
+
+      expect(response.body).toEqual(
+        expect.objectContaining({
+          statusCode: 409,
+          code: 'BUSINESS_PARTNER_DUPLICATE_SUSPECTED',
+        }),
+      );
+      expect(prisma.businessPartner.update).not.toHaveBeenCalled();
+    });
+
+    it('updates when acknowledgeDuplicate is true despite matches', async () => {
+      prisma.businessPartner.findUnique.mockResolvedValue({
+        ...basePartner,
+        name: 'Başqa ad',
+      });
+      prisma.businessPartner.findMany.mockResolvedValue([otherPartner]);
+      prisma.businessPartner.update.mockResolvedValue({
+        ...basePartner,
+        name: 'Nümunə MMC',
+      });
+
+      const response = await withAuth(request(app.getHttpServer()))
+        .patch(`/api/v1/business-partners/${partnerId}`)
+        .send({
+          name: 'Nümunə MMC',
+          acknowledgeDuplicate: true,
+        })
+        .expect(200);
+
+      expect((response.body as PartnerJson).name).toBe('Nümunə MMC');
+      expect(prisma.businessPartner.update).toHaveBeenCalled();
+    });
+
+    it('does not expose a standalone duplicate-check route', async () => {
+      await withAuth(request(app.getHttpServer()))
+        .post('/api/v1/business-partners/duplicate-check')
+        .send({ name: 'Nümunə MMC' })
+        .expect(404);
     });
   });
 });

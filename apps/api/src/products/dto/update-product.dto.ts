@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
+  IsBoolean,
   IsEnum,
   IsNotEmpty,
   IsString,
@@ -39,24 +40,16 @@ export class UpdateProductDto {
   type?: ProductTypeApi;
 
   @ApiPropertyOptional({
-    example: 'Tekstil',
+    format: 'uuid',
     nullable: true,
     type: String,
-    description: 'Send null to clear. Omit to leave unchanged.',
+    description:
+      'Send null to clear. Omit to leave unchanged. Must be active when set.',
   })
   @ValidateIf((_object, value) => value !== undefined)
   @ValidateIf((_object, value) => value !== null)
-  @IsString()
-  @MaxLength(255)
-  @Transform(({ value }: { value: unknown }) => {
-    if (value === null || value === undefined) return value;
-    if (typeof value === 'string') {
-      const trimmed = value.trim();
-      return trimmed.length === 0 ? null : trimmed;
-    }
-    return value;
-  })
-  category?: string | null;
+  @IsUUID()
+  categoryId?: string | null;
 
   @ApiPropertyOptional({
     format: 'uuid',
@@ -104,4 +97,43 @@ export class UpdateProductDto {
   @IsString()
   @IsNumericDecimal18_4()
   criticalStockThreshold?: string | null;
+
+  @ApiPropertyOptional({
+    example: '1234567890123',
+    nullable: true,
+    type: String,
+    description: 'Send null to clear. Omit to leave unchanged.',
+  })
+  @ValidateIf((_object, value) => value !== undefined)
+  @ValidateIf((_object, value) => value !== null)
+  @IsString()
+  @MaxLength(128)
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  barcode?: string | null;
+
+  @ApiPropertyOptional({
+    example: 'Əlavə qeyd',
+    nullable: true,
+    type: String,
+    description: 'Send null to clear. Omit to leave unchanged.',
+  })
+  @ValidateIf((_object, value) => value !== undefined)
+  @ValidateIf((_object, value) => value !== null)
+  @IsString()
+  @MaxLength(4000)
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  notes?: string | null;
+
+  @ApiPropertyOptional({
+    example: true,
+    description:
+      'Set true to reactivate an inactive product. Set false to deactivate (DELETE also deactivates).',
+  })
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsBoolean()
+  isActive?: boolean;
 }

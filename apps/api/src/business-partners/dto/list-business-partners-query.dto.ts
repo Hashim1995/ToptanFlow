@@ -1,13 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import {
-  IsBoolean,
-  IsEnum,
-  IsIn,
-  IsOptional,
-  IsString,
-  IsUUID,
-} from 'class-validator';
+import { IsBoolean, IsEnum, IsIn, IsOptional, IsString } from 'class-validator';
 import { PaginationQueryDto } from '../../common/pagination/pagination-query.dto';
 import { SortOrder } from '../../common/sorting/sort-order.enum';
 
@@ -59,11 +52,6 @@ export class ListBusinessPartnersQueryDto extends PaginationQueryDto {
   @Transform(({ value }: { value: unknown }) => transformQueryBoolean(value))
   @IsBoolean()
   isSupplier?: boolean;
-
-  @ApiPropertyOptional({ format: 'uuid' })
-  @IsOptional()
-  @IsUUID()
-  defaultCurrencyId?: string;
 
   @ApiPropertyOptional({ enum: SORT_BY_FIELDS, default: 'code' })
   @IsOptional()

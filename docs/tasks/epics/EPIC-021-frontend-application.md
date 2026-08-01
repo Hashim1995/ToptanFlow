@@ -32,6 +32,7 @@ ADR-005–006, 009–011, 013, 016–017; ui-requirements.md.
 
 - US-037
 - US-038
+- US-042
 
 ## Completion definition
 
@@ -47,4 +48,6 @@ Exact screen inventory per milestone not fully listed.
 
 ## Repository evidence
 
-apps/web Vite React template only; no domain screens.
+Web app: US-037 Done; US-038 Done (currencies, units, products, partners,
+soft-duplicate UI, responsive verification); US-042 Done (ProductCategory UI,
+shared UX kit, shell polish, master-data Forms/Filters uplift).

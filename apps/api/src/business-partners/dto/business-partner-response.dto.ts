@@ -1,5 +1,4 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { BusinessPartnerCurrencyResponseDto } from './business-partner-currency-response.dto';
 
 export class BusinessPartnerResponseDto {
   @ApiProperty({ format: 'uuid' })
@@ -56,11 +55,12 @@ export class BusinessPartnerResponseDto {
   })
   notes!: string | null;
 
-  @ApiProperty({ format: 'uuid' })
-  defaultCurrencyId!: string;
-
-  @ApiProperty({ type: BusinessPartnerCurrencyResponseDto })
-  defaultCurrency!: BusinessPartnerCurrencyResponseDto;
+  @ApiProperty({
+    example: '0.0000',
+    description:
+      'Signed debt balance (ADR-030). Positive: partner owes us; negative: we owe partner; zero: no debt. Decimal string with 4 places.',
+  })
+  currentDebtBalance!: string;
 
   @ApiProperty({ example: true })
   isActive!: boolean;

@@ -8,11 +8,13 @@ import { configureApp } from '../src/bootstrap/configure-app';
 import { ProductTypeApi } from '../src/products/dto/product-type.enum';
 import { NumberSequencesService } from '../src/number-sequences/number-sequences.service';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { attachAuthUserMock, withAuth } from './auth-e2e.helper';
 
 describe('Products (e2e)', () => {
   const productId = '11111111-1111-4111-8111-111111111111';
   const unitId = '22222222-2222-4222-8222-222222222222';
   const otherUnitId = '33333333-3333-4333-8333-333333333333';
+  const categoryId = '66666666-6666-4666-8666-666666666666';
   const createdAt = new Date('2026-07-28T00:00:00.000Z');
   const updatedAt = new Date('2026-07-28T00:00:00.000Z');
 
@@ -24,12 +26,18 @@ describe('Products (e2e)', () => {
     isActive: true,
   };
 
+  const categorySummary = {
+    id: categoryId,
+    name: 'Tekstil',
+    isActive: true,
+  };
+
   const baseProduct = {
     id: productId,
     code: '0000001',
     name: 'Parça məhsul',
     type: ProductTypeApi.FINISHED_GOOD,
-    category: 'Tekstil',
+    categoryId,
     unitId,
     standardSalePrice: new Prisma.Decimal('12.5'),
     latestPurchasePrice: new Prisma.Decimal('10'),
@@ -38,6 +46,7 @@ describe('Products (e2e)', () => {
     createdAt,
     updatedAt,
     unit: unitSummary,
+    category: categorySummary,
   };
 
   const expectedProductBody = {
@@ -45,7 +54,8 @@ describe('Products (e2e)', () => {
     code: '0000001',
     name: 'Parça məhsul',
     type: ProductTypeApi.FINISHED_GOOD,
-    category: 'Tekstil',
+    categoryId,
+    category: categorySummary,
     unitId,
     unit: unitSummary,
     standardSalePrice: '12.5000',
@@ -63,7 +73,7 @@ describe('Products (e2e)', () => {
   const prisma = {
     onModuleInit: jest.fn().mockResolvedValue(undefined),
     onModuleDestroy: jest.fn().mockResolvedValue(undefined),
-    $transaction: jest.fn((fn: (tx: typeof prisma) => unknown) =>
+    $transaction: jest.fn((fn: (tx: unknown) => unknown) =>
       Promise.resolve(fn(prisma)),
     ),
     product: {
@@ -78,17 +88,22 @@ describe('Products (e2e)', () => {
     unit: {
       findUnique: jest.fn(),
     },
+    productCategory: {
+      findUnique: jest.fn(),
+    },
   };
 
   let app: INestApplication<App>;
 
   type ProductUnitJson = typeof unitSummary;
+  type ProductCategoryJson = typeof categorySummary;
   type ProductJson = {
     id: string;
     code: string;
     name: string;
     type: string;
-    category: string | null;
+    categoryId: string | null;
+    category: ProductCategoryJson | null;
     unitId: string;
     unit: ProductUnitJson;
     standardSalePrice: string | null;
@@ -135,13 +150,31 @@ describe('Products (e2e)', () => {
     name: ' Yeni məhsul ',
     type: ProductTypeApi.FINISHED_GOOD,
     unitId,
-    category: '   ',
+    categoryId: null,
     standardSalePrice: '12.5',
     latestPurchasePrice: '0',
   };
 
+  const productResponseKeys = [
+    'category',
+    'categoryId',
+    'code',
+    'createdAt',
+    'criticalStockThreshold',
+    'id',
+    'isActive',
+    'latestPurchasePrice',
+    'name',
+    'standardSalePrice',
+    'type',
+    'unit',
+    'unitId',
+    'updatedAt',
+  ].sort();
+
   beforeEach(async () => {
     jest.clearAllMocks();
+    attachAuthUserMock(prisma);
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -168,11 +201,12 @@ describe('Products (e2e)', () => {
         ...baseProduct,
         code: '0000001',
         name: 'Yeni məhsul',
+        categoryId: null,
         category: null,
         latestPurchasePrice: new Prisma.Decimal('0'),
       });
 
-      const response = await request(app.getHttpServer())
+      const response = await withAuth(request(app.getHttpServer()))
         .post('/api/v1/products')
         .send(validCreatePayload)
         .expect(201);
@@ -183,6 +217,7 @@ describe('Products (e2e)', () => {
         ...expectedProductBody,
         code: '0000001',
         name: 'Yeni məhsul',
+        categoryId: null,
         category: null,
         standardSalePrice: '12.5000',
         latestPurchasePrice: '0.0000',
@@ -193,35 +228,47 @@ describe('Products (e2e)', () => {
           data: expect.objectContaining({
             code: '0000001',
             name: 'Yeni məhsul',
-            category: null,
+            categoryId: null,
             isActive: true,
           }) as object,
         }),
       );
-      expect(Object.keys(body).sort()).toEqual(
-        [
-          'category',
-          'code',
-          'createdAt',
-          'criticalStockThreshold',
-          'id',
-          'isActive',
-          'latestPurchasePrice',
-          'name',
-          'standardSalePrice',
-          'type',
-          'unit',
-          'unitId',
-          'updatedAt',
-        ].sort(),
-      );
+      expect(Object.keys(body).sort()).toEqual(productResponseKeys);
       expect(body.unit).toEqual(unitSummary);
       expect(body.isActive).toBe(true);
       assertNoInternalLeak(response.body);
     });
 
+    it('assigns an active categoryId when provided', async () => {
+      prisma.unit.findUnique.mockResolvedValue({ id: unitId, isActive: true });
+      prisma.productCategory.findUnique.mockResolvedValue({
+        id: categoryId,
+        isActive: true,
+      });
+      prisma.product.create.mockResolvedValue({
+        ...baseProduct,
+        name: 'Yeni məhsul',
+        latestPurchasePrice: new Prisma.Decimal('0'),
+      });
+
+      const response = await withAuth(request(app.getHttpServer()))
+        .post('/api/v1/products')
+        .send({ ...validCreatePayload, categoryId })
+        .expect(201);
+
+      const body = response.body as ProductJson;
+      expect(body.categoryId).toBe(categoryId);
+      expect(body.category).toEqual(categorySummary);
+      expect(prisma.productCategory.findUnique).toHaveBeenCalled();
+      expect(prisma.product.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ categoryId }) as object,
+        }),
+      );
+    });
+
     it('rejects client-supplied code with 400', async () => {
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .post('/api/v1/products')
         .send({ ...validCreatePayload, code: 'TX-999' })
         .expect(400);
@@ -241,19 +288,23 @@ describe('Products (e2e)', () => {
           id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
           code: '0000001',
           name: 'Birinci',
+          categoryId: null,
+          category: null,
         })
         .mockResolvedValueOnce({
           ...baseProduct,
           id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
           code: '0000002',
           name: 'İkinci',
+          categoryId: null,
+          category: null,
         });
 
-      const first = await request(app.getHttpServer())
+      const first = await withAuth(request(app.getHttpServer()))
         .post('/api/v1/products')
         .send({ ...validCreatePayload, name: 'Birinci' })
         .expect(201);
-      const second = await request(app.getHttpServer())
+      const second = await withAuth(request(app.getHttpServer()))
         .post('/api/v1/products')
         .send({ ...validCreatePayload, name: 'İkinci' })
         .expect(201);
@@ -264,12 +315,12 @@ describe('Products (e2e)', () => {
     });
 
     it('rejects missing required fields and unknown body properties', async () => {
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .post('/api/v1/products')
         .send({ name: 'X', type: ProductTypeApi.FINISHED_GOOD })
         .expect(400);
 
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .post('/api/v1/products')
         .send({ ...validCreatePayload, unknownField: true })
         .expect(400);
@@ -278,44 +329,49 @@ describe('Products (e2e)', () => {
     });
 
     it('rejects whitespace-only name with 400', async () => {
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .post('/api/v1/products')
         .send({ ...validCreatePayload, name: '   ' })
         .expect(400);
     });
 
-    it('rejects invalid type, unitId UUID, and decimal payloads', async () => {
-      await request(app.getHttpServer())
+    it('rejects invalid type, unitId UUID, categoryId UUID, and decimal payloads', async () => {
+      await withAuth(request(app.getHttpServer()))
         .post('/api/v1/products')
         .send({ ...validCreatePayload, type: 'INVALID' })
         .expect(400);
 
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .post('/api/v1/products')
         .send({ ...validCreatePayload, unitId: 'not-a-uuid' })
         .expect(400);
 
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
+        .post('/api/v1/products')
+        .send({ ...validCreatePayload, categoryId: 'not-a-uuid' })
+        .expect(400);
+
+      await withAuth(request(app.getHttpServer()))
         .post('/api/v1/products')
         .send({ ...validCreatePayload, standardSalePrice: 12.5 })
         .expect(400);
 
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .post('/api/v1/products')
         .send({ ...validCreatePayload, standardSalePrice: '-1' })
         .expect(400);
 
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .post('/api/v1/products')
         .send({ ...validCreatePayload, standardSalePrice: '12.12345' })
         .expect(400);
 
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .post('/api/v1/products')
         .send({ ...validCreatePayload, standardSalePrice: '1e3' })
         .expect(400);
 
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .post('/api/v1/products')
         .send({
           ...validCreatePayload,
@@ -327,7 +383,7 @@ describe('Products (e2e)', () => {
     it('maps missing unit to 404 and inactive unit to 400', async () => {
       prisma.unit.findUnique.mockResolvedValue(null);
 
-      const notFound = await request(app.getHttpServer())
+      const notFound = await withAuth(request(app.getHttpServer()))
         .post('/api/v1/products')
         .send(validCreatePayload)
         .expect(404);
@@ -339,7 +395,7 @@ describe('Products (e2e)', () => {
 
       prisma.unit.findUnique.mockResolvedValue({ id: unitId, isActive: false });
 
-      const inactive = await request(app.getHttpServer())
+      const inactive = await withAuth(request(app.getHttpServer()))
         .post('/api/v1/products')
         .send(validCreatePayload)
         .expect(400);
@@ -347,6 +403,35 @@ describe('Products (e2e)', () => {
       expect(inactive.body).toEqual(
         expect.objectContaining({ message: 'Unit is inactive' }),
       );
+    });
+
+    it('maps missing category to 404 and inactive category to 400', async () => {
+      prisma.unit.findUnique.mockResolvedValue({ id: unitId, isActive: true });
+      prisma.productCategory.findUnique.mockResolvedValue(null);
+
+      const notFound = await withAuth(request(app.getHttpServer()))
+        .post('/api/v1/products')
+        .send({ ...validCreatePayload, categoryId })
+        .expect(404);
+
+      expect(notFound.body).toEqual(
+        expect.objectContaining({ message: 'Product category not found' }),
+      );
+
+      prisma.productCategory.findUnique.mockResolvedValue({
+        id: categoryId,
+        isActive: false,
+      });
+
+      const inactive = await withAuth(request(app.getHttpServer()))
+        .post('/api/v1/products')
+        .send({ ...validCreatePayload, categoryId })
+        .expect(400);
+
+      expect(inactive.body).toEqual(
+        expect.objectContaining({ message: 'Product category is inactive' }),
+      );
+      expect(prisma.product.create).not.toHaveBeenCalled();
     });
 
     it('maps duplicate product code to 409 without leaking Prisma details', async () => {
@@ -358,7 +443,7 @@ describe('Products (e2e)', () => {
         }),
       );
 
-      const response = await request(app.getHttpServer())
+      const response = await withAuth(request(app.getHttpServer()))
         .post('/api/v1/products')
         .send(validCreatePayload)
         .expect(409);
@@ -384,7 +469,7 @@ describe('Products (e2e)', () => {
       prisma.product.findMany.mockResolvedValue([baseProduct, inactive]);
       prisma.product.count.mockResolvedValue(2);
 
-      const response = await request(app.getHttpServer())
+      const response = await withAuth(request(app.getHttpServer()))
         .get('/api/v1/products')
         .expect(200);
 
@@ -399,6 +484,8 @@ describe('Products (e2e)', () => {
       expect(body.data).toHaveLength(2);
       expect(body.data[0].standardSalePrice).toBe('12.5000');
       expect(body.data[0].unit).toEqual(unitSummary);
+      expect(body.data[0].categoryId).toBe(categoryId);
+      expect(body.data[0].category).toEqual(categorySummary);
       expect(body.data[0]).not.toHaveProperty('saleItems');
       expect(body.data[0]).not.toHaveProperty('purchaseItems');
       expect(body.data[1].isActive).toBe(false);
@@ -413,35 +500,43 @@ describe('Products (e2e)', () => {
     });
 
     it('rejects invalid pagination, filters, and sort query params', async () => {
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .get('/api/v1/products')
         .query({ page: 0 })
         .expect(400);
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .get('/api/v1/products')
         .query({ pageSize: 101 })
         .expect(400);
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .get('/api/v1/products')
         .query({ isActive: 'maybe' })
         .expect(400);
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .get('/api/v1/products')
         .query({ type: 'INVALID' })
         .expect(400);
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .get('/api/v1/products')
         .query({ unitId: 'bad' })
         .expect(400);
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
+        .get('/api/v1/products')
+        .query({ categoryId: 'bad' })
+        .expect(400);
+      await withAuth(request(app.getHttpServer()))
         .get('/api/v1/products')
         .query({ sortBy: 'stock' })
         .expect(400);
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
+        .get('/api/v1/products')
+        .query({ sortBy: 'category' })
+        .expect(400);
+      await withAuth(request(app.getHttpServer()))
         .get('/api/v1/products')
         .query({ sortOrder: 'up' })
         .expect(400);
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .get('/api/v1/products')
         .query({ extra: 'x' })
         .expect(400);
@@ -449,11 +544,11 @@ describe('Products (e2e)', () => {
       expect(prisma.product.findMany).not.toHaveBeenCalled();
     });
 
-    it('transforms isActive and ignores whitespace-only search and category', async () => {
+    it('transforms isActive and ignores whitespace-only search', async () => {
       prisma.product.findMany.mockResolvedValue([]);
       prisma.product.count.mockResolvedValue(0);
 
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .get('/api/v1/products')
         .query({ isActive: 'true' })
         .expect(200);
@@ -464,7 +559,7 @@ describe('Products (e2e)', () => {
         }),
       );
 
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .get('/api/v1/products')
         .query({ isActive: 'false' })
         .expect(200);
@@ -477,14 +572,30 @@ describe('Products (e2e)', () => {
 
       prisma.product.findMany.mockClear();
 
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .get('/api/v1/products')
-        .query({ search: '   ', category: '   ' })
+        .query({ search: '   ' })
         .expect(200);
 
       expect(prisma.product.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: undefined,
+        }),
+      );
+    });
+
+    it('applies categoryId filter when provided', async () => {
+      prisma.product.findMany.mockResolvedValue([]);
+      prisma.product.count.mockResolvedValue(0);
+
+      await withAuth(request(app.getHttpServer()))
+        .get('/api/v1/products')
+        .query({ categoryId })
+        .expect(200);
+
+      expect(prisma.product.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { categoryId },
         }),
       );
     });
@@ -494,34 +605,39 @@ describe('Products (e2e)', () => {
     it('returns active and inactive products with consistent shape', async () => {
       prisma.product.findUnique.mockResolvedValue(baseProduct);
 
-      const active = await request(app.getHttpServer())
+      const active = await withAuth(request(app.getHttpServer()))
         .get(`/api/v1/products/${productId}`)
         .expect(200);
 
       expect(active.body as ProductJson).toEqual(expectedProductBody);
+      expect(Object.keys(active.body as ProductJson).sort()).toEqual(
+        productResponseKeys,
+      );
 
       prisma.product.findUnique.mockResolvedValue({
         ...baseProduct,
         isActive: false,
       });
 
-      const inactive = await request(app.getHttpServer())
+      const inactive = await withAuth(request(app.getHttpServer()))
         .get(`/api/v1/products/${productId}`)
         .expect(200);
 
       const inactiveBody = inactive.body as ProductJson;
       expect(inactiveBody.isActive).toBe(false);
       expect(inactiveBody.criticalStockThreshold).toBeNull();
+      expect(inactiveBody.categoryId).toBe(categoryId);
+      expect(inactiveBody.category).toEqual(categorySummary);
     });
 
     it('rejects invalid UUID and missing product', async () => {
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .get('/api/v1/products/not-a-uuid')
         .expect(400);
 
       prisma.product.findUnique.mockResolvedValue(null);
 
-      const response = await request(app.getHttpServer())
+      const response = await withAuth(request(app.getHttpServer()))
         .get(`/api/v1/products/${productId}`)
         .expect(404);
 
@@ -538,7 +654,7 @@ describe('Products (e2e)', () => {
     });
 
     it('rejects empty body, invalid UUID, and null on non-nullable fields', async () => {
-      const empty = await request(app.getHttpServer())
+      const empty = await withAuth(request(app.getHttpServer()))
         .patch(`/api/v1/products/${productId}`)
         .send({})
         .expect(400);
@@ -549,17 +665,17 @@ describe('Products (e2e)', () => {
         }),
       );
 
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .patch('/api/v1/products/not-a-uuid')
         .send({ name: 'X' })
         .expect(400);
 
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .patch(`/api/v1/products/${productId}`)
         .send({ name: null })
         .expect(400);
 
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .patch(`/api/v1/products/${productId}`)
         .send({ code: 'TX-010' })
         .expect(400);
@@ -569,6 +685,7 @@ describe('Products (e2e)', () => {
       prisma.product.update.mockResolvedValue({
         ...baseProduct,
         name: 'Trimmed',
+        categoryId: null,
         category: null,
         type: ProductTypeApi.RAW_MATERIAL,
         standardSalePrice: null,
@@ -581,11 +698,11 @@ describe('Products (e2e)', () => {
         isActive: true,
       });
 
-      const response = await request(app.getHttpServer())
+      const response = await withAuth(request(app.getHttpServer()))
         .patch(`/api/v1/products/${productId}`)
         .send({
           name: ' Trimmed ',
-          category: null,
+          categoryId: null,
           type: ProductTypeApi.RAW_MATERIAL,
           standardSalePrice: null,
           latestPurchasePrice: '0',
@@ -599,6 +716,7 @@ describe('Products (e2e)', () => {
         expect.objectContaining({
           code: '0000001',
           name: 'Trimmed',
+          categoryId: null,
           category: null,
           type: ProductTypeApi.RAW_MATERIAL,
           standardSalePrice: null,
@@ -612,49 +730,55 @@ describe('Products (e2e)', () => {
           data: expect.not.objectContaining({ code: expect.anything() }),
         }),
       );
+      expect(prisma.productCategory.findUnique).not.toHaveBeenCalled();
     });
 
-    it('rejects validation errors for name, type, unitId, and decimals', async () => {
-      await request(app.getHttpServer())
+    it('rejects validation errors for name, type, unitId, categoryId, and decimals', async () => {
+      await withAuth(request(app.getHttpServer()))
         .patch(`/api/v1/products/${productId}`)
         .send({ name: '   ' })
         .expect(400);
 
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .patch(`/api/v1/products/${productId}`)
         .send({ type: 'BAD' })
         .expect(400);
 
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .patch(`/api/v1/products/${productId}`)
         .send({ unitId: 'bad' })
         .expect(400);
 
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
+        .patch(`/api/v1/products/${productId}`)
+        .send({ categoryId: 'bad' })
+        .expect(400);
+
+      await withAuth(request(app.getHttpServer()))
         .patch(`/api/v1/products/${productId}`)
         .send({ mystery: true })
         .expect(400);
 
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .patch(`/api/v1/products/${productId}`)
         .send({ standardSalePrice: 5 })
         .expect(400);
 
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .patch(`/api/v1/products/${productId}`)
         .send({ standardSalePrice: '-1' })
         .expect(400);
 
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .patch(`/api/v1/products/${productId}`)
         .send({ standardSalePrice: '1e2' })
         .expect(400);
     });
 
-    it('maps missing product and unit errors', async () => {
+    it('maps missing product, unit, and category errors', async () => {
       prisma.product.findUnique.mockResolvedValue(null);
 
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .patch(`/api/v1/products/${productId}`)
         .send({ name: 'X' })
         .expect(404);
@@ -662,7 +786,7 @@ describe('Products (e2e)', () => {
       prisma.product.findUnique.mockResolvedValue(baseProduct);
       prisma.unit.findUnique.mockResolvedValue(null);
 
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .patch(`/api/v1/products/${productId}`)
         .send({ unitId: otherUnitId })
         .expect(404);
@@ -672,13 +796,30 @@ describe('Products (e2e)', () => {
         isActive: false,
       });
 
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .patch(`/api/v1/products/${productId}`)
         .send({ unitId: otherUnitId })
         .expect(400);
+
+      prisma.productCategory.findUnique.mockResolvedValue(null);
+
+      await withAuth(request(app.getHttpServer()))
+        .patch(`/api/v1/products/${productId}`)
+        .send({ categoryId })
+        .expect(404);
+
+      prisma.productCategory.findUnique.mockResolvedValue({
+        id: categoryId,
+        isActive: false,
+      });
+
+      await withAuth(request(app.getHttpServer()))
+        .patch(`/api/v1/products/${productId}`)
+        .send({ categoryId })
+        .expect(400);
     });
 
-    it('updates inactive product without reactivation', async () => {
+    it('updates inactive product without changing isActive when omitted', async () => {
       prisma.product.findUnique.mockResolvedValue({
         ...baseProduct,
         isActive: false,
@@ -689,7 +830,7 @@ describe('Products (e2e)', () => {
         name: 'Inactive edit',
       });
 
-      const response = await request(app.getHttpServer())
+      const response = await withAuth(request(app.getHttpServer()))
         .patch(`/api/v1/products/${productId}`)
         .send({ name: 'Inactive edit' })
         .expect(200);
@@ -697,6 +838,30 @@ describe('Products (e2e)', () => {
       const inactivePatchBody = response.body as ProductJson;
       expect(inactivePatchBody.isActive).toBe(false);
       expect(inactivePatchBody.name).toBe('Inactive edit');
+    });
+
+    it('reactivates an inactive product via isActive true', async () => {
+      prisma.product.findUnique.mockResolvedValue({
+        ...baseProduct,
+        isActive: false,
+      });
+      prisma.product.update.mockResolvedValue({
+        ...baseProduct,
+        isActive: true,
+      });
+
+      const response = await withAuth(request(app.getHttpServer()))
+        .patch(`/api/v1/products/${productId}`)
+        .send({ isActive: true })
+        .expect(200);
+
+      const body = response.body as ProductJson;
+      expect(body.isActive).toBe(true);
+      expect(prisma.product.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { isActive: true },
+        }),
+      );
     });
 
     it('updates only non-unit fields when product references inactive unit', async () => {
@@ -713,7 +878,7 @@ describe('Products (e2e)', () => {
         unit: { ...unitSummary, id: inactiveUnitId, isActive: false },
       });
 
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .patch(`/api/v1/products/${productId}`)
         .send({ name: 'Still linked' })
         .expect(200);
@@ -730,7 +895,7 @@ describe('Products (e2e)', () => {
         isActive: false,
       });
 
-      const first = await request(app.getHttpServer())
+      const first = await withAuth(request(app.getHttpServer()))
         .delete(`/api/v1/products/${productId}`)
         .expect(200);
 
@@ -741,6 +906,7 @@ describe('Products (e2e)', () => {
         isActive: false,
       });
       expect(firstBody.unit).toEqual(unitSummary);
+      expect(firstBody.category).toEqual(categorySummary);
       expect(prisma.product.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: { isActive: false },
@@ -755,7 +921,7 @@ describe('Products (e2e)', () => {
       });
       prisma.product.update.mockClear();
 
-      const second = await request(app.getHttpServer())
+      const second = await withAuth(request(app.getHttpServer()))
         .delete(`/api/v1/products/${productId}`)
         .expect(200);
 
@@ -764,13 +930,13 @@ describe('Products (e2e)', () => {
     });
 
     it('rejects invalid UUID and missing product', async () => {
-      await request(app.getHttpServer())
+      await withAuth(request(app.getHttpServer()))
         .delete('/api/v1/products/not-a-uuid')
         .expect(400);
 
       prisma.product.findUnique.mockResolvedValue(null);
 
-      const response = await request(app.getHttpServer())
+      const response = await withAuth(request(app.getHttpServer()))
         .delete(`/api/v1/products/${productId}`)
         .expect(404);
 

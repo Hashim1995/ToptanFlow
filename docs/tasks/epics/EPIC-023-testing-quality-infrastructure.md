@@ -47,3 +47,4 @@ CI provider/pipeline details.
 ## Repository evidence
 
 apps/api unit + e2e + test:concurrency present.
+apps/web Vitest harness present (TASK-041-01; pure helper suite).

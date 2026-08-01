@@ -7,9 +7,8 @@ export default defineConfig({
   schema: 'prisma/schema.prisma',
   migrations: {
     path: 'prisma/migrations',
-    // Infrastructure-only, intentional no-op seed (apps/api/prisma/seed.ts);
-    // see docs/technical/database-development.md. Runs after `prisma migrate
-    // dev` / `prisma migrate reset`, and via `prisma db seed` directly.
+    // Optional bootstrap first user when BOOTSTRAP_* env vars are set and User
+    // table is empty (ADR-025 / TASK-018-01). See apps/api/.env.example.
     seed: 'ts-node prisma/seed.ts',
   },
   datasource: {

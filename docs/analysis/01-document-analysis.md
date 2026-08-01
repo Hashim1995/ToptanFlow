@@ -1,5 +1,27 @@
 # TOPTANFLOW Joint Business and Technical Document Analysis
 
+> **Active product override (2026-07-31):** Approved Human Decision
+> [ADR-029](../decisions/ADR-029-single-product-quantity-no-warehouse.md) /
+> [CHANGE-002](../tasks/unplanned/CHANGE-002-single-product-quantity-no-warehouse.md)
+> supersedes warehouse / multi-location inventory design for the active system.
+> Quantity is one `currentQuantity` per Product with product quantity history.
+> Sections below that describe warehouses, warehouse transfers, vehicle warehouses,
+> or warehouse-scoped balances remain **historical BRD/SRS analysis** and must not
+> be implemented as written. Prefer `docs/business/invariants.md` (post ADR-029)
+> for current business rules.
+>
+> **Active product override (2026-07-31):** Approved Human Decisions
+> [ADR-030](../decisions/ADR-030-signed-business-partner-debt-balance.md) and
+> [ADR-031](../decisions/ADR-031-currency-reserved-for-future-cash.md) /
+> [CHANGE-003](../tasks/unplanned/CHANGE-003-signed-partner-balance-and-azn-only.md)
+> supersede dual receivable/payable primary balances (and “never net” rules) and
+> multi-currency / Currency CRUD for the active product. Partner debt is one signed
+> AZN balance; Currency is reserved for future Cash only. Sections below that
+> describe separate AR/AP ledgers, advance primary balances, or document/partner
+> currency selection remain **historical BRD/SRS analysis** and must not be
+> implemented as written. Prefer `docs/business/invariants.md` (post ADR-030 /
+> ADR-031) for current business rules.
+
 **Analyzed sources**
 
 - **BRD:** *TOPTANFLOW ERP — Business Requirements Document*, version 1.1, July 27, 2026.
@@ -95,15 +117,15 @@ The project is **not yet ready for a final domain database schema or business-mo
 
 ## 3.5 Sales
 
-- **Business purpose:** Record delivery of goods, sales price and discounts, create receivables, and link immediate or later payment.
-- **Main responsibilities:** draft and posting; inventory validation; price and discount control; due dates; fully/partially/unpaid states; returns; cancellation; correction; Yatı channel; invoice sharing.
+- **Business purpose:** Record delivery of goods, sales price and discounts, create receivables, and optionally coordinate a separately posted cash receipt for immediate or later payment (ADR-028 — sale never mutates cash directly).
+- **Main responsibilities:** draft and posting; inventory validation; price and discount control; due dates; open/settled receivable state derived from allocations; returns; cancellation; correction; Yatı channel; invoice sharing.
 - **Users/roles involved:** Sales Officer, Field Sales, Manager for overrides/cancellation, Warehouse for physical issue, Cashier for receipts.
 - **Dependencies:** Partners, Catalog, Inventory, Settlement, Cash, Bundles, Trips, Messaging, Period Control, Audit.
 - **Related sources:** [BRD §10 — “Sales Processes”] [SRS §13 — “Sales”]
 
 ## 3.6 Purchasing and Goods Receipt
 
-- **Business purpose:** Record goods actually received from suppliers, increase inventory, create payables, and link immediate or later supplier payment.
+- **Business purpose:** Record goods actually received from suppliers, increase inventory, create payables, and optionally coordinate a separately posted supplier payment for immediate or later settlement (ADR-028 — purchase never mutates cash directly).
 - **Main responsibilities:** drafts; actual receipt quantity; supplier invoice duplicate warning; price verification; posting; evidence; returns; cancellation; later corrections; transport/additional-cost note.
 - **Users/roles involved:** Purchasing Officer, Warehouse Officer, Cashier, Manager, mobile receipt creator/reviewer.
 - **Dependencies:** Partners, Catalog, Inventory/Costing, Settlement, Cash, Attachments, Audit, Period Control.
@@ -127,16 +149,16 @@ The project is **not yet ready for a final domain database schema or business-mo
 
 ## 3.9 Cash and Money Accounts
 
-- **Business purpose:** Track every receipt, payment, refund, expense, contribution, withdrawal, and transfer by account.
-- **Main responsibilities:** main/secondary/vehicle/bank accounts; immutable money movements; transfers; customer receipts; supplier payments; refunds; owner funding; cash adjustments; balance reporting.
+- **Business purpose:** Track every receipt, payment, refund, expense, contribution, withdrawal, and transfer by account. This is the only module that mutates money-account balances for operational cash movement (ADR-028).
+- **Main responsibilities:** main/secondary/vehicle/bank accounts; immutable money movements; transfers; customer receipts; supplier payments; refunds; owner funding; cash adjustments; balance reporting; optional link/allocation to sale/purchase documents; unlinked movements allowed.
 - **Users/roles involved:** Cashier, Field Sales, Manager, Business Owner, Controller.
 - **Dependencies:** Settlement, Sales/Purchases for allocations, Expenses, Trips, Negative Cash, Cash Closing, Audit.
 - **Related sources:** [BRD §13 — “Cash, Payment, and Expense Management”] [SRS §16 — “Cash, Payments, and Expenses”]
 
 ## 3.10 Settlement, Receivables, Payables, and Advances
 
-- **Business purpose:** Explain how posted sales and purchases are settled at document level without automatically netting opposite directions.
-- **Main responsibilities:** open amounts; payment allocation and reallocation; customer and supplier advances; aging; due dates; return/cancellation effects; partner statements.
+- **Business purpose:** Explain how posted sales and purchases are settled at document level without automatically netting opposite directions, via optional allocation of separately posted cash movements (ADR-028).
+- **Main responsibilities:** open amounts; payment allocation and reallocation; partial and multi-document allocation; customer and supplier advances; aging; due dates; return/cancellation effects; partner statements.
 - **Users/roles involved:** Cashier, Sales, Purchase, Manager, Controller, Field Sales.
 - **Dependencies:** Partners, Sales, Purchasing, Cash, Returns, Period Control, Audit, Reporting.
 - **Related sources:** [BRD §14 — “Accounts Receivable, Accounts Payable, and Advances”] [SRS §17 — “Receivables, Payables, and Advances”]
@@ -349,8 +371,8 @@ The project is **not yet ready for a final domain database schema or business-mo
 - **Main steps:** Select partner and warehouse; enter products, quantities, prices, discounts, due date, and channel; save/revise draft; revalidate stock and rules; post.
 - **Posting moment:** The sale becomes business-effective only when the post command succeeds atomically.
 - **Inventory effect:** Draft: none. Posting: decrease stocked products or bundle components from the selected warehouse; snapshot sale cost.
-- **Cash effect:** Sale posting alone has no cash effect unless the same atomic flow also creates a separately identifiable receipt.
-- **Receivable/payable effect:** Full sale amount creates a receivable; allocated payment reduces it; any remainder stays open.
+- **Cash effect:** Sale posting alone has **no** cash effect. Cash changes only if the same user flow also posts a **separately identifiable** Cash In (customer receipt) — optionally allocated to this sale. Same atomic commit is allowed; Sale and Cash remain separate records with separate audit trails ([ADR-028](../decisions/ADR-028-sale-purchase-cash-separation.md)).
+- **Receivable/payable effect:** Full sale amount creates a receivable; any reduction of the open amount comes only from separately posted, allocated receipts (or returns/cancellation) — never from cash fields on the sale itself.
 - **Audit effect:** Preserve creator, poster, date/time, prices, discounts, cost snapshots, partner/product snapshots, overrides, request ID, and source movements.
 - **Failure cases:** insufficient stock; concurrent last-stock sale; blocked Yellow Card; unauthorized discount/zero price; closed period; inactive master; duplicate idempotency request; stale draft version.
 - **Related sources:** [BRD §10.1 — “Purpose and Main Flow of a Sale”] [BRD §10.5 — “Inventory Check and Release of Goods”] [SRS §13.2 — “Sale Commands”] [SRS §8.2 — “Posting Service Pattern”]
@@ -359,7 +381,7 @@ The project is **not yet ready for a final domain database schema or business-mo
 
 - **Trigger:** Money is received for one or more open sales, immediately or later.
 - **Preconditions:** Active partner and receiving money account; positive amount; open target sales in the receivable direction; open period; allocation permission.
-- **Main steps:** Create customer receipt; display open sales; propose oldest-due allocation; user confirms or edits allocations; retain excess as customer advance; post receipt and allocations.
+- **Main steps:** Create customer receipt; optionally display open sales; propose oldest-due allocation; user confirms or edits allocations (partial, multi-document, or none/unlinked); retain excess as customer advance; post receipt and allocations.
 - **Posting moment:** When the customer receipt is posted; allocations and money movement must commit together.
 - **Inventory effect:** None.
 - **Cash effect:** Selected money account increases by the full received amount.
@@ -385,10 +407,10 @@ The project is **not yet ready for a final domain database schema or business-mo
 
 - **Trigger:** An authorized user identifies that a posted sale is invalid and a return is not the commercially correct correction.
 - **Preconditions:** Cancellation permission and reason; open period or approved reopen; downstream allocations reviewed; reversal can restore stock and settlement consistently.
-- **Main steps:** Assess linked payments/returns; unallocate or resolve payments; execute cancellation; create exact opposite stock, receivable, and eligible direct-payment effects; create corrected sale separately if needed.
+- **Main steps:** Assess linked payments/returns; unallocate or resolve payments as separate cash/settlement actions; execute cancellation; create exact opposite stock and receivable effects; create corrected sale separately if needed.
 - **Posting moment:** When the cancellation/reversal transaction commits; the original is retained and marked cancelled.
 - **Inventory effect:** Reverse original sale issues, subject to integrity checks.
-- **Cash effect:** Reverse only the cash effect that the approved cancellation model identifies; separately allocated receipts require explicit resolution.
+- **Cash effect:** Cancellation does not silently delete cash into the sale. Linked receipts require explicit unallocation, cash reversal, or other cash/settlement resolution ([ADR-028](../decisions/ADR-028-sale-purchase-cash-separation.md)).
 - **Receivable/payable effect:** Reverse the receivable and reopen/reorganize linked settlement as applicable.
 - **Audit effect:** Original number is retained and never reused; preserve cancellation reason, actor, reversal links, affected allocations, period reopen, and replacement reference.
 - **Failure cases:** closed period; linked payment allocated elsewhere; later returns; inconsistent stock; unauthorized cancellation; duplicate cancellation.
@@ -401,8 +423,8 @@ The project is **not yet ready for a final domain database schema or business-mo
 - **Main steps:** Enter supplier, actual products/quantities/prices, supplier invoice, receiver, due date, and evidence; save draft if price/review incomplete; verify; post.
 - **Posting moment:** When the purchase post command succeeds atomically.
 - **Inventory effect:** Draft: none. Posting: increase inventory by actual received quantities and update cost under the approved costing policy.
-- **Cash effect:** None unless a separate supplier payment is created and linked.
-- **Receivable/payable effect:** Full purchase creates payable; allocated payment/advance reduces it.
+- **Cash effect:** Purchase posting alone has **no** cash effect. Cash changes only if the same user flow also posts a **separately identifiable** Cash Out (supplier payment) — optionally allocated to this purchase. Same atomic commit is allowed; Purchase and Cash remain separate records with separate audit trails ([ADR-028](../decisions/ADR-028-sale-purchase-cash-separation.md)).
+- **Receivable/payable effect:** Full purchase creates a payable; any reduction of the open amount comes only from separately posted, allocated payments (or returns/cancellation) — never from cash fields on the purchase itself.
 - **Audit effect:** Preserve supplier/product snapshots, actual versus invoiced difference, receiver, poster, prices, evidence links, cost result, and source movements.
 - **Failure cases:** missing price; unreadable or unreviewed evidence; duplicate invoice warning unresolved; closed period; inactive product; invalid quantity.
 - **Related sources:** [BRD §11.1 — “Purpose and Main Flow of a Purchase”] [BRD §11.4 — “Receipt Differences and Invoice Discrepancies”] [SRS §14.1 — “Requirements”]
@@ -411,7 +433,7 @@ The project is **not yet ready for a final domain database schema or business-mo
 
 - **Trigger:** The company pays one or more open purchases.
 - **Preconditions:** Active partner and source money account; positive amount; open purchases in payable direction; sufficient cash unless negative-cash exception is authorized; open period.
-- **Main steps:** Create supplier payment; show open purchases; propose allocation order; user confirms/edits; retain excess as supplier advance; post money movement and allocations.
+- **Main steps:** Create supplier payment; optionally show open purchases; propose allocation order; user confirms/edits (partial, multi-document, or none/unlinked); retain excess as supplier advance; post money movement and allocations.
 - **Posting moment:** When the supplier payment and its allocations commit.
 - **Inventory effect:** None.
 - **Cash effect:** Source money account decreases by the full payment.
@@ -1305,6 +1327,7 @@ The BRD open-decision table has topics but no decision IDs. This analysis assign
 
 - **Question:** How many warehouses are active at go-live, including vehicle and damaged locations?
 - **Current recommendation/safe default:** At least one warehouse with future multi-warehouse support; this recommendation is insufficient for initial Yatı.
+- **Status (2026-07-31):** **Resolved for v1 inventory** by Approved Human Decision [ADR-026](../decisions/ADR-026-initial-warehouses-v1.md): one seeded GENERAL warehouse; multi-warehouse schema; no VEHICLE kind in v1 (Yatı deferred); DAMAGED kind allowed but not required at seed.
 - **Business impact:** Custody, stock availability, counting, transfers, and trip operation.
 - **Technical impact:** Seed/configuration, warehouse types, assignment constraints, reporting.
 - **Decision deadline:** Before master-data and opening-stock design. [BRD §28 — “Open Decisions”] [BRD §17.1]
@@ -1321,9 +1344,10 @@ The BRD open-decision table has topics but no decision IDs. This analysis assign
 
 - **Question:** Which products, warehouses, users, quantities/values, and durations may go negative?
 - **Current recommendation/safe default:** Delayed-entry cases only; permission, reason, limit, warning, and target clearance within one business day.
+- **Partial resolution (Approved Human Decision 2026-07-31 → [ADR-027](../decisions/ADR-027-allow-negative-stock-v1.md)):** v1 inventory posting **allows** negative warehouse/product balances (no hard-block). Full controlled-exception scope (which products/users, quantity/value/age limits, case lifecycle, provisional cost clearance) remains open.
 - **Business impact:** Trading continuity versus inventory/profit reliability.
 - **Technical impact:** policy engine, locks, case lifecycle, provisional cost, alerts, reports.
-- **Decision deadline:** Before inventory posting and costing. [BRD §28]
+- **Decision deadline:** Before inventory posting and costing. [BRD §28] — quantity hard-block removed for v1; remaining controls still needed before full exception/costing behavior.
 
 ### BRD-OD-05 — Negative Cash Scope and Limits
 
@@ -1554,6 +1578,8 @@ The BRD open-decision table has topics but no decision IDs. This analysis assign
 ## 10.3 Additional Material Decisions Stated Outside the Registers
 
 These have no source-issued IDs; `AD-*` identifiers are analysis-local.
+
+**Resolved by Approved Human Decision (2026-07-31 → [ADR-028](../decisions/ADR-028-sale-purchase-cash-separation.md)):** Completing a Sale or Purchase never directly mutates cash; cash changes only via separate Cash In / Cash Out; optional link/allocation (same UI flow or later from Cash); separate records and audit logs; unlinked cash allowed; partial / multi-payment / multi-document allocation supported. This clarifies and locks wording that was already present in §5.1 / §5.5 and removes ambiguity in planning stubs.
 
 ### AD-01 — Unit Conversion
 

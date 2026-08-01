@@ -2,23 +2,34 @@
 
 - **ID:** EPIC-004
 - **Title:** Currency and unit reference data
-- **Status:** Done
+- **Status:** Done (Units); Currency portion **Cancelled / superseded**
+
+## Supersession note (2026-07-31)
+
+Currency reference CRUD is **not** current master data.
+[ADR-031](../../decisions/ADR-031-currency-reserved-for-future-cash.md) /
+[CHANGE-003](../unplanned/CHANGE-003-signed-partner-balance-and-azn-only.md):
+static AZN now; Currency reserved for future Cash only.
+[US-007](../stories/US-007-currency-reference-data.md) **Cancelled**.
+Unit reference data (US-006 / US-008) remains valid and delivered.
 
 ## Business objective
 
-Backend reference-data APIs for Units and Currencies.
+Backend reference-data APIs for Units (and historically Currencies).
 
 ## User / business value
 
-Prerequisites for Product and BusinessPartner.
+Units remain prerequisites for Product. Currency is no longer a current-domain
+prerequisite.
 
 ## Scope
 
-units + currencies modules; create/list/get/update/deactivate; tests.
+- **Active / Done:** units module; create/list/get/update/deactivate; tests.
+- **Cancelled:** currencies module (runtime removal under CHANGE-003).
 
 ## Exclusions
 
-Full FX gain/loss engine; UI screens.
+Full FX gain/loss engine; Currency as Product/Partner/Purchase/Sale property.
 
 ## Dependencies
 
@@ -26,26 +37,28 @@ EPIC-002, EPIC-003.
 
 ## Related ADRs / docs
 
-invariants Currency; ADR-023; Approved Human Decision 2026-07-28 (AZN default).
+ADR-023; ADR-031 (supersedes 2026-07-28 multi-currency decision for active
+scope); CHANGE-003.
 
 ## Child user stories
 
-- US-006
-- US-007
-- US-008
+- US-006 (Units — Done)
+- US-007 (Currency — **Cancelled**, ADR-031)
+- US-008 (Units — Done)
 
 ## Completion definition
 
-Unit and Currency HTTP APIs and tests exist.
+Unit HTTP APIs and tests exist. Currency APIs are removed / not current.
 
 ## Known risks
 
-Remaining FX policy open decisions.
+Do not reintroduce Currency CRUD without a new Approved Human Decision.
 
 ## Open questions
 
-OD-12 FX gains/losses; money-account native non-AZN balance questions.
+Future Cash multi-currency design (documentation only until Cash work activates).
 
 ## Repository evidence
 
-Commits 0b263e5, 5a81437, cd0e169; apps/api/src/{units,currencies}.
+Historical: commits 0b263e5, 5a81437, cd0e169; units remain under
+`apps/api/src/units`. Currencies removed under CHANGE-003.

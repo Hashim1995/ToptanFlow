@@ -5,7 +5,6 @@ import {
   IsEmail,
   IsOptional,
   IsString,
-  IsUUID,
   MaxLength,
   ValidateIf,
 } from 'class-validator';
@@ -51,10 +50,6 @@ export class CreateBusinessPartnerDto {
   @IsBoolean()
   isSupplier!: boolean;
 
-  @ApiProperty({ format: 'uuid' })
-  @IsUUID()
-  defaultCurrencyId!: string;
-
   @ApiPropertyOptional({ example: '+994 50 123 45 67', nullable: true })
   @IsOptional()
   @IsString()
@@ -94,4 +89,15 @@ export class CreateBusinessPartnerDto {
   @MaxLength(4000)
   @Transform(({ value }: { value: unknown }) => trimOrNull(value))
   notes?: string | null;
+
+  @ApiPropertyOptional({
+    example: false,
+    description:
+      'US-016 soft duplicate acknowledge. When possible duplicates match on ' +
+      'normalized name/phone/taxNumber, create returns 409 unless this is true. ' +
+      'Does not affect uuid/code uniqueness (ADR-024).',
+  })
+  @IsOptional()
+  @IsBoolean()
+  acknowledgeDuplicate?: boolean;
 }

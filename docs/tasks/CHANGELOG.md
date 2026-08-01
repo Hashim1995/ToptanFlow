@@ -2,11 +2,77 @@
 
 Planning-history only. Not a product release-notes replacement.
 
+## 2026-08-01
+
+- **US-023 / EPIC-010 activated → In Progress:** Sale Nest module + web list/form/detail (`TASK-023-01` / `TASK-023-02`). Draft CRUD; `POST /sales/:id/post` (negative-qty reason when needed); `POST /sales/:id/cancel`; `SAL-` document numbers; ProductQuantityHistory + BusinessPartnerDebtMovement; no cash/warehouse/currency. Sales Returns deferred. Mirrors US-022 purchase patterns.
+- **UI polish:** Added `@phosphor-icons/react`; icons across shell, home, login, purchases, and master-data lists; denser tables with logical column order, badges/tags, dropdown actions, and shared format cells (`CodeText` / `EntityCell` / `MoneyCell`).
+
+## 2026-07-31
+
+- **Owner decision / US-022 follow-up:** Same product may appear on multiple purchase lines (different prices/discounts allowed). Purchase create/edit moved from dedicated pages into a compact modal on the list/detail screens. Invariant Purchasing updated; TASK-022-01/02 acceptance wording updated.
+- **US-022 implementation → Review:** Purchase Nest module + web list/form/detail (`TASK-022-01` / `TASK-022-02`). Draft CRUD; `POST /purchases/:id/post`; `POST /purchases/:id/cancel`; `PUR-` document numbers; ProductQuantityHistory + BusinessPartnerDebtMovement; no cash/warehouse/currency. Purchase Returns deferred. Tests: purchases.service.spec (11), purchases.e2e (7), web purchase schema/labels.
+- **Epic/Story activated → [EPIC-009](epics/EPIC-009-purchasing.md) / [US-022](stories/US-022-purchase-draft-post.md):** Purchase list module — Draft CRUD, post (`POSTED`), cancel; product quantity ↑ + partner debt ↓ on post; no cash/warehouse/currency. Tasks [TASK-022-01](tasks/TASK-022-01-purchase-draft-post-cancel-apis.md), [TASK-022-02](tasks/TASK-022-02-purchase-list-form-details-ui.md). Document numbers: `PUR-` + NumberSequence `PURCHASE` (Approved Human Decision). Purchase Returns deferred. ADR-025: no granular `purchase.*` permissions in v1.
+- **CHANGE / Approved Human Decision → [CHANGE-003](unplanned/CHANGE-003-signed-partner-balance-and-azn-only.md) / [ADR-030](../decisions/ADR-030-signed-business-partner-debt-balance.md) / [ADR-031](../decisions/ADR-031-currency-reserved-for-future-cash.md):** One signed Business Partner debt balance (not separate AR/AP); Currency removed from current domains — static AZN; Currency reserved for future Cash only. [US-007](stories/US-007-currency-reference-data.md) **Cancelled** (ADR-031); EPIC-004 Currency portion superseded (Units remain). EPIC-012 / US-017 / US-026 dual-balance wording superseded by ADR-030. Active: CHANGE-003; next after Done: EPIC-009 (signed balance + `Product.currentQuantity`; no currency).
+- **CHANGE / Approved Human Decision → [CHANGE-002](unplanned/CHANGE-002-single-product-quantity-no-warehouse.md) / [ADR-029](../decisions/ADR-029-single-product-quantity-no-warehouse.md):** Single product quantity; no separate Warehouse or Stock module. Owner decision 2026-07-31. [EPIC-008](epics/EPIC-008-inventory-warehouses.md) **Cancelled**; [US-020](stories/US-020-warehouse-master-data.md) / [US-021](stories/US-021-inventory-movements-balances.md) **Cancelled** (Done task history kept; TASK-021-05 abandoned). Planning retargeted: Products (incl. quantity) → Business Partners → Purchases → Sales → Cash → Fixed Assets (future). Active work: finish CHANGE-002, then Purchasing/Sales without `warehouseId` (`Product.currentQuantity`). EPIC-014 blocked pending Yatı redesign. ADR-026 superseded for warehouse topology.
+- **Docs / Approved Human Decision → [ADR-028](../decisions/ADR-028-sale-purchase-cash-separation.md):** Sale/Purchase must never directly mutate cash; cash only via separate Cash In/Out; optional link/allocation (same UI or later); separate audit; unlinked cash + partial/multi allocation required. Updated invariants, terminology, workflow-map, analysis §3.5–3.10 / §5.1–5.6 / §10.3, EPIC-009–012, US-022/023/024/026. No application code.
+- **Task completed:** [TASK-021-04](tasks/TASK-021-04-inventory-balances-transfer-ui.md) Inventory UI (Stok qalıqları, Anbar transferi, düzəliş/silinmə). Next: [TASK-021-05](tasks/TASK-021-05-stock-count-workflow.md).
+- **Task completed:** [TASK-021-03](tasks/TASK-021-03-inventory-api-e2e.md) Inventory API e2e (9 passed; ADR-027 negative accepted). Next: [TASK-021-04](tasks/TASK-021-04-inventory-balances-transfer-ui.md).
+- **Approved Human Decision → [ADR-027](../decisions/ADR-027-allow-negative-stock-v1.md):** allow negative warehouse/product stock quantities in v1 (Option A); supersedes ADR-026 hard-block; remaining BRD-OD-04 controls deferred. Inventory API hard-block removed.
+- **Task completed:** [TASK-021-02](tasks/TASK-021-02-inventory-movement-post-api.md) Inventory post/read API (`/api/v1/inventory/*`; 15 unit tests). Next: [TASK-021-03](tasks/TASK-021-03-inventory-api-e2e.md).
+- **Task completed:** [TASK-021-01](tasks/TASK-021-01-stock-movement-balance-persistence.md) `StockMovement` + `StockBalance` (migration `20260731090000_add_stock_movement_balance`). Next: [TASK-021-02](tasks/TASK-021-02-inventory-movement-post-api.md).
+- **Story completed:** [US-020](stories/US-020-warehouse-master-data.md) Warehouse master data (TASK-020-01..05). Next: [US-021](stories/US-021-inventory-movements-balances.md) / [TASK-021-01](tasks/TASK-021-01-stock-movement-balance-persistence.md).
+- **Task completed:** [TASK-020-05](tasks/TASK-020-05-warehouse-ui-screens.md) Warehouse UI **Anbarlar** (lint/test/build green).
+- **Task completed:** [TASK-020-04](tasks/TASK-020-04-warehouse-api-e2e.md) Warehouse API e2e (12 passed). Next: [TASK-020-05](tasks/TASK-020-05-warehouse-ui-screens.md).
+- **Task completed:** [TASK-020-03](tasks/TASK-020-03-warehouse-crud-api.md) Warehouse CRUD API (`/api/v1/warehouses`; code via `WAREHOUSE` sequence; 13 unit tests). Next: [TASK-020-04](tasks/TASK-020-04-warehouse-api-e2e.md).
+- **Task completed:** [TASK-020-02](tasks/TASK-020-02-warehouse-persistence-model.md) Warehouse Prisma model + migration + seed `Əsas anbar` / `WAREHOUSE` sequence. Next: [TASK-020-03](tasks/TASK-020-03-warehouse-crud-api.md).
+- **Epic activated:** [EPIC-008](epics/EPIC-008-inventory-warehouses.md) inventory only (Yatı/sales/purchases/cash deferred).
+- **Approved Human Decision → [ADR-026](../decisions/ADR-026-initial-warehouses-v1.md):** BRD-OD-02 v1 — one seeded GENERAL warehouse; multi-warehouse schema; no VEHICLE; one-step transfers; hard-block negative stock (OD-04 exceptions deferred).
+- **Story Ready:** [US-020](stories/US-020-warehouse-master-data.md); TASK-020-01 **Done**; TASK-020-02..05 elaborated. Next: TASK-020-02.
+- **Story elaborated (Planned):** [US-021](stories/US-021-inventory-movements-balances.md) TASK-021-01..05; activate after US-020 Done.
+
+## 2026-07-30
+
+- **Epic completed:** [EPIC-007](epics/EPIC-007-identity-authz.md); [US-019](stories/US-019-authentication-authorization.md) **Done** (TASK-019-02 protect APIs; TASK-019-03 web login/session; TASK-019-04 auth e2e — 88 e2e / web 33 tests).
+- **Task completed:** [TASK-019-01](tasks/TASK-019-01-jwt-auth-module.md) JWT login/refresh/logout + `RefreshToken` model (ADR-025; 8 unit tests). Next: [TASK-019-02](tasks/TASK-019-02-protect-apis-flat-authz.md).
+
 ## 2026-07-29
 
+- **Story completed:** [US-018](stories/US-018-user-account-foundation.md); [TASK-018-02](tasks/TASK-018-02-user-admin-api-e2e.md) **Done** (users e2e 8 passed). Next: [TASK-019-01](tasks/TASK-019-01-jwt-auth-module.md).
+- **Task completed:** [TASK-018-01](tasks/TASK-018-01-user-persistence-and-crud.md) User `passwordHash` + `/users` CRUD + bootstrap seed (`argon2`; 12 unit tests; migration `20260729110103_add_user_password_hash`).
+- **Approved Human Decision → [ADR-025](../decisions/ADR-025-jwt-auth-flat-users-v1.md):** JWT + Argon2id; access 24h / refresh 30d; single-company; no roles/admin types — any active user can do everything. Closes auth open decisions for v1. [US-018](stories/US-018-user-account-foundation.md) In Progress; [US-019](stories/US-019-authentication-authorization.md) Ready; tasks TASK-018-01/02, TASK-019-01..04 elaborated.
+- **Owner focus:** Jump to identity/auth — [EPIC-007](epics/EPIC-007-identity-authz.md), [US-018](stories/US-018-user-account-foundation.md), [US-019](stories/US-019-authentication-authorization.md). No tasks elaborated; blocked on Approved Human Decisions (auth implementation, AD-17/18, permission registry).
+- **Sequential US review:** First incomplete by ID [US-017](stories/US-017-business-partner-statement.md) → **Deferred** (EPIC-009–012 postings + BRD-OD-11). Next review: [US-018](stories/US-018-user-account-foundation.md).
+- **Story resumed:** [US-041](stories/US-041-quality-harness-expansion.md); [TASK-041-02](tasks/TASK-041-02-reactivation-and-helper-regressions.md) **Done** (reactivation e2e 72; web Vitest 17).
+- **Approved Human Decision:** Soft-deactivated master-data entities may be
+  reactivated via PATCH `isActive: true` (currencies, units, categories,
+  products, business partners). Operator UI must expose **Aktiv et**. Prior
+  US-015/US-038 “no reactivation” exclusions superseded for this operational
+  completeness gap. Cursor rule `operational-completeness.mdc` records the
+  process: fill obvious user/business workflow gaps even when task docs omit them.
+- **Unplanned CHANGE completed:** [CHANGE-001](unplanned/CHANGE-001-product-category-and-frontend-ux-uplift.md) ProductCategory flat reference + frontend UX quality bar; [US-042](stories/US-042-product-category-and-frontend-ux-uplift.md) **Done** (TASK-042-01..05).
+- **Unplanned CHANGE:** [CHANGE-001](unplanned/CHANGE-001-product-category-and-frontend-ux-uplift.md) ProductCategory flat reference + frontend UX quality bar (owner).
+- **Story activated:** [US-042](stories/US-042-product-category-and-frontend-ux-uplift.md); TASK-042-01 docs/gates Done; US-041 further work paused.
+- **Task completed:** [TASK-041-01](tasks/TASK-041-01-add-web-vitest-harness.md) web Vitest harness + 14 pure helper tests (Vitest 3.2.4; build/lint green).
+- **Story activated:** [US-041](stories/US-041-quality-harness-expansion.md) quality harness expansion (safe path after US-038; warehouses/auth blocked on open decisions).
+- **Story completed:** [US-038](stories/US-038-frontend-master-data-screens.md) master-data UI screens (TASK-038-05 responsive verification).
+- **Task completed:** [TASK-038-05](tasks/TASK-038-05-verify-master-data-ui-responsive-states.md) ADR-005/ui-requirements matrix + build/lint.
+- **Task completed:** [TASK-038-04](tasks/TASK-038-04-add-business-partner-screens.md) partner screens + soft-duplicate acknowledge UI (`web` build + lint green).
+- **Task completed:** [TASK-038-03](tasks/TASK-038-03-add-product-screens.md) product screens (`Məhsullar`; type labels Hazır məhsul / Xammal / Qarışıq təyinatlı); owner guidance: do not stop for routine AZ UI labels.
+- **Task completed:** [TASK-038-02](tasks/TASK-038-02-add-currency-unit-screens.md) currency/unit screens; labels approved `Valyutalar` / `Ölçü vahidləri` (`web` build + lint green).
+- **Story activated:** [US-038](stories/US-038-frontend-master-data-screens.md) frontend master-data screens.
+- **Tasks elaborated:** TASK-038-01 through TASK-038-05 (shared API foundation, reference-data UI, product UI, partner UI, responsive verification).
+- **Task completed:** [TASK-038-01](tasks/TASK-038-01-add-master-data-frontend-api-foundation.md) typed pagination/query keys/error contracts (`web` build + lint green).
+- **Task completed:** [TASK-037-03](tasks/TASK-037-03-add-routing-and-responsive-app-shell.md) routing + responsive shell; [US-037](stories/US-037-frontend-shell-foundation.md) **Done**.
+- **Task completed:** [TASK-037-02](tasks/TASK-037-02-add-axios-http-client-foundation.md) Axios HTTP client + stub AZ error mapper (`web` build green).
+- **Story activated:** [US-037](stories/US-037-frontend-shell-foundation.md) Frontend shell foundation; router choice `react-router-dom` recorded.
+- **Tasks elaborated:** TASK-037-01, TASK-037-02, TASK-037-03.
+- **Task completed:** [TASK-037-01](tasks/TASK-037-01-wire-frontend-providers-replace-template.md) providers + Vite template replaced (`web` build green).
+- **Task completed:** [TASK-016-02](tasks/TASK-016-02-extend-business-partner-duplicate-check-e2e.md) soft-duplicate e2e (19 passed); exception filter preserves `code`/`candidates`.
+- **Story completed:** [US-016](stories/US-016-business-partner-duplicate-soft-flag.md) BusinessPartner soft-duplicate create/update.
+- **Design revision (US-016):** Removed standalone `duplicate-check` API; soft flag on create/update via `409` + `acknowledgeDuplicate`.
+- **Task completed:** [TASK-016-01](tasks/TASK-016-01-add-business-partner-duplicate-check-api.md) (revised).
 - **Task completed:** [TASK-015-02](tasks/TASK-015-02-extend-business-partner-update-deactivate-e2e.md) BusinessPartner update/deactivate e2e (14 tests passed).
 - **Story completed:** [US-015](stories/US-015-business-partner-update-deactivate-apis.md) BusinessPartner update/deactivation APIs.
-- **Next:** Activate [US-016](stories/US-016-business-partner-duplicate-soft-flag.md) or prioritize another backlog item.
 
 ## 2026-07-28
 

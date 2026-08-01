@@ -83,14 +83,23 @@ export class AllExceptionsFilter implements ExceptionFilter {
       const responseObject = exceptionResponse as {
         message?: string | string[];
         error?: string;
+        code?: string;
+        candidates?: unknown[];
       };
-      return {
+      const body: ApiErrorResponse = {
         statusCode,
         error: responseObject.error ?? HttpStatus[statusCode] ?? 'Error',
         message: responseObject.message ?? httpException.message,
         path,
         timestamp,
       };
+      if (typeof responseObject.code === 'string') {
+        body.code = responseObject.code;
+      }
+      if (Array.isArray(responseObject.candidates)) {
+        body.candidates = responseObject.candidates;
+      }
+      return body;
     }
 
     // Never expose an unexpected error's internal message or stack trace to

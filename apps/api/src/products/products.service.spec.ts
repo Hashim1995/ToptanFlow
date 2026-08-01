@@ -13,6 +13,7 @@ import { ProductsService } from './products.service';
 describe('ProductsService', () => {
   const productId = '11111111-1111-4111-8111-111111111111';
   const unitId = '22222222-2222-4222-8222-222222222222';
+  const categoryId = '66666666-6666-4666-8666-666666666666';
 
   const unitSummary = {
     id: unitId,
@@ -22,28 +23,42 @@ describe('ProductsService', () => {
     isActive: true,
   };
 
+  const categorySummary = {
+    id: categoryId,
+    name: 'Tekstil',
+    isActive: true,
+  };
+
   const baseProduct = {
     id: productId,
     code: '0000001',
     name: 'Parça məhsul',
     type: ProductTypeApi.FINISHED_GOOD,
-    category: 'Tekstil',
+    categoryId,
     unitId,
     standardSalePrice: new Decimal('12.5000'),
     latestPurchasePrice: new Decimal('10'),
+    currentQuantity: new Decimal('0'),
     criticalStockThreshold: null,
+    barcode: null,
+    notes: null,
     isActive: true,
     createdAt: new Date('2026-07-28T00:00:00.000Z'),
     updatedAt: new Date('2026-07-28T00:00:00.000Z'),
     unit: unitSummary,
+    category: categorySummary,
   };
 
   const numberSequences = {
     nextCode: jest.fn(),
   };
 
+  const productQuantity = {
+    applyChange: jest.fn(),
+  };
+
   const prisma = {
-    $transaction: jest.fn((fn: (tx: typeof prisma) => unknown) =>
+    $transaction: jest.fn((fn: (tx: unknown) => unknown) =>
       Promise.resolve(fn(prisma)),
     ),
     product: {
@@ -55,7 +70,14 @@ describe('ProductsService', () => {
       update: jest.fn(),
       delete: jest.fn(),
     },
+    productQuantityHistory: {
+      findMany: jest.fn(),
+      count: jest.fn(),
+    },
     unit: {
+      findUnique: jest.fn(),
+    },
+    productCategory: {
       findUnique: jest.fn(),
     },
   };
@@ -66,15 +88,20 @@ describe('ProductsService', () => {
     jest.clearAllMocks();
     numberSequences.nextCode.mockResolvedValue('0000001');
     service = new ProductsService(
-      prisma,
+      prisma as never,
       numberSequences as unknown as NumberSequencesService,
+      productQuantity as never,
     );
   });
 
   describe('create', () => {
     it('allocates backend code inside transaction and trims name', async () => {
       prisma.unit.findUnique.mockResolvedValue({ id: unitId, isActive: true });
-      prisma.product.create.mockResolvedValue(baseProduct);
+      prisma.product.create.mockResolvedValue({
+        ...baseProduct,
+        categoryId: null,
+        category: null,
+      });
 
       await service.create({
         name: ' Parça məhsul ',
@@ -92,16 +119,18 @@ describe('ProductsService', () => {
           data: expect.objectContaining({
             code: '0000001',
             name: 'Parça məhsul',
+            categoryId: null,
             isActive: true,
           }) as object,
         }),
       );
     });
 
-    it('converts blank category to null', async () => {
+    it('stores null categoryId when omitted or explicitly null', async () => {
       prisma.unit.findUnique.mockResolvedValue({ id: unitId, isActive: true });
       prisma.product.create.mockResolvedValue({
         ...baseProduct,
+        categoryId: null,
         category: null,
       });
 
@@ -109,14 +138,88 @@ describe('ProductsService', () => {
         name: 'Test',
         type: ProductTypeApi.RAW_MATERIAL,
         unitId,
-        category: '   ',
       });
 
       expect(prisma.product.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ category: null }) as object,
+          data: expect.objectContaining({ categoryId: null }) as object,
         }),
       );
+      expect(prisma.productCategory.findUnique).not.toHaveBeenCalled();
+
+      prisma.product.create.mockClear();
+
+      await service.create({
+        name: 'Test',
+        type: ProductTypeApi.RAW_MATERIAL,
+        unitId,
+        categoryId: null,
+      });
+
+      expect(prisma.product.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ categoryId: null }) as object,
+        }),
+      );
+      expect(prisma.productCategory.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('assigns active categoryId when provided', async () => {
+      prisma.unit.findUnique.mockResolvedValue({ id: unitId, isActive: true });
+      prisma.productCategory.findUnique.mockResolvedValue({
+        id: categoryId,
+        isActive: true,
+      });
+      prisma.product.create.mockResolvedValue(baseProduct);
+
+      await service.create({
+        name: 'Test',
+        type: ProductTypeApi.FINISHED_GOOD,
+        unitId,
+        categoryId,
+      });
+
+      expect(prisma.productCategory.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: categoryId } }),
+      );
+      expect(prisma.product.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ categoryId }) as object,
+        }),
+      );
+    });
+
+    it('throws NotFoundException when category does not exist', async () => {
+      prisma.unit.findUnique.mockResolvedValue({ id: unitId, isActive: true });
+      prisma.productCategory.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.create({
+          name: 'Test',
+          type: ProductTypeApi.FINISHED_GOOD,
+          unitId,
+          categoryId,
+        }),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(prisma.product.create).not.toHaveBeenCalled();
+    });
+
+    it('throws BadRequestException when category is inactive', async () => {
+      prisma.unit.findUnique.mockResolvedValue({ id: unitId, isActive: true });
+      prisma.productCategory.findUnique.mockResolvedValue({
+        id: categoryId,
+        isActive: false,
+      });
+
+      await expect(
+        service.create({
+          name: 'Test',
+          type: ProductTypeApi.FINISHED_GOOD,
+          unitId,
+          categoryId,
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(prisma.product.create).not.toHaveBeenCalled();
     });
 
     it('persists exact decimal string values', async () => {
@@ -199,19 +302,26 @@ describe('ProductsService', () => {
       ).rejects.toBeInstanceOf(ConflictException);
     });
 
-    it('returns serialized decimal fields and unit summary', async () => {
+    it('returns serialized decimal fields, unit summary, and category summary', async () => {
       prisma.unit.findUnique.mockResolvedValue({ id: unitId, isActive: true });
+      prisma.productCategory.findUnique.mockResolvedValue({
+        id: categoryId,
+        isActive: true,
+      });
       prisma.product.create.mockResolvedValue(baseProduct);
 
       const result = await service.create({
         name: 'Parça məhsul',
         type: ProductTypeApi.FINISHED_GOOD,
         unitId,
+        categoryId,
       });
 
       expect(result.standardSalePrice).toBe('12.5000');
       expect(result.latestPurchasePrice).toBe('10.0000');
       expect(result.criticalStockThreshold).toBeNull();
+      expect(result.categoryId).toBe(categoryId);
+      expect(result.category).toEqual(categorySummary);
       expect(result.unit).toEqual(unitSummary);
     });
   });
@@ -230,9 +340,10 @@ describe('ProductsService', () => {
         totalPages: 1,
       });
       expect(result.data[0].standardSalePrice).toBe('12.5000');
+      expect(result.data[0].category).toEqual(categorySummary);
     });
 
-    it('builds search where clause', async () => {
+    it('builds search where clause including category name', async () => {
       prisma.product.findMany.mockResolvedValue([]);
       prisma.product.count.mockResolvedValue(0);
 
@@ -244,7 +355,7 @@ describe('ProductsService', () => {
             OR: [
               { code: { contains: 'tx', mode: 'insensitive' } },
               { name: { contains: 'tx', mode: 'insensitive' } },
-              { category: { contains: 'tx', mode: 'insensitive' } },
+              { category: { name: { contains: 'tx', mode: 'insensitive' } } },
             ],
           },
         }),
@@ -269,22 +380,19 @@ describe('ProductsService', () => {
       );
     });
 
-    it('applies unitId and category filters', async () => {
+    it('applies unitId and categoryId filters', async () => {
       prisma.product.findMany.mockResolvedValue([]);
       prisma.product.count.mockResolvedValue(0);
 
       await service.list({
         unitId,
-        category: 'Tekstil',
+        categoryId,
       });
 
       expect(prisma.product.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: {
-            AND: [
-              { unitId },
-              { category: { equals: 'Tekstil', mode: 'insensitive' } },
-            ],
+            AND: [{ unitId }, { categoryId }],
           },
         }),
       );
@@ -326,6 +434,8 @@ describe('ProductsService', () => {
 
       expect(result.id).toBe(productId);
       expect(result.unit.code).toBe('KG');
+      expect(result.categoryId).toBe(categoryId);
+      expect(result.category?.name).toBe('Tekstil');
     });
 
     it('returns inactive products by id', async () => {
@@ -405,41 +515,90 @@ describe('ProductsService', () => {
       ).rejects.toBeInstanceOf(BadRequestException);
     });
 
-    it('updates type and clears category with null', async () => {
+    it('updates type and clears categoryId with null', async () => {
       prisma.product.update.mockResolvedValue({
         ...baseProduct,
         type: ProductTypeApi.RAW_MATERIAL,
+        categoryId: null,
         category: null,
       });
 
       await service.update(productId, {
         type: ProductTypeApi.RAW_MATERIAL,
-        category: null,
+        categoryId: null,
       });
 
       expect(prisma.product.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             type: ProductTypeApi.RAW_MATERIAL,
-            category: null,
+            categoryId: null,
           }) as object,
+        }),
+      );
+      expect(prisma.productCategory.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('assigns active categoryId on update', async () => {
+      const otherCategoryId = '77777777-7777-4777-8777-777777777777';
+      prisma.productCategory.findUnique.mockResolvedValue({
+        id: otherCategoryId,
+        isActive: true,
+      });
+      prisma.product.update.mockResolvedValue({
+        ...baseProduct,
+        categoryId: otherCategoryId,
+        category: {
+          id: otherCategoryId,
+          name: 'Digər',
+          isActive: true,
+        },
+      });
+
+      await service.update(productId, { categoryId: otherCategoryId });
+
+      expect(prisma.productCategory.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: otherCategoryId } }),
+      );
+      expect(prisma.product.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { categoryId: otherCategoryId },
         }),
       );
     });
 
-    it('normalizes whitespace-only category to null', async () => {
-      prisma.product.update.mockResolvedValue({
-        ...baseProduct,
-        category: null,
+    it('throws NotFoundException for nonexistent category', async () => {
+      prisma.productCategory.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.update(productId, { categoryId }),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(prisma.product.update).not.toHaveBeenCalled();
+    });
+
+    it('throws BadRequestException for inactive category assignment', async () => {
+      prisma.productCategory.findUnique.mockResolvedValue({
+        id: categoryId,
+        isActive: false,
       });
 
-      await service.update(productId, { category: '   ' });
+      await expect(
+        service.update(productId, { categoryId }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(prisma.product.update).not.toHaveBeenCalled();
+    });
+
+    it('omits categoryId from Prisma update when not provided', async () => {
+      prisma.product.update.mockResolvedValue(baseProduct);
+
+      await service.update(productId, { name: 'Only name' });
 
       expect(prisma.product.update).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: { category: null },
+          data: { name: 'Only name' },
         }),
       );
+      expect(prisma.productCategory.findUnique).not.toHaveBeenCalled();
     });
 
     it('clears decimal fields with null and persists string decimals', async () => {
@@ -559,7 +718,7 @@ describe('ProductsService', () => {
       ).rejects.toBeInstanceOf(BadRequestException);
     });
 
-    it('updates inactive product without reactivating', async () => {
+    it('updates inactive product without reactivating when isActive omitted', async () => {
       prisma.product.findUnique.mockResolvedValue({
         ...baseProduct,
         isActive: false,
@@ -580,6 +739,26 @@ describe('ProductsService', () => {
       );
     });
 
+    it('reactivates an inactive product via isActive true', async () => {
+      prisma.product.findUnique.mockResolvedValue({
+        ...baseProduct,
+        isActive: false,
+      });
+      prisma.product.update.mockResolvedValue({
+        ...baseProduct,
+        isActive: true,
+      });
+
+      const result = await service.update(productId, { isActive: true });
+
+      expect(prisma.product.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { isActive: true },
+        }),
+      );
+      expect(result.isActive).toBe(true);
+    });
+
     it('throws NotFoundException when product is missing', async () => {
       prisma.product.findUnique.mockResolvedValue(null);
 
@@ -588,13 +767,15 @@ describe('ProductsService', () => {
       ).rejects.toBeInstanceOf(NotFoundException);
     });
 
-    it('maps response decimals and nested unit', async () => {
+    it('maps response decimals, nested unit, and category', async () => {
       prisma.product.update.mockResolvedValue(baseProduct);
 
       const result = await service.update(productId, { name: 'Parça məhsul' });
 
       expect(result.standardSalePrice).toBe('12.5000');
       expect(result.unit).toEqual(unitSummary);
+      expect(result.categoryId).toBe(categoryId);
+      expect(result.category).toEqual(categorySummary);
     });
   });
 
@@ -628,6 +809,7 @@ describe('ProductsService', () => {
       expect(result.isActive).toBe(false);
       expect(result.standardSalePrice).toBe('12.5000');
       expect(result.unit).toEqual(unitSummary);
+      expect(result.category).toEqual(categorySummary);
     });
 
     it('throws NotFoundException when product is missing', async () => {

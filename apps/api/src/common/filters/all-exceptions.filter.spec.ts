@@ -1,4 +1,8 @@
-import { ArgumentsHost, NotFoundException } from '@nestjs/common';
+import {
+  ArgumentsHost,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AllExceptionsFilter } from './all-exceptions.filter';
 import { ApiErrorResponse } from '../interfaces/api-error-response.interface';
@@ -41,6 +45,37 @@ describe('AllExceptionsFilter', () => {
         statusCode: 404,
         message: 'Not found',
         path: request.url,
+      }),
+    );
+  });
+
+  it('preserves structured conflict code and candidates for soft duplicates', () => {
+    const filter = createFilter('production');
+    const { host, response } = createHost(request);
+    const candidates = [
+      {
+        id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        code: '0000002',
+        matchedFields: ['name'],
+      },
+    ];
+
+    filter.catch(
+      new ConflictException({
+        message: 'Possible duplicate business partners found',
+        code: 'BUSINESS_PARTNER_DUPLICATE_SUSPECTED',
+        candidates,
+      }),
+      host,
+    );
+
+    expect(response.status).toHaveBeenCalledWith(409);
+    expect(response.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statusCode: 409,
+        message: 'Possible duplicate business partners found',
+        code: 'BUSINESS_PARTNER_DUPLICATE_SUSPECTED',
+        candidates,
       }),
     );
   });

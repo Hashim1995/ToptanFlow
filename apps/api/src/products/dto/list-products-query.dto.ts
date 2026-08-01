@@ -16,7 +16,7 @@ const SORT_BY_FIELDS = [
   'code',
   'name',
   'type',
-  'category',
+  'categoryId',
   'standardSalePrice',
   'latestPurchasePrice',
   'criticalStockThreshold',
@@ -28,8 +28,7 @@ export type ProductSortByField = (typeof SORT_BY_FIELDS)[number];
 
 export class ListProductsQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({
-    description:
-      'Case-insensitive match against code, name, or category (when not null).',
+    description: 'Case-insensitive match against code, name, or category name.',
   })
   @IsOptional()
   @IsString()
@@ -58,17 +57,10 @@ export class ListProductsQueryDto extends PaginationQueryDto {
   @IsUUID()
   unitId?: string;
 
-  @ApiPropertyOptional({
-    description: 'Case-insensitive exact match on category.',
-  })
+  @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()
-  @IsString()
-  @Transform(({ value }: { value: unknown }) => {
-    if (typeof value !== 'string') return value;
-    const trimmed = value.trim();
-    return trimmed.length === 0 ? undefined : trimmed;
-  })
-  category?: string;
+  @IsUUID()
+  categoryId?: string;
 
   @ApiPropertyOptional({ enum: SORT_BY_FIELDS, default: 'code' })
   @IsOptional()

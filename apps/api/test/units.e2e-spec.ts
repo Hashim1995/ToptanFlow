@@ -6,6 +6,7 @@ import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/bootstrap/configure-app';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { attachAuthUserMock, withAuth } from './auth-e2e.helper';
 
 describe('Units (e2e)', () => {
   const unitId = '11111111-1111-4111-8111-111111111111';
@@ -41,6 +42,7 @@ describe('Units (e2e)', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    attachAuthUserMock(prisma);
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -61,7 +63,7 @@ describe('Units (e2e)', () => {
   it('POST /api/v1/units creates and serializes a unit response', async () => {
     prisma.unit.create.mockResolvedValue(baseUnit);
 
-    const response = await request(app.getHttpServer())
+    const response = await withAuth(request(app.getHttpServer()))
       .post('/api/v1/units')
       .send({ code: 'kg', name: 'Kiloqram' })
       .expect(201);
@@ -82,7 +84,7 @@ describe('Units (e2e)', () => {
   });
 
   it('POST /api/v1/units rejects whitespace-only fields with 400', async () => {
-    const response = await request(app.getHttpServer())
+    const response = await withAuth(request(app.getHttpServer()))
       .post('/api/v1/units')
       .send({ code: '   ', name: '   ' })
       .expect(400);
@@ -104,7 +106,7 @@ describe('Units (e2e)', () => {
       }),
     );
 
-    const response = await request(app.getHttpServer())
+    const response = await withAuth(request(app.getHttpServer()))
       .post('/api/v1/units')
       .send({ code: 'KG', name: 'Duplicate' })
       .expect(409);
@@ -121,7 +123,7 @@ describe('Units (e2e)', () => {
     prisma.unit.findMany.mockResolvedValue([baseUnit]);
     prisma.unit.count.mockResolvedValue(1);
 
-    const response = await request(app.getHttpServer())
+    const response = await withAuth(request(app.getHttpServer()))
       .get('/api/v1/units')
       .expect(200);
 
@@ -147,22 +149,22 @@ describe('Units (e2e)', () => {
   });
 
   it('GET /api/v1/units rejects invalid pagination and sort query params', async () => {
-    await request(app.getHttpServer())
+    await withAuth(request(app.getHttpServer()))
       .get('/api/v1/units')
       .query({ page: 0 })
       .expect(400);
 
-    await request(app.getHttpServer())
+    await withAuth(request(app.getHttpServer()))
       .get('/api/v1/units')
       .query({ pageSize: 101 })
       .expect(400);
 
-    await request(app.getHttpServer())
+    await withAuth(request(app.getHttpServer()))
       .get('/api/v1/units')
       .query({ sortBy: 'price' })
       .expect(400);
 
-    await request(app.getHttpServer())
+    await withAuth(request(app.getHttpServer()))
       .get('/api/v1/units')
       .query({ sortOrder: 'up' })
       .expect(400);
@@ -171,13 +173,13 @@ describe('Units (e2e)', () => {
   });
 
   it('GET /api/v1/units/:id rejects invalid UUID and maps missing unit to 404', async () => {
-    await request(app.getHttpServer())
+    await withAuth(request(app.getHttpServer()))
       .get('/api/v1/units/not-a-uuid')
       .expect(400);
 
     prisma.unit.findUnique.mockResolvedValue(null);
 
-    const response = await request(app.getHttpServer())
+    const response = await withAuth(request(app.getHttpServer()))
       .get(`/api/v1/units/${unitId}`)
       .expect(404);
 
@@ -190,7 +192,7 @@ describe('Units (e2e)', () => {
   });
 
   it('PATCH /api/v1/units/:id rejects an empty body with 400', async () => {
-    const response = await request(app.getHttpServer())
+    const response = await withAuth(request(app.getHttpServer()))
       .patch(`/api/v1/units/${unitId}`)
       .send({})
       .expect(400);
@@ -208,7 +210,7 @@ describe('Units (e2e)', () => {
     prisma.unit.findUnique.mockResolvedValue(baseUnit);
     prisma.unit.update.mockResolvedValue({ ...baseUnit, isActive: false });
 
-    const first = await request(app.getHttpServer())
+    const first = await withAuth(request(app.getHttpServer()))
       .delete(`/api/v1/units/${unitId}`)
       .expect(200);
 
@@ -228,7 +230,7 @@ describe('Units (e2e)', () => {
     prisma.unit.findUnique.mockResolvedValue({ ...baseUnit, isActive: false });
     prisma.unit.update.mockClear();
 
-    const second = await request(app.getHttpServer())
+    const second = await withAuth(request(app.getHttpServer()))
       .delete(`/api/v1/units/${unitId}`)
       .expect(200);
 
@@ -239,5 +241,27 @@ describe('Units (e2e)', () => {
       }),
     );
     expect(prisma.unit.update).not.toHaveBeenCalled();
+  });
+
+  it('PATCH /api/v1/units/:id reactivates via isActive true', async () => {
+    prisma.unit.findUnique.mockResolvedValue({ ...baseUnit, isActive: false });
+    prisma.unit.update.mockResolvedValue({ ...baseUnit, isActive: true });
+
+    const response = await withAuth(request(app.getHttpServer()))
+      .patch(`/api/v1/units/${unitId}`)
+      .send({ isActive: true })
+      .expect(200);
+
+    expect(response.body).toEqual(
+      expect.objectContaining({
+        id: unitId,
+        isActive: true,
+      }),
+    );
+    expect(prisma.unit.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: { isActive: true },
+      }),
+    );
   });
 });

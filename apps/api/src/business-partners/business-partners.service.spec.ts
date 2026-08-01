@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/client';
 import { SortOrder } from '../common/sorting/sort-order.enum';
 import { BusinessCodeSequenceKey } from '../number-sequences/business-code-sequence-key';
 import { NumberSequencesService } from '../number-sequences/number-sequences.service';
@@ -11,15 +12,6 @@ import { BusinessPartnersService } from './business-partners.service';
 
 describe('BusinessPartnersService', () => {
   const partnerId = '11111111-1111-4111-8111-111111111111';
-  const currencyId = '22222222-2222-4222-8222-222222222222';
-
-  const currencySummary = {
-    id: currencyId,
-    code: 'USD',
-    name: 'ABŞ dolları',
-    symbol: '$',
-    isActive: true,
-  };
 
   const basePartner = {
     id: partnerId,
@@ -32,11 +24,10 @@ describe('BusinessPartnersService', () => {
     taxNumber: '1234567891',
     address: 'Bakı',
     notes: 'Note',
-    defaultCurrencyId: currencyId,
+    currentDebtBalance: new Decimal('0'),
     isActive: true,
     createdAt: new Date('2026-07-28T00:00:00.000Z'),
     updatedAt: new Date('2026-07-28T00:00:00.000Z'),
-    defaultCurrency: currencySummary,
   };
 
   const numberSequences = {
@@ -54,9 +45,6 @@ describe('BusinessPartnersService', () => {
       findUnique: jest.fn(),
       update: jest.fn(),
     },
-    currency: {
-      findUnique: jest.fn(),
-    },
   };
 
   let service: BusinessPartnersService;
@@ -64,25 +52,21 @@ describe('BusinessPartnersService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     numberSequences.nextCode.mockResolvedValue('0000001');
+    prisma.businessPartner.findMany.mockResolvedValue([]);
     service = new BusinessPartnersService(
-      prisma,
+      prisma as never,
       numberSequences as unknown as NumberSequencesService,
     );
   });
 
   describe('create', () => {
     it('allocates backend code inside transaction for customer-only partner', async () => {
-      prisma.currency.findUnique.mockResolvedValue({
-        id: currencyId,
-        isActive: true,
-      });
       prisma.businessPartner.create.mockResolvedValue(basePartner);
 
       const result = await service.create({
         name: 'Nümunə MMC',
         isCustomer: true,
         isSupplier: false,
-        defaultCurrencyId: currencyId,
       });
 
       expect(prisma.$transaction).toHaveBeenCalled();
@@ -95,24 +79,22 @@ describe('BusinessPartnersService', () => {
           data: expect.objectContaining({
             code: '0000001',
             name: 'Nümunə MMC',
+            currentDebtBalance: expect.any(Decimal) as Decimal,
             isActive: true,
           }) as object,
         }),
       );
       expect(result.isCustomer).toBe(true);
       expect(result.isSupplier).toBe(false);
-      expect(result.defaultCurrency).toEqual(currencySummary);
+      expect(result.currentDebtBalance).toBe('0.0000');
+      expect(result).not.toHaveProperty('defaultCurrencyId');
+      expect(result).not.toHaveProperty('defaultCurrency');
       expect(result).not.toHaveProperty('sales');
       expect(result).not.toHaveProperty('purchases');
       expect(result).not.toHaveProperty('cashTransactions');
-      expect(result).not.toHaveProperty('balance');
     });
 
     it('creates a supplier-only partner', async () => {
-      prisma.currency.findUnique.mockResolvedValue({
-        id: currencyId,
-        isActive: true,
-      });
       prisma.businessPartner.create.mockResolvedValue({
         ...basePartner,
         isCustomer: false,
@@ -123,7 +105,6 @@ describe('BusinessPartnersService', () => {
         name: 'Təchizatçı',
         isCustomer: false,
         isSupplier: true,
-        defaultCurrencyId: currencyId,
       });
 
       expect(result.isCustomer).toBe(false);
@@ -131,10 +112,6 @@ describe('BusinessPartnersService', () => {
     });
 
     it('creates a both-role partner', async () => {
-      prisma.currency.findUnique.mockResolvedValue({
-        id: currencyId,
-        isActive: true,
-      });
       prisma.businessPartner.create.mockResolvedValue({
         ...basePartner,
         isCustomer: true,
@@ -145,7 +122,6 @@ describe('BusinessPartnersService', () => {
         name: 'Hər iki rol',
         isCustomer: true,
         isSupplier: true,
-        defaultCurrencyId: currencyId,
       });
 
       expect(result.isCustomer).toBe(true);
@@ -158,24 +134,18 @@ describe('BusinessPartnersService', () => {
           name: 'Invalid',
           isCustomer: false,
           isSupplier: false,
-          defaultCurrencyId: currencyId,
         }),
       ).rejects.toThrow(BadRequestException);
       expect(prisma.businessPartner.create).not.toHaveBeenCalled();
     });
 
     it('trims name on create', async () => {
-      prisma.currency.findUnique.mockResolvedValue({
-        id: currencyId,
-        isActive: true,
-      });
       prisma.businessPartner.create.mockResolvedValue(basePartner);
 
       await service.create({
         name: ' Nümunə MMC ',
         isCustomer: true,
         isSupplier: false,
-        defaultCurrencyId: currencyId,
       });
 
       expect(prisma.businessPartner.create).toHaveBeenCalledWith(
@@ -193,16 +163,11 @@ describe('BusinessPartnersService', () => {
           name: '   ',
           isCustomer: true,
           isSupplier: false,
-          defaultCurrencyId: currencyId,
         }),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('converts blank optional contact fields to null', async () => {
-      prisma.currency.findUnique.mockResolvedValue({
-        id: currencyId,
-        isActive: true,
-      });
       prisma.businessPartner.create.mockResolvedValue({
         ...basePartner,
         phone: null,
@@ -216,7 +181,6 @@ describe('BusinessPartnersService', () => {
         name: 'Test',
         isCustomer: true,
         isSupplier: false,
-        defaultCurrencyId: currencyId,
         phone: '   ',
         email: '   ',
         taxNumber: '   ',
@@ -238,17 +202,12 @@ describe('BusinessPartnersService', () => {
     });
 
     it('preserves a valid email after trim', async () => {
-      prisma.currency.findUnique.mockResolvedValue({
-        id: currencyId,
-        isActive: true,
-      });
       prisma.businessPartner.create.mockResolvedValue(basePartner);
 
       await service.create({
         name: 'Test',
         isCustomer: true,
         isSupplier: false,
-        defaultCurrencyId: currencyId,
         email: ' info@example.com ',
       });
 
@@ -261,42 +220,7 @@ describe('BusinessPartnersService', () => {
       );
     });
 
-    it('throws NotFoundException when currency does not exist', async () => {
-      prisma.currency.findUnique.mockResolvedValue(null);
-
-      await expect(
-        service.create({
-          name: 'Test',
-          isCustomer: true,
-          isSupplier: false,
-          defaultCurrencyId: currencyId,
-        }),
-      ).rejects.toBeInstanceOf(NotFoundException);
-      expect(prisma.businessPartner.create).not.toHaveBeenCalled();
-    });
-
-    it('throws BadRequestException when currency is inactive', async () => {
-      prisma.currency.findUnique.mockResolvedValue({
-        id: currencyId,
-        isActive: false,
-      });
-
-      await expect(
-        service.create({
-          name: 'Test',
-          isCustomer: true,
-          isSupplier: false,
-          defaultCurrencyId: currencyId,
-        }),
-      ).rejects.toBeInstanceOf(BadRequestException);
-      expect(prisma.businessPartner.create).not.toHaveBeenCalled();
-    });
-
     it('maps Prisma P2002 to ConflictException', async () => {
-      prisma.currency.findUnique.mockResolvedValue({
-        id: currencyId,
-        isActive: true,
-      });
       prisma.businessPartner.create.mockRejectedValue(
         new Prisma.PrismaClientKnownRequestError('Unique constraint', {
           code: 'P2002',
@@ -309,23 +233,17 @@ describe('BusinessPartnersService', () => {
           name: 'Duplicate',
           isCustomer: true,
           isSupplier: false,
-          defaultCurrencyId: currencyId,
         }),
       ).rejects.toBeInstanceOf(ConflictException);
     });
 
     it('excludes server-managed fields from create data', async () => {
-      prisma.currency.findUnique.mockResolvedValue({
-        id: currencyId,
-        isActive: true,
-      });
       prisma.businessPartner.create.mockResolvedValue(basePartner);
 
       await service.create({
         name: 'Test',
         isCustomer: true,
         isSupplier: false,
-        defaultCurrencyId: currencyId,
       });
 
       const createCalls = prisma.businessPartner.create.mock.calls as Array<
@@ -336,8 +254,10 @@ describe('BusinessPartnersService', () => {
       expect(data).not.toHaveProperty('createdAt');
       expect(data).not.toHaveProperty('updatedAt');
       expect(data).not.toHaveProperty('sales');
+      expect(data).not.toHaveProperty('defaultCurrencyId');
       expect(data.isActive).toBe(true);
       expect(data.code).toBe('0000001');
+      expect(data.currentDebtBalance).toEqual(expect.any(Decimal));
     });
   });
 
@@ -354,6 +274,7 @@ describe('BusinessPartnersService', () => {
         total: 1,
         totalPages: 1,
       });
+      expect(result.data[0].currentDebtBalance).toBe('0.0000');
       expect(prisma.businessPartner.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           skip: 0,
@@ -397,7 +318,7 @@ describe('BusinessPartnersService', () => {
       );
     });
 
-    it('applies isActive, role, and currency filters with AND', async () => {
+    it('applies isActive and role filters with AND', async () => {
       prisma.businessPartner.findMany.mockResolvedValue([]);
       prisma.businessPartner.count.mockResolvedValue(0);
 
@@ -405,7 +326,6 @@ describe('BusinessPartnersService', () => {
         isActive: true,
         isCustomer: true,
         isSupplier: true,
-        defaultCurrencyId: currencyId,
       });
 
       expect(prisma.businessPartner.findMany).toHaveBeenCalledWith(
@@ -415,7 +335,6 @@ describe('BusinessPartnersService', () => {
               { isActive: true },
               { isCustomer: true },
               { isSupplier: true },
-              { defaultCurrencyId: currencyId },
             ],
           },
         }),
@@ -435,17 +354,23 @@ describe('BusinessPartnersService', () => {
       expect(select).not.toHaveProperty('sales');
       expect(select).not.toHaveProperty('purchases');
       expect(select).not.toHaveProperty('cashTransactions');
+      expect(select).not.toHaveProperty('defaultCurrency');
+      expect(select).toHaveProperty('currentDebtBalance');
     });
   });
 
   describe('findOne', () => {
-    it('returns an active partner with nested currency', async () => {
-      prisma.businessPartner.findUnique.mockResolvedValue(basePartner);
+    it('returns an active partner with debt balance', async () => {
+      prisma.businessPartner.findUnique.mockResolvedValue({
+        ...basePartner,
+        currentDebtBalance: new Decimal('1250.5000'),
+      });
 
       const result = await service.findOne(partnerId);
 
       expect(result.id).toBe(partnerId);
-      expect(result.defaultCurrency).toEqual(currencySummary);
+      expect(result.currentDebtBalance).toBe('1250.5000');
+      expect(result).not.toHaveProperty('defaultCurrency');
     });
 
     it('returns an inactive partner', async () => {
@@ -480,7 +405,7 @@ describe('BusinessPartnersService', () => {
       expect(prisma.businessPartner.update).not.toHaveBeenCalled();
     });
 
-    it('never maps code or isActive into Prisma update data', async () => {
+    it('never maps code into Prisma update data unless reactivation requested', async () => {
       prisma.businessPartner.update.mockResolvedValue({
         ...basePartner,
         name: 'Only name',
@@ -493,7 +418,28 @@ describe('BusinessPartnersService', () => {
       >;
       expect(updateCalls[0][0].data).not.toHaveProperty('code');
       expect(updateCalls[0][0].data).not.toHaveProperty('isActive');
+      expect(updateCalls[0][0].data).not.toHaveProperty('currentDebtBalance');
       expect(updateCalls[0][0].data).toEqual({ name: 'Only name' });
+    });
+
+    it('reactivates an inactive partner via isActive true', async () => {
+      prisma.businessPartner.findUnique.mockResolvedValue({
+        ...basePartner,
+        isActive: false,
+      });
+      prisma.businessPartner.update.mockResolvedValue({
+        ...basePartner,
+        isActive: true,
+      });
+
+      const result = await service.update(partnerId, { isActive: true });
+
+      expect(prisma.businessPartner.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { isActive: true },
+        }),
+      );
+      expect(result.isActive).toBe(true);
     });
 
     it('updates trimmed name and rejects blank name', async () => {
@@ -560,75 +506,6 @@ describe('BusinessPartnersService', () => {
           data: { isCustomer: false, isSupplier: true },
         }),
       );
-    });
-
-    it('validates currency when defaultCurrencyId is present', async () => {
-      const newCurrencyId = '33333333-3333-4333-8333-333333333333';
-      prisma.currency.findUnique.mockResolvedValue({
-        id: newCurrencyId,
-        isActive: true,
-      });
-      prisma.businessPartner.update.mockResolvedValue({
-        ...basePartner,
-        defaultCurrencyId: newCurrencyId,
-      });
-
-      await service.update(partnerId, { defaultCurrencyId: newCurrencyId });
-
-      expect(prisma.currency.findUnique).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { id: newCurrencyId } }),
-      );
-    });
-
-    it('throws NotFoundException for nonexistent currency', async () => {
-      prisma.currency.findUnique.mockResolvedValue(null);
-
-      await expect(
-        service.update(partnerId, {
-          defaultCurrencyId: '44444444-4444-4444-8444-444444444444',
-        }),
-      ).rejects.toBeInstanceOf(NotFoundException);
-    });
-
-    it('throws BadRequestException for inactive currency assignment', async () => {
-      prisma.currency.findUnique.mockResolvedValue({
-        id: '44444444-4444-4444-8444-444444444444',
-        isActive: false,
-      });
-
-      await expect(
-        service.update(partnerId, {
-          defaultCurrencyId: '44444444-4444-4444-8444-444444444444',
-        }),
-      ).rejects.toBeInstanceOf(BadRequestException);
-    });
-
-    it('allows update of another field when partner references inactive currency', async () => {
-      const inactiveCurrencyId = '55555555-5555-4555-8555-555555555555';
-      prisma.businessPartner.findUnique.mockResolvedValue({
-        ...basePartner,
-        defaultCurrencyId: inactiveCurrencyId,
-        defaultCurrency: {
-          ...currencySummary,
-          id: inactiveCurrencyId,
-          isActive: false,
-        },
-      });
-      prisma.businessPartner.update.mockResolvedValue({
-        ...basePartner,
-        defaultCurrencyId: inactiveCurrencyId,
-        name: 'Düzəliş',
-        defaultCurrency: {
-          ...currencySummary,
-          id: inactiveCurrencyId,
-          isActive: false,
-        },
-      });
-
-      await service.update(partnerId, { name: 'Düzəliş' });
-
-      expect(prisma.currency.findUnique).not.toHaveBeenCalled();
-      expect(prisma.businessPartner.update).toHaveBeenCalled();
     });
 
     it('updates inactive partner without reactivating', async () => {
@@ -703,7 +580,7 @@ describe('BusinessPartnersService', () => {
 
       expect(prisma.businessPartner.update).not.toHaveBeenCalled();
       expect(result.isActive).toBe(false);
-      expect(result.defaultCurrency).toEqual(currencySummary);
+      expect(result.currentDebtBalance).toBe('0.0000');
     });
 
     it('throws NotFoundException when partner is missing', async () => {
@@ -712,6 +589,111 @@ describe('BusinessPartnersService', () => {
       await expect(service.deactivate(partnerId)).rejects.toBeInstanceOf(
         NotFoundException,
       );
+    });
+  });
+
+  describe('soft duplicate flag (US-016)', () => {
+    const otherPartner = {
+      id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      code: '0000002',
+      name: 'Nümunə MMC',
+      phone: '+994 50 123 45 67',
+      taxNumber: '1234567891',
+      isCustomer: true,
+      isSupplier: false,
+      isActive: true,
+    };
+
+    it('rejects create with 409 when possible duplicates match', async () => {
+      prisma.businessPartner.findMany.mockResolvedValue([otherPartner]);
+
+      await expect(
+        service.create({
+          name: '  NÜMUNƏ   MMC  ',
+          isCustomer: true,
+          isSupplier: false,
+        }),
+      ).rejects.toMatchObject({
+        response: expect.objectContaining({
+          message: 'Possible duplicate business partners found',
+          code: 'BUSINESS_PARTNER_DUPLICATE_SUSPECTED',
+          candidates: [
+            expect.objectContaining({
+              id: otherPartner.id,
+              matchedFields: ['name'],
+            }),
+          ],
+        }),
+      });
+      expect(prisma.businessPartner.create).not.toHaveBeenCalled();
+    });
+
+    it('creates when acknowledgeDuplicate is true despite matches', async () => {
+      prisma.businessPartner.findMany.mockResolvedValue([otherPartner]);
+      prisma.businessPartner.create.mockResolvedValue(basePartner);
+
+      const result = await service.create({
+        name: 'Nümunə MMC',
+        isCustomer: true,
+        isSupplier: false,
+        acknowledgeDuplicate: true,
+      });
+
+      expect(result.code).toBe('0000001');
+      expect(prisma.businessPartner.create).toHaveBeenCalled();
+    });
+
+    it('includes inactive partners in soft-duplicate create check', async () => {
+      prisma.businessPartner.findMany.mockResolvedValue([
+        { ...otherPartner, isActive: false },
+      ]);
+
+      await expect(
+        service.create({
+          name: 'Nümunə MMC',
+          isCustomer: true,
+          isSupplier: false,
+        }),
+      ).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it('rejects update with 409 when identity helpers collide with another partner', async () => {
+      prisma.businessPartner.findUnique.mockResolvedValue(basePartner);
+      prisma.businessPartner.findMany.mockResolvedValue([otherPartner]);
+
+      await expect(
+        service.update(partnerId, { name: 'Nümunə MMC' }),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(prisma.businessPartner.update).not.toHaveBeenCalled();
+    });
+
+    it('updates when acknowledgeDuplicate is true', async () => {
+      prisma.businessPartner.findUnique.mockResolvedValue(basePartner);
+      prisma.businessPartner.findMany.mockResolvedValue([otherPartner]);
+      prisma.businessPartner.update.mockResolvedValue({
+        ...basePartner,
+        name: 'Nümunə MMC',
+      });
+
+      const result = await service.update(partnerId, {
+        name: 'Nümunə MMC',
+        acknowledgeDuplicate: true,
+      });
+
+      expect(result.name).toBe('Nümunə MMC');
+      expect(prisma.businessPartner.update).toHaveBeenCalled();
+    });
+
+    it('skips soft-duplicate check on update when identity helpers unchanged', async () => {
+      prisma.businessPartner.findUnique.mockResolvedValue(basePartner);
+      prisma.businessPartner.update.mockResolvedValue({
+        ...basePartner,
+        notes: 'Only notes',
+      });
+
+      await service.update(partnerId, { notes: 'Only notes' });
+
+      expect(prisma.businessPartner.findMany).not.toHaveBeenCalled();
     });
   });
 });

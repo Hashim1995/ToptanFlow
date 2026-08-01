@@ -3,7 +3,7 @@
 - **ID:** US-038
 - **Title:** Frontend master-data screens for delivered APIs
 - **Parent Epic:** [EPIC-021](../epics/EPIC-021-frontend-application.md)
-- **Status:** Planned
+- **Status:** Done
 - **Priority:** High
 - **Business actor:** Master-data maintainer
 
@@ -17,12 +17,29 @@ Usable master-data operations.
 
 ## High-level scope
 
-Screens only for backend-ready capabilities; code fields read-only.
+- Shared typed frontend API/query conventions for delivered master-data APIs
+- Responsive CRUD/deactivate screens for currencies and units
+- Responsive CRUD/deactivate screens for products
+- Responsive CRUD/deactivate screens for business partners, including the
+  approved soft-duplicate `409` + acknowledge flow
+- Backend-generated Product / BusinessPartner code fields are read-only
 
 ## High-level acceptance criteria
 
-- High-level criteria to be refined at activation
-- Must not resolve Open Decisions silently
+- Currencies, units, products, and business partners can be listed, searched,
+  created, updated, and deactivated through their delivered backend contracts
+- TanStack Query owns server state; Axios is the only HTTP transport; Redux
+  does not duplicate server entities
+- Forms use React Hook Form + Zod for frontend boundary validation; backend
+  validation remains authoritative
+- Loading, empty, success, and failure states are Azerbaijani
+- Mobile uses a readable card/reflow strategy; desktop may use tables, with
+  all fields and actions still reachable
+- Product and BusinessPartner codes are visible but never editable/supplied
+- BusinessPartner soft-duplicate conflicts show candidates and require
+  explicit user acknowledgement before retrying
+- No authentication, permission policy, or unresolved business behavior is
+  invented
 
 ## Dependencies
 
@@ -38,19 +55,36 @@ ui-requirements.md.
 
 ## Known risks
 
-Deferred detail until activation.
+- Currency / unit Azerbaijani navigation and screen labels are not entries in
+  `docs/business/terminology.md`; owner approved `Valyutalar` /
+  `Ölçü vahidləri` for US-038 (2026-07-29).
+- Responsive CRUD forms can become too large; each vertical slice must preserve
+  all fields/actions without forcing horizontal form scrolling.
 
 ## Open questions
 
-See epic open questions; do not invent requirements.
+| Question | Disposition |
+| --- | --- |
+| Exact screen inventory? | Four delivered modules only: currencies, units, products, business partners. |
+| Authentication / protected routes? | Out of scope; US-019 remains blocked. |
+| Delete behavior? | UI invokes delivered soft-deactivate endpoints only; no hard delete or reactivation UI. |
+| Currency/unit Azerbaijani labels? | Approved: `Valyutalar`, `Ölçü vahidləri`. |
+| Routine Azerbaijani UI labels for delivered enums? | Owner (2026-07-29): agents may choose clear correct labels without stopping; e.g. product types Hazır məhsul / Xammal / Qarışıq təyinatlı. |
+| Automated browser testing? | Add focused component/UI tests only when the project test harness is activated; each task requires build/lint plus responsive manual evidence. |
 
 ## Readiness checklist
 
-- [ ] Business behavior approved / traceable for this slice
-- [ ] No unresolved Open Decision that this story would silently resolve
-- [ ] Dependencies satisfied or explicitly accepted
-- [ ] Acceptance criteria sufficient to implement
+- [x] Business behavior traceable to delivered APIs, ADR-005, and UI requirements
+- [x] No unresolved Open Decision is silently resolved
+- [x] US-037 and backend dependencies satisfied
+- [x] Acceptance criteria sufficient to implement incrementally
 
 ## Task elaboration
 
-Deferred until activation
+Elaborated:
+
+- [TASK-038-01](../tasks/TASK-038-01-add-master-data-frontend-api-foundation.md) — **Done**
+- [TASK-038-02](../tasks/TASK-038-02-add-currency-unit-screens.md) — **Done**
+- [TASK-038-03](../tasks/TASK-038-03-add-product-screens.md) — **Done**
+- [TASK-038-04](../tasks/TASK-038-04-add-business-partner-screens.md) — **Done**
+- [TASK-038-05](../tasks/TASK-038-05-verify-master-data-ui-responsive-states.md) — **Done**

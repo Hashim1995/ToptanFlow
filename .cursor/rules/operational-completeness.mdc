@@ -1,0 +1,26 @@
+---
+description: Fill obvious operational UX gaps even when tasks omit them
+alwaysApply: true
+---
+
+# Operational Completeness for Delivered Screens
+
+Owner guidance (2026-07-29): planning/task docs have gaps. When implementing
+or reviewing `apps/web` / matching APIs, do **not** leave incomplete
+operator workflows solely because a task file omitted them.
+
+## Default expectations (unless an Accepted Decision forbids them)
+
+1. Soft-deactivate implies **reactivate** (API + UI) for the same entity.
+2. Create/list/update/deactivate screens must remain usable end-to-end for
+   everyday master-data maintenance (filters, empty/error/retry, confirmations).
+3. If a capability is needed from a business/user perspective and is not an
+   Open Decision / conflict, **add it** in the current change and record a short
+   note in task evidence / CHANGELOG (do not silently invent new domain policy).
+
+## Still stop for
+
+- Missing business rules that change money, stock, debt, or immutability.
+- Documented Open Decisions / BRD–SRS conflicts.
+- New vocabulary that ADR-005 requires clarification for (except routine
+  delivered-enum labels already owner-approved).

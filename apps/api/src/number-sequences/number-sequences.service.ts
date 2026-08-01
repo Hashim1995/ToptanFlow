@@ -58,7 +58,9 @@ export class NumberSequencesService {
   private isApprovedSequenceKey(key: string): key is SequenceKey {
     return (
       key === BusinessCodeSequenceKey.PRODUCT ||
-      key === BusinessCodeSequenceKey.BUSINESS_PARTNER
+      key === BusinessCodeSequenceKey.BUSINESS_PARTNER ||
+      key === BusinessCodeSequenceKey.PURCHASE ||
+      key === BusinessCodeSequenceKey.SALE
     );
   }
 }

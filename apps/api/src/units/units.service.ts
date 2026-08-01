@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '../../generated/prisma/client.js';
 import { SortOrder } from '../common/sorting/sort-order.enum';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUnitDto } from './dto/create-unit.dto';
@@ -254,7 +254,9 @@ export class UnitsService {
 
   private rethrowUniqueAsConflict(error: unknown): void {
     if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
       error.code === 'P2002'
     ) {
       throw new ConflictException('Unit code already exists');

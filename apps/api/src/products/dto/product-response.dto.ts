@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ProductCategorySummaryDto } from './product-category-summary.dto';
 import { ProductTypeApi } from './product-type.enum';
 import { ProductUnitResponseDto } from './product-unit-response.dto';
 
@@ -20,11 +21,17 @@ export class ProductResponseDto {
   type!: ProductTypeApi;
 
   @ApiPropertyOptional({
-    example: 'Tekstil',
+    format: 'uuid',
     nullable: true,
     type: String,
   })
-  category!: string | null;
+  categoryId!: string | null;
+
+  @ApiPropertyOptional({
+    type: ProductCategorySummaryDto,
+    nullable: true,
+  })
+  category!: ProductCategorySummaryDto | null;
 
   @ApiProperty({ format: 'uuid' })
   unitId!: string;
@@ -51,12 +58,34 @@ export class ProductResponseDto {
   latestPurchasePrice!: string | null;
 
   @ApiPropertyOptional({
+    example: '100.0000',
+    type: String,
+    description:
+      'Company-wide current quantity (ADR-029). Read-only on create/update; changed only via quantity history posts.',
+  })
+  currentQuantity!: string;
+
+  @ApiPropertyOptional({
     example: '5.0000',
     nullable: true,
     type: String,
-    description: 'Company-total critical stock threshold as decimal string.',
+    description: 'Minimum quantity alert threshold as decimal string.',
   })
   criticalStockThreshold!: string | null;
+
+  @ApiPropertyOptional({
+    example: '1234567890123',
+    nullable: true,
+    type: String,
+  })
+  barcode!: string | null;
+
+  @ApiPropertyOptional({
+    example: 'Qeyd',
+    nullable: true,
+    type: String,
+  })
+  notes!: string | null;
 
   @ApiProperty({ example: true })
   isActive!: boolean;

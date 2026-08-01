@@ -1,8 +1,9 @@
-import { plainToInstance } from 'class-transformer';
+import { plainToInstance, Type } from 'class-transformer';
 import {
   IsEnum,
   IsInt,
   IsNotEmpty,
+  IsOptional,
   IsString,
   Max,
   Min,
@@ -40,6 +41,7 @@ export class EnvironmentVariables {
   @IsEnum(NodeEnv)
   NODE_ENV: NodeEnv = NodeEnv.Development;
 
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   @Max(65535)
@@ -55,12 +57,52 @@ export class EnvironmentVariables {
 
   /**
    * Comma-separated list of allowed CORS origins (e.g.
-   * "https://app.example.com,https://admin.example.com"). Empty by default,
-   * which disables cross-origin requests until explicitly configured — see
-   * `configureApp` in `src/bootstrap/configure-app.ts`.
+   * "https://app.example.com,https://admin.example.com").
+   * Empty in development falls back to Vite local origins in configureApp;
+   * empty in production disables cross-origin requests.
    */
   @IsString()
   CORS_ORIGINS = '';
+
+  /**
+   * Optional first-user bootstrap for empty databases (ADR-025 / seed).
+   * Used only by `prisma db seed`; not required for API boot.
+   */
+  @IsOptional()
+  @IsString()
+  BOOTSTRAP_USERNAME = '';
+
+  @IsOptional()
+  @IsString()
+  BOOTSTRAP_PASSWORD = '';
+
+  @IsOptional()
+  @IsString()
+  BOOTSTRAP_FULL_NAME = '';
+
+  /**
+   * JWT access-token signing secret (ADR-025). Override in every non-local env.
+   */
+  @IsString()
+  @IsNotEmpty()
+  JWT_ACCESS_SECRET = 'dev-only-jwt-access-secret-change-me';
+
+  /** Access token lifetime (ADR-025: 24h). Parsed by @nestjs/jwt. */
+  @IsString()
+  @IsNotEmpty()
+  JWT_ACCESS_EXPIRES_IN = '24h';
+
+  /** Refresh cookie / token lifetime in days (ADR-025: 30). */
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(365)
+  JWT_REFRESH_EXPIRES_DAYS = 30;
+
+  /** httpOnly cookie name for the opaque refresh token. */
+  @IsString()
+  @IsNotEmpty()
+  REFRESH_COOKIE_NAME = 'refresh_token';
 }
 
 /**
