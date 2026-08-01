@@ -22,6 +22,7 @@ import {
   ShoppingCart,
   SignOut,
   SquaresFour,
+  UserCircle,
   UsersThree,
   Wallet,
   Receipt,
@@ -32,6 +33,7 @@ import { useAuth } from '../features/auth/use-auth';
 import { CASH_LABELS } from '../features/cash/ui/labels';
 import { PURCHASE_LABELS } from '../features/purchases/ui/labels';
 import { SALES_LABELS } from '../features/sales/ui/labels';
+import { USERS_LABELS } from '../features/users/ui/labels';
 import { ICON_SIZE, phIcon } from '../shared/ui/ph-icon';
 
 const { Header, Sider, Content } = Layout;
@@ -173,6 +175,30 @@ const NAV_ITEMS: MenuItem[] = [
   },
 ];
 
+function buildNavItems(isSuperAdmin: boolean): MenuItem[] {
+  if (!isSuperAdmin) {
+    return NAV_ITEMS;
+  }
+  return [
+    ...NAV_ITEMS,
+    {
+      key: 'group-users',
+      type: 'group',
+      label: USERS_LABELS.nav,
+      children: [
+        {
+          key: '/users',
+          label: navLabel(
+            phIcon(UserCircle, { size: ICON_SIZE.md }),
+            USERS_LABELS.nav,
+            '/users',
+          ),
+        },
+      ],
+    },
+  ];
+}
+
 /**
  * Responsive app chrome (US-037 / TASK-037-03; uplifted CHANGE-001 / US-042).
  * Navigation simplified under ADR-029 / ADR-031 (no Warehouse / Inventar / Currency).
@@ -200,7 +226,9 @@ export function AppShellLayout() {
               ? '/cash/reports'
               : location.pathname.startsWith('/cash')
                 ? '/cash/accounts'
-                : location.pathname,
+                : location.pathname.startsWith('/users')
+                  ? '/users'
+                  : location.pathname,
   ];
 
   async function handleLogout() {
@@ -217,7 +245,7 @@ export function AppShellLayout() {
     <Menu
       mode="inline"
       selectedKeys={selectedKeys}
-      items={NAV_ITEMS}
+      items={buildNavItems(Boolean(auth.user?.isSuperAdmin))}
       onClick={() => setDrawerOpen(false)}
       style={{ borderInlineEnd: 'none' }}
     />

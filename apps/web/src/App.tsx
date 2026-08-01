@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AppShellLayout } from './app/app-shell-layout';
 import { RequireAuth } from './features/auth/require-auth';
+import { RequireSuperAdmin } from './features/auth/require-super-admin';
 import { LoginPage } from './features/auth/pages/login-page';
 import { CashAccountDetailPage } from './features/cash/pages/cash-account-detail-page';
 import { CashAccountsPage } from './features/cash/pages/cash-accounts-page';
@@ -14,10 +15,12 @@ import { PurchaseDetailPage } from './features/purchases/pages/purchase-detail-p
 import { PurchasesPage } from './features/purchases/pages/purchases-page';
 import { SaleDetailPage } from './features/sales/pages/sale-detail-page';
 import { SalesPage } from './features/sales/pages/sales-page';
+import { UsersPage } from './features/users/pages/users-page';
 import { HomePage } from './pages/home-page';
 
 /**
  * App routes — auth gate (US-019) + master-data / purchase / sale / cash screens.
+ * Users admin is Super Admin only (ADR-039 / US-051).
  */
 function App() {
   return (
@@ -51,6 +54,9 @@ function App() {
               path="cash/expense-categories"
               element={<ExpenseCategoriesPage />}
             />
+            <Route element={<RequireSuperAdmin />}>
+              <Route path="users" element={<UsersPage />} />
+            </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Route>

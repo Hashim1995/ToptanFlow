@@ -6,6 +6,7 @@ export const E2E_AUTH_USER = {
   username: 'e2e-user',
   fullName: 'E2E User',
   isActive: true,
+  isSuperAdmin: true,
   passwordHash: 'not-used-in-jwt-path',
 } as const;
 

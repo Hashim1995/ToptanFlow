@@ -156,7 +156,8 @@ model NumberSequence {
 /// account," and "User accounts are personal; when employment ends, the
 /// account is deactivated, not deleted."
 /// Credentials: `passwordHash` (Argon2id) per ADR-025. No Role/Permission
-/// tables in v1 (flat equal active users). JWT login is US-019.
+/// tables in v1. `isSuperAdmin` gates Users module only (ADR-039 / CHANGE-007);
+/// other domains remain flat equal active users.
 model User {
   id           String   @id @default(uuid())
   fullName     String
@@ -165,6 +166,8 @@ model User {
   /// Argon2id hash. Never returned by HTTP APIs.
   passwordHash String
   isActive     Boolean  @default(true)
+  /// Bootstrap Super Admin only for user administration (ADR-039).
+  isSuperAdmin Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -188,6 +191,7 @@ model User {
   refreshTokens                RefreshToken[]
 
   @@index([isActive])
+  @@index([isSuperAdmin])
 }
 
 /// Server-side refresh token (hashed). Opaque token value is only in the

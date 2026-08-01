@@ -3,9 +3,10 @@
 - **ID:** US-050
 - **Title:** Cash capabilities catalog under ADR-025
 - **Parent Epic:** [EPIC-011](../epics/EPIC-011-cash-expenses.md)
-- **Status:** Planned
+- **Status:** Deferred
 - **Priority:** Medium
 - **Business actor:** N/A (technical / governance)
+- **Deferred:** 2026-08-02 — owner: no permission catalog needed yet (CHANGE-007).
 
 ## Statement
 

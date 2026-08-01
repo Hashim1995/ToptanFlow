@@ -37,7 +37,8 @@
 - Requiring the document creator and its approver to be different people is an optional business policy, not a mandatory rule by default.
 - **[Approved Human Decision — recorded 2026-07-29; see ADR-025.]** For v1, authentication uses JWT (access + refresh) with access-token lifetime 24 hours and refresh-token lifetime 30 days (rotating refresh). Passwords use Argon2id. Login uses `username`.
 - **[Approved Human Decision — recorded 2026-07-29; see ADR-025.]** For v1, the product is single-company; multi-company / membership isolation is not implemented.
-- **[Approved Human Decision — recorded 2026-07-29; see ADR-025.]** For v1, there are no role packages and no admin/user-type split: every authenticated **active** user may perform every available application action. Granular permissions and per-user overrides remain deferred until a future Approved Human Decision.
+- **[Approved Human Decision — recorded 2026-07-29; see ADR-025.]** For v1, there are no role packages: every authenticated **active** user may perform every available **business** application action (sales, purchases, cash, master data). Granular permission packages remain deferred.
+- **[Approved Human Decision — recorded 2026-08-02; see ADR-039 / CHANGE-007.]** User administration is an exception: only accounts with `isSuperAdmin = true` may create, list, update, deactivate, reactivate users, or set passwords. Ordinary users must not access the Users module. API-created users are never Super Admin. Super Admin accounts cannot be soft-deactivated (root operator). This is not a general RBAC system.
 
 ## Business Partners
 

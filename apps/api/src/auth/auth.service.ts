@@ -19,6 +19,7 @@ type ActiveUserRecord = {
   fullName: string;
   passwordHash: string;
   isActive: boolean;
+  isSuperAdmin: boolean;
 };
 
 @Injectable()
@@ -39,6 +40,7 @@ export class AuthService {
         fullName: true,
         passwordHash: true,
         isActive: true,
+        isSuperAdmin: true,
       },
     });
 
@@ -76,6 +78,7 @@ export class AuthService {
             fullName: true,
             passwordHash: true,
             isActive: true,
+            isSuperAdmin: true,
           },
         },
       },
@@ -151,6 +154,7 @@ export class AuthService {
         id: user.id,
         username: user.username,
         fullName: user.fullName,
+        isSuperAdmin: user.isSuperAdmin,
       },
     };
   }

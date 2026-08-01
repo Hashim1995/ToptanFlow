@@ -10,6 +10,7 @@ export type AuthenticatedUser = {
   username: string;
   fullName: string;
   isActive: boolean;
+  isSuperAdmin: boolean;
 };
 
 @Injectable()
@@ -37,6 +38,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
         username: true,
         fullName: true,
         isActive: true,
+        isSuperAdmin: true,
       },
     });
 

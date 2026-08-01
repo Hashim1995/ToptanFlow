@@ -111,6 +111,12 @@ function mapHttpStatusToAz(statusCode: number, code?: string): string {
   if (code === 'CASH_TRANSFER_NOT_FOUND') {
     return 'Axtarılan transfer tapılmadı.';
   }
+  if (code === 'SUPERADMIN_REQUIRED') {
+    return 'Bu əməliyyat yalnız Super Admin üçündür.';
+  }
+  if (code === 'SUPERADMIN_IMMUTABLE' || code === 'LAST_SUPERADMIN') {
+    return 'Super Admin deaktiv edilə bilməz.';
+  }
   if (statusCode === 400) {
     return 'Göndərilən məlumatlar yanlışdır. Yoxlayıb yenidən cəhd edin.';
   }

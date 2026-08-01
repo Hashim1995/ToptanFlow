@@ -1,7 +1,7 @@
 // TOPTANFLOW — Prisma Seed Entry Point
 //
 // Optional bootstrap first user when BOOTSTRAP_USERNAME + BOOTSTRAP_PASSWORD
-// are set and the User table is empty (ADR-025).
+// are set (ADR-025). Bootstrap user is Super Admin (ADR-039 / CHANGE-007).
 //
 // Default warehouse seed removed under ADR-029 / CHANGE-002.
 //
@@ -33,6 +33,34 @@ async function seedBootstrapUser(client: Client): Promise<void> {
     );
   }
 
+  const existing = await client.query<{
+    id: string;
+    username: string;
+    isSuperAdmin: boolean;
+  }>(
+    `SELECT id, username, "isSuperAdmin" FROM "User" WHERE username = $1 LIMIT 1`,
+    [username],
+  );
+
+  if (existing.rows[0]) {
+    if (!existing.rows[0].isSuperAdmin) {
+      await client.query(
+        `UPDATE "User" SET "isSuperAdmin" = true, "updatedAt" = NOW() WHERE id = $1`,
+        [existing.rows[0].id],
+      );
+      // eslint-disable-next-line no-console
+      console.log(
+        `[prisma:seed] Promoted bootstrap user "${username}" to Super Admin.`,
+      );
+    } else {
+      // eslint-disable-next-line no-console
+      console.log(
+        `[prisma:seed] Bootstrap user "${username}" already exists as Super Admin.`,
+      );
+    }
+    return;
+  }
+
   const countResult = await client.query<{ count: string }>(
     'SELECT COUNT(*)::text AS count FROM "User"',
   );
@@ -40,7 +68,7 @@ async function seedBootstrapUser(client: Client): Promise<void> {
   if (count > 0) {
     // eslint-disable-next-line no-console
     console.log(
-      `[prisma:seed] Skip bootstrap user: ${count} user(s) already exist.`,
+      `[prisma:seed] Skip create: ${count} user(s) already exist and BOOTSTRAP_USERNAME was not found.`,
     );
     return;
   }
@@ -54,8 +82,8 @@ async function seedBootstrapUser(client: Client): Promise<void> {
     username: string;
     fullName: string;
   }>(
-    `INSERT INTO "User" (id, "fullName", username, "passwordHash", "isActive", "createdAt", "updatedAt")
-     VALUES ($1, $2, $3, $4, true, NOW(), NOW())
+    `INSERT INTO "User" (id, "fullName", username, "passwordHash", "isActive", "isSuperAdmin", "createdAt", "updatedAt")
+     VALUES ($1, $2, $3, $4, true, true, NOW(), NOW())
      RETURNING id, username, "fullName"`,
     [id, fullName, username, passwordHash],
   );
@@ -63,7 +91,7 @@ async function seedBootstrapUser(client: Client): Promise<void> {
   const user = inserted.rows[0];
   // eslint-disable-next-line no-console
   console.log(
-    `[prisma:seed] Created bootstrap user "${user.username}" (${user.id}).`,
+    `[prisma:seed] Created Super Admin bootstrap user "${user.username}" (${user.id}).`,
   );
 }
 

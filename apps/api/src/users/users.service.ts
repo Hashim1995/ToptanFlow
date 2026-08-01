@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -19,6 +20,7 @@ const userSelect = {
   fullName: true,
   username: true,
   isActive: true,
+  isSuperAdmin: true,
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.UserSelect;
@@ -44,6 +46,7 @@ export class UsersService {
           fullName,
           username,
           passwordHash,
+          isSuperAdmin: false,
         },
         select: userSelect,
       });
@@ -113,6 +116,10 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
+    if (dto.isActive === false) {
+      this.assertMayDeactivate(existing);
+    }
+
     const data: {
       fullName?: string;
       username?: string;
@@ -174,16 +181,28 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    if (existing.isActive) {
-      const user = await this.prisma.user.update({
-        where: { id },
-        data: { isActive: false },
-        select: userSelect,
-      });
-      return this.toResponse(user);
+    if (!existing.isActive) {
+      return this.toResponse(existing);
     }
 
-    return this.toResponse(existing);
+    this.assertMayDeactivate(existing);
+
+    const user = await this.prisma.user.update({
+      where: { id },
+      data: { isActive: false },
+      select: userSelect,
+    });
+    return this.toResponse(user);
+  }
+
+  private assertMayDeactivate(user: UserRecord): void {
+    // Super Admin is the root operator (ADR-039): never soft-deactivate.
+    if (user.isSuperAdmin) {
+      throw new ForbiddenException({
+        message: 'Super Admin cannot be deactivated',
+        code: 'SUPERADMIN_IMMUTABLE',
+      });
+    }
   }
 
   private buildListWhere(
@@ -245,6 +264,7 @@ export class UsersService {
       fullName: user.fullName,
       username: user.username,
       isActive: user.isActive,
+      isSuperAdmin: user.isSuperAdmin,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };

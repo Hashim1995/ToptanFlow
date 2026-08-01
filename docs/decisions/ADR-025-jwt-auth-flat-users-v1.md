@@ -67,25 +67,34 @@ per-user overrides (AD-18), or multi-company semantics (AD-17).
 
 ### User administration
 
-- Any authenticated active user may create, list, update, deactivate, and
-  reactivate users (operational completeness: soft-deactivate implies
-  reactivate).
-- Bootstrap: a seed or documented first-user creation path is required so the
-  system is usable before the first login (chicken-and-egg).
+> **Superseded for user administration by [ADR-039](ADR-039-superadmin-user-administration.md)
+> (2026-08-02).** Only `User.isSuperAdmin` accounts may create/list/update/
+> deactivate/reactivate users and set passwords. API-created users are never
+> Super Admin. All other v1 application actions remain flat equal among active
+> authenticated users.
+
+- Bootstrap: a seed or documented first-user creation path creates the Super
+  Admin (`isSuperAdmin = true`) so the system is usable before further accounts
+  exist (chicken-and-egg).
 
 ## Consequences
 
 - Closes “Authentication implementation” and “Authorization implementation
-  details” for **v1 flat equal users** in `system-architecture.md`.
+  details” for **v1 JWT + mostly flat equal users** in `system-architecture.md`.
 - Resolves AD-17 for v1 as single-company; AD-18 deferred (no overrides).
 - US-018 / US-019 may be activated and implemented against this ADR.
+- **[ADR-039]** narrows user administration to Super Admin; does not introduce
+  Role/Permission tables.
 - Future introduction of roles/permissions requires a new Approved Human
-  Decision and will supersede the flat-authorization clause of this ADR.
+  Decision and will supersede the flat-authorization clause of this ADR for
+  additional domains as decided.
 
 ## Alternatives Considered
 
 - **Short-lived access tokens (e.g. 15 minutes):** Rejected by owner; longer
   lifetimes preferred for v1 operator convenience.
 - **Role packages from day one (BRD §6):** Deferred by owner for v1.
-- **Separate Super Admin user type:** Rejected by owner for v1.
+- **Separate Super Admin user type:** Rejected for v1 in the original decision;
+  **later accepted in narrow form** (boolean flag, Users module only) via
+  ADR-039 (2026-08-02).
 - **Multi-company `companyId` isolation:** Rejected for v1 (single company).
