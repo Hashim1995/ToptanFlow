@@ -2,10 +2,10 @@
 
 > Short operational snapshot. Details live in linked Epic/Story/Task/Unplanned files.
 
-- **Last meaningful update:** 2026-07-31 — [US-020](stories/US-020-warehouse-master-data.md) **Done** (TASK-020-05 Anbarlar UI).
+- **Last meaningful update:** 2026-07-31 — [US-022](stories/US-022-purchase-draft-post.md) Purchase module: duplicate product lines allowed; create/edit via compact modal (owner follow-up).
 - **Current branch:** `feat/business-partners`
-- **Active epic:** [EPIC-008](epics/EPIC-008-inventory-warehouses.md) — **In Progress**
-- **Active user story:** [US-021](stories/US-021-inventory-movements-balances.md) — **Ready**
-- **Active task:** none — next [TASK-021-01](tasks/TASK-021-01-stock-movement-balance-persistence.md)
-- **Blocked / deferred:** US-017; BRD-OD-04 exceptions; Yatı; purchase/sale inventory posting
-- **Next recommended action:** Start **TASK-021-01** (Stock movement & balance persistence).
+- **Active epic:** [EPIC-009 Purchasing](epics/EPIC-009-purchasing.md) (US-022 Review)
+- **Active user story:** [US-022](stories/US-022-purchase-draft-post.md) — Review
+- **Active tasks:** [TASK-022-01](tasks/TASK-022-01-purchase-draft-post-cancel-apis.md), [TASK-022-02](tasks/TASK-022-02-purchase-list-form-details-ui.md) — Review
+- **Blocked / deferred:** Purchase Returns; US-017 statement UI; BRD-OD-04 remaining controls; Yatı redesign (EPIC-014); Sales (EPIC-010); Cash Nest modules (EPIC-011)
+- **Next recommended action:** Accept US-022; then start **EPIC-010 Sales** (mirror purchase patterns incl. multi-line same product; ADR-028 cash separation).

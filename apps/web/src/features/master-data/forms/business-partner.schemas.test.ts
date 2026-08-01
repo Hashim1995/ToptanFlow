@@ -5,7 +5,6 @@ const validBase = {
   name: 'Müştəri MMC',
   isCustomer: true,
   isSupplier: false,
-  defaultCurrencyId: '11111111-1111-4111-8111-111111111111',
   phone: '',
   email: '',
   taxNumber: '',
@@ -57,11 +56,9 @@ describe('businessPartnerFormSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('rejects non-uuid default currency', () => {
-    const result = businessPartnerFormSchema.safeParse({
-      ...validBase,
-      defaultCurrencyId: 'not-a-uuid',
-    });
-    expect(result.success).toBe(false);
+  it('does not require currency fields', () => {
+    expect(validBase).not.toHaveProperty('defaultCurrencyId');
+    const result = businessPartnerFormSchema.safeParse(validBase);
+    expect(result.success).toBe(true);
   });
 });

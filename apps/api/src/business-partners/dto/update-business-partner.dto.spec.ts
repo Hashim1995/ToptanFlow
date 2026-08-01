@@ -20,6 +20,12 @@ describe('UpdateBusinessPartnerDto validation', () => {
     expect(sample).not.toHaveProperty('code');
   });
 
+  it('does not declare currency fields', () => {
+    expect(new UpdateBusinessPartnerDto()).not.toHaveProperty(
+      'defaultCurrencyId',
+    );
+  });
+
   it('accepts isActive for reactivation', async () => {
     expect(await validateDto({ isActive: true })).toHaveLength(0);
     expect(await validateDto({ isActive: false })).toHaveLength(0);
@@ -33,9 +39,6 @@ describe('UpdateBusinessPartnerDto validation', () => {
     await expect(validateDto({ isSupplier: null })).resolves.not.toHaveLength(
       0,
     );
-    await expect(
-      validateDto({ defaultCurrencyId: null }),
-    ).resolves.not.toHaveLength(0);
   });
 
   it('allows null for nullable clearable contact fields', async () => {
@@ -49,21 +52,14 @@ describe('UpdateBusinessPartnerDto validation', () => {
     expect(messages).toHaveLength(0);
   });
 
-  it('accepts partial role and currency updates', async () => {
+  it('accepts partial role updates', async () => {
     expect(await validateDto({ isCustomer: false })).toHaveLength(0);
-    expect(
-      await validateDto({
-        defaultCurrencyId: '22222222-2222-4222-8222-222222222222',
-      }),
-    ).toHaveLength(0);
+    expect(await validateDto({ isSupplier: true })).toHaveLength(0);
   });
 
-  it('rejects invalid email and currency UUID', async () => {
+  it('rejects invalid email', async () => {
     await expect(
       validateDto({ email: 'not-an-email' }),
-    ).resolves.not.toHaveLength(0);
-    await expect(
-      validateDto({ defaultCurrencyId: 'bad' }),
     ).resolves.not.toHaveLength(0);
   });
 });

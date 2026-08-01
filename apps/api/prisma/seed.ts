@@ -1,8 +1,9 @@
 // TOPTANFLOW — Prisma Seed Entry Point
 //
-// 1) Default GENERAL warehouse when Warehouse table is empty (ADR-026 / US-020).
-// 2) Optional bootstrap first user when BOOTSTRAP_USERNAME + BOOTSTRAP_PASSWORD
-//    are set and the User table is empty (ADR-025).
+// Optional bootstrap first user when BOOTSTRAP_USERNAME + BOOTSTRAP_PASSWORD
+// are set and the User table is empty (ADR-025).
+//
+// Default warehouse seed removed under ADR-029 / CHANGE-002.
 //
 // Uses `pg` + `argon2` (not the generated Prisma ESM client) so `ts-node`
 // seed works under CommonJS. See docs/technical/database-development.md.
@@ -11,56 +12,6 @@ import 'dotenv/config';
 import * as argon2 from 'argon2';
 import { randomUUID } from 'node:crypto';
 import { Client } from 'pg';
-
-async function seedDefaultWarehouse(client: Client): Promise<void> {
-  const countResult = await client.query<{ count: string }>(
-    'SELECT COUNT(*)::text AS count FROM "Warehouse"',
-  );
-  const count = Number(countResult.rows[0]?.count ?? 0);
-  if (count > 0) {
-    // eslint-disable-next-line no-console
-    console.log(
-      `[prisma:seed] Skip default warehouse: ${count} warehouse(s) already exist.`,
-    );
-    return;
-  }
-
-  await client.query(
-    `INSERT INTO "NumberSequence" ("key", "currentValue", "padding", "createdAt", "updatedAt")
-     VALUES ('WAREHOUSE', 0, 7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-     ON CONFLICT ("key") DO NOTHING`,
-  );
-
-  const seq = await client.query<{ currentValue: string; padding: number }>(
-    `UPDATE "NumberSequence"
-     SET "currentValue" = "currentValue" + 1,
-         "updatedAt" = CURRENT_TIMESTAMP
-     WHERE key = 'WAREHOUSE'
-     RETURNING "currentValue"::text AS "currentValue", padding`,
-  );
-
-  if (seq.rows.length === 0) {
-    throw new Error(
-      '[prisma:seed] NumberSequence key WAREHOUSE is not configured.',
-    );
-  }
-
-  const currentValue = BigInt(seq.rows[0].currentValue);
-  const padding = seq.rows[0].padding;
-  const code = currentValue.toString().padStart(padding, '0');
-  const id = randomUUID();
-
-  await client.query(
-    `INSERT INTO "Warehouse" (id, code, name, kind, "isActive", "createdAt", "updatedAt")
-     VALUES ($1, $2, $3, 'GENERAL', true, NOW(), NOW())`,
-    [id, code, 'Əsas anbar'],
-  );
-
-  // eslint-disable-next-line no-console
-  console.log(
-    `[prisma:seed] Created default warehouse "Əsas anbar" code=${code} (${id}).`,
-  );
-}
 
 async function seedBootstrapUser(client: Client): Promise<void> {
   const username = process.env.BOOTSTRAP_USERNAME?.trim();
@@ -126,7 +77,6 @@ async function main(): Promise<void> {
   await client.connect();
 
   try {
-    await seedDefaultWarehouse(client);
     await seedBootstrapUser(client);
   } finally {
     await client.end();

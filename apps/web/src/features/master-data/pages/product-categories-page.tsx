@@ -13,7 +13,15 @@ import {
   message,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import {
+  PencilSimple,
+  Plus,
+  Power,
+  Prohibit,
+  SquaresFour,
+} from '@phosphor-icons/react';
 import { mapApiError } from '../../../api/map-api-error';
+import { ICON_SIZE, phIcon } from '../../../shared/ui/ph-icon';
 import type { ProductCategory } from '../api/product-categories.api';
 import {
   useCreateProductCategory,
@@ -73,35 +81,50 @@ export function ProductCategoriesPage() {
 
   const columns: ColumnsType<ProductCategory> = [
     {
+      title: common.status,
+      dataIndex: 'isActive',
+      key: 'isActive',
+      width: 110,
+      render: (isActive: boolean) => <ActiveStatusTag isActive={isActive} />,
+    },
+    {
       title: common.name,
       dataIndex: 'name',
       key: 'name',
       sorter: true,
-    },
-    {
-      title: common.status,
-      dataIndex: 'isActive',
-      key: 'isActive',
-      render: (isActive: boolean) => <ActiveStatusTag isActive={isActive} />,
+      render: (value: string) => <Text strong>{value}</Text>,
     },
     {
       title: common.actions,
       key: 'actions',
+      width: 180,
       render: (_, record) => (
-        <Space wrap>
-          <Button type="link" onClick={() => openEdit(record)}>
+        <Space size={4}>
+          <Button
+            type="text"
+            size="small"
+            icon={phIcon(PencilSimple, { size: ICON_SIZE.sm })}
+            onClick={() => openEdit(record)}
+          >
             {common.edit}
           </Button>
           {record.isActive ? (
             <Button
-              type="link"
+              type="text"
+              size="small"
               danger
+              icon={phIcon(Prohibit, { size: ICON_SIZE.sm })}
               onClick={() => confirmDeactivate(record)}
             >
               {common.deactivate}
             </Button>
           ) : (
-            <Button type="link" onClick={() => confirmActivate(record)}>
+            <Button
+              type="text"
+              size="small"
+              icon={phIcon(Power, { size: ICON_SIZE.sm })}
+              onClick={() => confirmActivate(record)}
+            >
               {common.activate}
             </Button>
           )}
@@ -194,8 +217,13 @@ export function ProductCategoriesPage() {
       <PageHeader
         title={labels.title}
         description={labels.description}
+        icon={phIcon(SquaresFour, { size: ICON_SIZE.xl, weight: 'duotone' })}
         extra={
-          <Button type="primary" onClick={openCreate}>
+          <Button
+            type="primary"
+            icon={phIcon(Plus, { size: ICON_SIZE.md, weight: 'bold' })}
+            onClick={openCreate}
+          >
             {labels.create}
           </Button>
         }

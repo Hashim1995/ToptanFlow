@@ -6,11 +6,15 @@
 - **Title:** Inventory UI — balances, transfer, adjustment
 - **Parent User Story:** [US-021](../stories/US-021-inventory-movements-balances.md)
 - **Parent Epic:** [EPIC-008](../epics/EPIC-008-inventory-warehouses.md)
-- **Status:** Planned
+- **Status:** Done
 - **Type:** Frontend
 - **Priority:** High
 - **Estimate:** M
 - **Dependencies:** TASK-021-02
+
+## Superseded note
+
+Runtime warehouse/inventory code is removed under [CHANGE-002](../unplanned/CHANGE-002-single-product-quantity-no-warehouse.md) / [ADR-029](../../decisions/ADR-029-single-product-quantity-no-warehouse.md). This task remains **Done** as planning history only.
 
 ## Objective
 
@@ -32,10 +36,17 @@ Stock count UI (TASK-021-05); purchase/sale documents; Yatı.
 
 ## Acceptance criteria
 
-- [ ] Balances and transfer/adjustment/write-off usable end-to-end against API
-- [ ] No raw enum/API leakage
-- [ ] `web` build + lint green
+- [x] Balances and transfer/adjustment/write-off usable end-to-end against API
+- [x] No raw enum/API leakage
+- [x] `web` build + lint green
+
+## Evidence
+
+- `apps/web/src/features/inventory/` — API, hooks, schemas, modals, pages
+- Routes: `/inventory/balances`, `/inventory/transfer`
+- Shell group **Inventar**; home shortcuts
+- `yarn workspace web` lint, test (44), build — green
 
 ## Result
 
-(To be filled)
+Done 2026-07-31. Next: TASK-021-05 Stock count workflow (or close US-021 if count deferred separately).

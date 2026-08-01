@@ -5,7 +5,6 @@ import {
   IsEmail,
   IsOptional,
   IsString,
-  IsUUID,
   MaxLength,
   ValidateIf,
 } from 'class-validator';
@@ -50,10 +49,6 @@ export class CreateBusinessPartnerDto {
   })
   @IsBoolean()
   isSupplier!: boolean;
-
-  @ApiProperty({ format: 'uuid' })
-  @IsUUID()
-  defaultCurrencyId!: string;
 
   @ApiPropertyOptional({ example: '+994 50 123 45 67', nullable: true })
   @IsOptional()

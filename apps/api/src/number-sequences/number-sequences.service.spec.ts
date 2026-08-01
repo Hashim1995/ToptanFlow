@@ -43,15 +43,15 @@ describe('NumberSequencesService', () => {
     expect(tx.$queryRaw).toHaveBeenCalledTimes(1);
   });
 
-  it('allocates WAREHOUSE codes via $queryRaw on the transaction client', async () => {
-    tx.$queryRaw.mockResolvedValue([{ currentValue: 1n, padding: 7 }]);
+  it('allocates PURCHASE codes via $queryRaw on the transaction client', async () => {
+    tx.$queryRaw.mockResolvedValue([{ currentValue: 5n, padding: 7 }]);
 
     const code = await service.nextCode(
       tx as never,
-      BusinessCodeSequenceKey.WAREHOUSE,
+      BusinessCodeSequenceKey.PURCHASE,
     );
 
-    expect(code).toBe('0000001');
+    expect(code).toBe('0000005');
     expect(tx.$queryRaw).toHaveBeenCalledTimes(1);
   });
 

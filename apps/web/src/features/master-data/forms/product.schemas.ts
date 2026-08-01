@@ -45,6 +45,8 @@ export const productFormSchema = z.object({
   standardSalePrice: optionalDecimal,
   latestPurchasePrice: optionalDecimal,
   criticalStockThreshold: optionalDecimal,
+  barcode: z.string().trim().max(128, { message: 'Barkod çox uzundur.' }),
+  notes: z.string().trim().max(4000, { message: 'Qeyd çox uzundur.' }),
 });
 
 export type ProductFormValues = z.infer<typeof productFormSchema>;

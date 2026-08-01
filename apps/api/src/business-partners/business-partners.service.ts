@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '../../generated/prisma/client.js';
+import { Decimal } from '@prisma/client/runtime/client';
 import { SortOrder } from '../common/sorting/sort-order.enum';
 import { BusinessCodeSequenceKey } from '../number-sequences/business-code-sequence-key';
 import { NumberSequencesService } from '../number-sequences/number-sequences.service';
@@ -21,14 +22,6 @@ import { BusinessPartnerResponseDto } from './dto/business-partner-response.dto'
 
 const DUPLICATE_CANDIDATE_FETCH_CAP = 200;
 
-const currencySummarySelect = {
-  id: true,
-  code: true,
-  name: true,
-  symbol: true,
-  isActive: true,
-} satisfies Prisma.CurrencySelect;
-
 const businessPartnerSelect = {
   id: true,
   code: true,
@@ -40,13 +33,10 @@ const businessPartnerSelect = {
   taxNumber: true,
   address: true,
   notes: true,
-  defaultCurrencyId: true,
+  currentDebtBalance: true,
   isActive: true,
   createdAt: true,
   updatedAt: true,
-  defaultCurrency: {
-    select: currencySummarySelect,
-  },
 } satisfies Prisma.BusinessPartnerSelect;
 
 const duplicateCandidateSelect = {
@@ -88,8 +78,6 @@ export class BusinessPartnersService {
     this.assertNonEmpty('name', name);
     this.assertAtLeastOneRole(dto.isCustomer, dto.isSupplier);
 
-    await this.assertCurrencyAssignable(dto.defaultCurrencyId);
-
     const phone = this.normalizeOptionalText(dto.phone);
     const taxNumber = this.normalizeOptionalText(dto.taxNumber);
 
@@ -116,7 +104,7 @@ export class BusinessPartnersService {
             taxNumber,
             address: this.normalizeOptionalText(dto.address),
             notes: this.normalizeOptionalText(dto.notes),
-            defaultCurrencyId: dto.defaultCurrencyId,
+            currentDebtBalance: new Decimal(0),
             isActive: true,
           },
           select: businessPartnerSelect,
@@ -205,7 +193,6 @@ export class BusinessPartnersService {
       name?: string;
       isCustomer?: boolean;
       isSupplier?: boolean;
-      defaultCurrencyId?: string;
       phone?: string | null;
       email?: string | null;
       taxNumber?: string | null;
@@ -226,11 +213,6 @@ export class BusinessPartnersService {
 
     if (dto.isSupplier !== undefined) {
       data.isSupplier = dto.isSupplier;
-    }
-
-    if (dto.defaultCurrencyId !== undefined) {
-      await this.assertCurrencyAssignable(dto.defaultCurrencyId);
-      data.defaultCurrencyId = dto.defaultCurrencyId;
     }
 
     if (dto.phone !== undefined) {
@@ -398,21 +380,6 @@ export class BusinessPartnersService {
     return candidates;
   }
 
-  private async assertCurrencyAssignable(currencyId: string): Promise<void> {
-    const currency = await this.prisma.currency.findUnique({
-      where: { id: currencyId },
-      select: { id: true, isActive: true },
-    });
-
-    if (!currency) {
-      throw new NotFoundException('Currency not found');
-    }
-
-    if (!currency.isActive) {
-      throw new BadRequestException('Currency is inactive');
-    }
-  }
-
   private assertAtLeastOneRole(isCustomer: boolean, isSupplier: boolean): void {
     if (!isCustomer && !isSupplier) {
       throw new BadRequestException(
@@ -426,7 +393,6 @@ export class BusinessPartnersService {
       dto.name !== undefined ||
       dto.isCustomer !== undefined ||
       dto.isSupplier !== undefined ||
-      dto.defaultCurrencyId !== undefined ||
       dto.phone !== undefined ||
       dto.email !== undefined ||
       dto.taxNumber !== undefined ||
@@ -451,10 +417,6 @@ export class BusinessPartnersService {
 
     if (query.isSupplier !== undefined) {
       conditions.push({ isSupplier: query.isSupplier });
-    }
-
-    if (query.defaultCurrencyId !== undefined) {
-      conditions.push({ defaultCurrencyId: query.defaultCurrencyId });
     }
 
     const search = query.search?.trim();
@@ -644,6 +606,10 @@ export class BusinessPartnersService {
     }
   }
 
+  private decimalToStringRequired(value: Decimal): string {
+    return value.toFixed(4);
+  }
+
   private toResponse(
     partner: BusinessPartnerRecord,
   ): BusinessPartnerResponseDto {
@@ -658,14 +624,9 @@ export class BusinessPartnersService {
       taxNumber: partner.taxNumber,
       address: partner.address,
       notes: partner.notes,
-      defaultCurrencyId: partner.defaultCurrencyId,
-      defaultCurrency: {
-        id: partner.defaultCurrency.id,
-        code: partner.defaultCurrency.code,
-        name: partner.defaultCurrency.name,
-        symbol: partner.defaultCurrency.symbol,
-        isActive: partner.defaultCurrency.isActive,
-      },
+      currentDebtBalance: this.decimalToStringRequired(
+        partner.currentDebtBalance,
+      ),
       isActive: partner.isActive,
       createdAt: partner.createdAt,
       updatedAt: partner.updatedAt,

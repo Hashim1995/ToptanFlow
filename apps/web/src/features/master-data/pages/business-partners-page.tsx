@@ -3,6 +3,7 @@ import {
   Alert,
   Button,
   Card,
+  Dropdown,
   Grid,
   Input,
   Modal,
@@ -10,11 +11,26 @@ import {
   Select,
   Space,
   Table,
+  Tag,
+  Tooltip,
   Typography,
   message,
 } from 'antd';
+import type { MenuProps } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import {
+  PencilSimple,
+  Phone,
+  Plus,
+  Power,
+  Prohibit,
+  UsersThree,
+} from '@phosphor-icons/react';
 import { mapApiError } from '../../../api/map-api-error';
+import { debtBalanceSignLabel } from '../../../shared/money/debt-balance-label';
+import { formatMoney } from '../../../shared/money/format-money';
+import { ICON_SIZE, phIcon } from '../../../shared/ui/ph-icon';
+import { CodeText, MoneyCell } from '../../../shared/ui/table-cells';
 import type {
   BusinessPartner,
   CreateBusinessPartnerInput,
@@ -104,13 +120,23 @@ function toPayload(
     name: values.name.trim(),
     isCustomer: values.isCustomer,
     isSupplier: values.isSupplier,
-    defaultCurrencyId: values.defaultCurrencyId,
     phone: emptyToNull(values.phone ?? ''),
     email: emptyToNull(values.email ?? ''),
     taxNumber: emptyToNull(values.taxNumber ?? ''),
     address: emptyToNull(values.address ?? ''),
     notes: emptyToNull(values.notes ?? ''),
   };
+}
+
+function DebtBalanceCell({ balance }: { balance: string }) {
+  return (
+    <Space direction="vertical" size={0}>
+      <Text>{formatMoney(balance)}</Text>
+      <Text type="secondary" style={{ fontSize: 12 }}>
+        {debtBalanceSignLabel(balance)}
+      </Text>
+    </Space>
+  );
 }
 
 export function BusinessPartnersPage() {
@@ -154,50 +180,116 @@ export function BusinessPartnersPage() {
   const submitting = createMutation.isPending || updateMutation.isPending;
 
   const columns: ColumnsType<BusinessPartner> = [
-    { title: common.code, dataIndex: 'code', key: 'code', width: 110 },
-    { title: common.name, dataIndex: 'name', key: 'name' },
+    {
+      title: common.status,
+      dataIndex: 'isActive',
+      key: 'isActive',
+      width: 110,
+      render: (isActive: boolean) => <ActiveStatusTag isActive={isActive} />,
+    },
+    {
+      title: common.code,
+      dataIndex: 'code',
+      key: 'code',
+      width: 110,
+      render: (value: string) => <CodeText value={value} />,
+    },
+    {
+      title: common.name,
+      dataIndex: 'name',
+      key: 'name',
+      ellipsis: true,
+      render: (value: string) => <Text strong>{value}</Text>,
+    },
     {
       title: labels.role,
       key: 'role',
-      render: (_, record) => roleLabel(record),
+      width: 150,
+      render: (_, record) => (
+        <Tag style={{ marginInlineEnd: 0 }}>{roleLabel(record)}</Tag>
+      ),
     },
     {
       title: labels.phone,
       dataIndex: 'phone',
       key: 'phone',
-      render: (value: string | null) => value ?? '—',
+      width: 150,
+      render: (value: string | null) =>
+        value ? (
+          <Space size={6}>
+            {phIcon(Phone, { size: ICON_SIZE.sm })}
+            <Text>{value}</Text>
+          </Space>
+        ) : (
+          <Text type="secondary">—</Text>
+        ),
     },
     {
-      title: labels.defaultCurrency,
-      key: 'currency',
-      render: (_, record) =>
-        `${record.defaultCurrency.code} — ${record.defaultCurrency.name}`,
-    },
-    {
-      title: common.status,
-      dataIndex: 'isActive',
-      key: 'isActive',
-      render: (isActive: boolean) => <ActiveStatusTag isActive={isActive} />,
+      title: labels.debtBalance,
+      key: 'currentDebtBalance',
+      width: 160,
+      align: 'right',
+      render: (_, record) => (
+        <Space direction="vertical" size={0} style={{ width: '100%' }}>
+          <MoneyCell
+            value={record.currentDebtBalance}
+            format={formatMoney}
+            emphasize
+          />
+          <Text type="secondary" style={{ fontSize: 11, textAlign: 'right' }}>
+            {debtBalanceSignLabel(record.currentDebtBalance)}
+          </Text>
+        </Space>
+      ),
     },
     {
       title: common.actions,
       key: 'actions',
-      render: (_, record) => (
-        <Space wrap>
-          <Button type="link" onClick={() => openEdit(record)}>
-            {common.edit}
-          </Button>
-          {record.isActive ? (
-            <Button type="link" danger onClick={() => confirmDeactivate(record)}>
-              {common.deactivate}
-            </Button>
-          ) : (
-            <Button type="link" onClick={() => confirmActivate(record)}>
-              {common.activate}
-            </Button>
-          )}
-        </Space>
-      ),
+      fixed: 'right',
+      width: 120,
+      render: (_, record) => {
+        const menuItems: MenuProps['items'] = [
+          {
+            key: 'edit',
+            icon: phIcon(PencilSimple, { size: ICON_SIZE.sm }),
+            label: common.edit,
+            onClick: () => openEdit(record),
+          },
+          { type: 'divider' },
+          record.isActive
+            ? {
+                key: 'deactivate',
+                danger: true,
+                icon: phIcon(Prohibit, { size: ICON_SIZE.sm }),
+                label: common.deactivate,
+                onClick: () => confirmDeactivate(record),
+              }
+            : {
+                key: 'activate',
+                icon: phIcon(Power, { size: ICON_SIZE.sm }),
+                label: common.activate,
+                onClick: () => confirmActivate(record),
+              },
+        ];
+        return (
+          <Space size={4}>
+            <Tooltip title={common.edit}>
+              <Button
+                type="text"
+                size="small"
+                icon={phIcon(PencilSimple, { size: ICON_SIZE.sm })}
+                aria-label={common.edit}
+                onClick={() => openEdit(record)}
+              />
+            </Tooltip>
+            <Dropdown menu={{ items: menuItems }} trigger={['click']}>
+              <Button type="text" size="small">
+                •••
+              </Button>
+            </Dropdown>
+          </Space>
+        );
+      },
     },
   ];
 
@@ -323,7 +415,6 @@ export function BusinessPartnersPage() {
           name: formMode.partner.name,
           isCustomer: formMode.partner.isCustomer,
           isSupplier: formMode.partner.isSupplier,
-          defaultCurrencyId: formMode.partner.defaultCurrencyId,
           phone: formMode.partner.phone ?? '',
           email: formMode.partner.email ?? '',
           taxNumber: formMode.partner.taxNumber ?? '',
@@ -332,21 +423,18 @@ export function BusinessPartnersPage() {
         }
       : undefined;
 
-  const fallbackCurrencyOption =
-    formMode.kind === 'edit'
-      ? {
-          value: formMode.partner.defaultCurrencyId,
-          label: `${formMode.partner.defaultCurrency.code} — ${formMode.partner.defaultCurrency.name}`,
-        }
-      : undefined;
-
   return (
     <div>
       <PageHeader
         title={labels.title}
         description={labels.description}
+        icon={phIcon(UsersThree, { size: ICON_SIZE.xl, weight: 'duotone' })}
         extra={
-          <Button type="primary" onClick={openCreate}>
+          <Button
+            type="primary"
+            icon={phIcon(Plus, { size: ICON_SIZE.md, weight: 'bold' })}
+            onClick={openCreate}
+          >
             {labels.create}
           </Button>
         }
@@ -434,10 +522,10 @@ export function BusinessPartnersPage() {
                 <Text type="secondary">
                   {labels.phone}: {partner.phone ?? '—'}
                 </Text>
-                <Text type="secondary">
-                  {labels.defaultCurrency}: {partner.defaultCurrency.code} —{' '}
-                  {partner.defaultCurrency.name}
-                </Text>
+                <div>
+                  <Text type="secondary">{labels.debtBalance}: </Text>
+                  <DebtBalanceCell balance={partner.currentDebtBalance} />
+                </div>
                 <ActiveStatusTag isActive={partner.isActive} />
                 <Space wrap>
                   <Button onClick={() => openEdit(partner)}>
@@ -478,7 +566,6 @@ export function BusinessPartnersPage() {
         readOnlyCode={
           formMode.kind === 'edit' ? formMode.partner.code : undefined
         }
-        fallbackCurrencyOption={fallbackCurrencyOption}
         initialValues={editInitialValues}
         submitting={submitting && duplicateCandidates.length === 0}
         errorMessage={formError}

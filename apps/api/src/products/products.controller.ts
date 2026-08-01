@@ -14,18 +14,26 @@ import {
   ApiBody,
   ApiConflictResponse,
   ApiCreatedResponse,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
+import { CurrentUser } from '../auth/current-user.decorator';
+import type { AuthenticatedUser } from '../auth/jwt.strategy';
+import { PaginationQueryDto } from '../common/pagination/pagination-query.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ListProductsQueryDto } from './dto/list-products-query.dto';
 import { PaginatedProductsResponseDto } from './dto/paginated-products-response.dto';
 import { ProductResponseDto } from './dto/product-response.dto';
 import { ProductTypeApi } from './dto/product-type.enum';
+import {
+  AdjustProductQuantityDto,
+  ProductQuantityHistoryResponseDto,
+} from './dto/adjust-product-quantity.dto';
 import { ProductsService } from './products.service';
 
 @ApiTags('Products')
@@ -37,7 +45,7 @@ export class ProductsController {
   @ApiOperation({
     summary: 'Create a product',
     description:
-      'Product.code is allocated by the backend (ADR-024). Clients must not supply code.',
+      'Product.code is allocated by the backend (ADR-024). Clients must not supply code. currentQuantity starts at 0 (ADR-029).',
   })
   @ApiBody({
     type: CreateProductDto,
@@ -76,6 +84,40 @@ export class ProductsController {
     return this.productsService.list(query);
   }
 
+  @Get(':id/quantity-history')
+  @ApiOperation({
+    summary: 'List product quantity history (ADR-029)',
+  })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOkResponse({ type: ProductQuantityHistoryResponseDto, isArray: true })
+  @ApiNotFoundResponse({ description: 'Product not found' })
+  listQuantityHistory(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query() query: PaginationQueryDto,
+  ) {
+    return this.productsService.listQuantityHistory(id, query);
+  }
+
+  @Post(':id/quantity-adjustments')
+  @ApiOperation({
+    summary: 'Post a manual product quantity adjustment (ADR-029)',
+    description:
+      'Requires a reason. May leave currentQuantity negative when authorized (ADR-025 v1: all active users) with reason.',
+  })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiBody({ type: AdjustProductQuantityDto })
+  @ApiOkResponse({ type: ProductResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid quantity or missing reason' })
+  @ApiForbiddenResponse({ description: 'Negative quantity not permitted' })
+  @ApiNotFoundResponse({ description: 'Product not found' })
+  adjustQuantity(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AdjustProductQuantityDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<ProductResponseDto> {
+    return this.productsService.adjustQuantity(id, dto, user.id);
+  }
+
   @Get(':id')
   @ApiOperation({
     summary: 'Get a product by id',
@@ -96,7 +138,7 @@ export class ProductsController {
     description:
       'Inactive products may be updated for administrative correction. ' +
       'PATCH may set isActive true to reactivate, or false to deactivate. ' +
-      'Product.code is immutable and must not be sent (ADR-024).',
+      'Product.code and currentQuantity are not accepted here (ADR-024 / ADR-029).',
   })
   @ApiBody({ type: UpdateProductDto })
   @ApiParam({ name: 'id', format: 'uuid' })

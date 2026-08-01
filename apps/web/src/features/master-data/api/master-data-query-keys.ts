@@ -22,10 +22,8 @@ function createEntityKeys(entity: MasterDataEntityName) {
  * Feature hooks own fetching/mutations; Redux never mirrors these entities.
  */
 export const masterDataQueryKeys = {
-  currencies: createEntityKeys('currencies'),
   units: createEntityKeys('units'),
   products: createEntityKeys('products'),
   productCategories: createEntityKeys('product-categories'),
   businessPartners: createEntityKeys('business-partners'),
-  warehouses: createEntityKeys('warehouses'),
 };

@@ -29,7 +29,10 @@ export type Product = {
   unit: ProductUnitSummary;
   standardSalePrice: string | null;
   latestPurchasePrice: string | null;
+  currentQuantity: string;
   criticalStockThreshold: string | null;
+  barcode: string | null;
+  notes: string | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -49,6 +52,8 @@ export type CreateProductInput = {
   standardSalePrice?: string;
   latestPurchasePrice?: string;
   criticalStockThreshold?: string;
+  barcode?: string;
+  notes?: string;
 };
 
 export type UpdateProductInput = {
@@ -59,7 +64,28 @@ export type UpdateProductInput = {
   standardSalePrice?: string | null;
   latestPurchasePrice?: string | null;
   criticalStockThreshold?: string | null;
+  barcode?: string | null;
+  notes?: string | null;
   isActive?: boolean;
+};
+
+export type ProductQuantityHistory = {
+  id: string;
+  productId: string;
+  kind: string;
+  quantityChange: string;
+  quantityBefore: string;
+  quantityAfter: string;
+  reason: string | null;
+  saleId: string | null;
+  purchaseId: string | null;
+  createdByUserId: string;
+  createdAt: string;
+};
+
+export type AdjustProductQuantityInput = {
+  quantityChange: string;
+  reason: string;
 };
 
 export async function listProducts(
@@ -94,5 +120,26 @@ export async function updateProduct(
 
 export async function deactivateProduct(id: string): Promise<Product> {
   const { data } = await httpClient.delete<Product>(`/products/${id}`);
+  return data;
+}
+
+export async function listProductQuantityHistory(
+  productId: string,
+  query: { page?: number; pageSize?: number } = {},
+): Promise<PaginatedResponse<ProductQuantityHistory>> {
+  const { data } = await httpClient.get<
+    PaginatedResponse<ProductQuantityHistory>
+  >(`/products/${productId}/quantity-history`, { params: query });
+  return data;
+}
+
+export async function adjustProductQuantity(
+  productId: string,
+  input: AdjustProductQuantityInput,
+): Promise<Product> {
+  const { data } = await httpClient.post<Product>(
+    `/products/${productId}/quantity-adjustments`,
+    input,
+  );
   return data;
 }

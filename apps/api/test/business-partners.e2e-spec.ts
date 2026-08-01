@@ -1,5 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { Decimal } from '@prisma/client/runtime/client';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
@@ -10,17 +11,8 @@ import { attachAuthUserMock, withAuth } from './auth-e2e.helper';
 
 describe('BusinessPartners (e2e)', () => {
   const partnerId = '11111111-1111-4111-8111-111111111111';
-  const currencyId = '22222222-2222-4222-8222-222222222222';
   const createdAt = new Date('2026-07-28T00:00:00.000Z');
   const updatedAt = new Date('2026-07-28T00:00:00.000Z');
-
-  const currencySummary = {
-    id: currencyId,
-    code: 'USD',
-    name: 'ABŞ dolları',
-    symbol: '$',
-    isActive: true,
-  };
 
   const basePartner = {
     id: partnerId,
@@ -33,11 +25,10 @@ describe('BusinessPartners (e2e)', () => {
     taxNumber: '1234567891',
     address: 'Bakı',
     notes: 'Note',
-    defaultCurrencyId: currencyId,
+    currentDebtBalance: new Decimal('0'),
     isActive: true,
     createdAt,
     updatedAt,
-    defaultCurrency: currencySummary,
   };
 
   const expectedPartnerBody = {
@@ -51,8 +42,7 @@ describe('BusinessPartners (e2e)', () => {
     taxNumber: '1234567891',
     address: 'Bakı',
     notes: 'Note',
-    defaultCurrencyId: currencyId,
-    defaultCurrency: currencySummary,
+    currentDebtBalance: '0.0000',
     isActive: true,
     createdAt: createdAt.toISOString(),
     updatedAt: updatedAt.toISOString(),
@@ -76,9 +66,6 @@ describe('BusinessPartners (e2e)', () => {
       update: jest.fn(),
       delete: jest.fn(),
     },
-    currency: {
-      findUnique: jest.fn(),
-    },
   };
 
   let app: INestApplication<App>;
@@ -94,8 +81,7 @@ describe('BusinessPartners (e2e)', () => {
     taxNumber: string | null;
     address: string | null;
     notes: string | null;
-    defaultCurrencyId: string;
-    defaultCurrency: typeof currencySummary;
+    currentDebtBalance: string;
     isActive: boolean;
     createdAt: string;
     updatedAt: string;
@@ -115,7 +101,6 @@ describe('BusinessPartners (e2e)', () => {
     name: ' Yeni tərəfdaş ',
     isCustomer: true,
     isSupplier: false,
-    defaultCurrencyId: currencyId,
   };
 
   function assertNoInternalLeak(body: unknown): void {
@@ -149,10 +134,6 @@ describe('BusinessPartners (e2e)', () => {
 
   describe('POST /api/v1/business-partners', () => {
     it('creates a partner with backend-generated code and trimmed name', async () => {
-      prisma.currency.findUnique.mockResolvedValue({
-        id: currencyId,
-        isActive: true,
-      });
       prisma.businessPartner.create.mockResolvedValue({
         ...basePartner,
         name: 'Yeni tərəfdaş',
@@ -166,12 +147,15 @@ describe('BusinessPartners (e2e)', () => {
       const body = response.body as PartnerJson;
       expect(body.code).toBe('0000001');
       expect(body.name).toBe('Yeni tərəfdaş');
+      expect(body.currentDebtBalance).toBe('0.0000');
+      expect(body).not.toHaveProperty('defaultCurrencyId');
       expect(numberSequences.nextCode).toHaveBeenCalled();
       expect(prisma.businessPartner.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             code: '0000001',
             name: 'Yeni tərəfdaş',
+            currentDebtBalance: expect.any(Decimal) as Decimal,
           }) as object,
         }),
       );
@@ -179,11 +163,6 @@ describe('BusinessPartners (e2e)', () => {
     });
 
     it('creates customer-only, supplier-only, and both-role partners', async () => {
-      prisma.currency.findUnique.mockResolvedValue({
-        id: currencyId,
-        isActive: true,
-      });
-
       prisma.businessPartner.create.mockResolvedValueOnce({
         ...basePartner,
         isCustomer: true,
@@ -195,7 +174,6 @@ describe('BusinessPartners (e2e)', () => {
           name: 'Müştəri',
           isCustomer: true,
           isSupplier: false,
-          defaultCurrencyId: currencyId,
         })
         .expect(201);
 
@@ -210,7 +188,6 @@ describe('BusinessPartners (e2e)', () => {
           name: 'Təchizatçı',
           isCustomer: false,
           isSupplier: true,
-          defaultCurrencyId: currencyId,
         })
         .expect(201);
 
@@ -225,7 +202,6 @@ describe('BusinessPartners (e2e)', () => {
           name: 'Hər ikisi',
           isCustomer: true,
           isSupplier: true,
-          defaultCurrencyId: currencyId,
         })
         .expect(201);
 
@@ -259,30 +235,7 @@ describe('BusinessPartners (e2e)', () => {
       );
     });
 
-    it('maps missing currency to 404 and inactive currency to 400', async () => {
-      prisma.currency.findUnique.mockResolvedValue(null);
-
-      await withAuth(request(app.getHttpServer()))
-        .post('/api/v1/business-partners')
-        .send(validCreatePayload)
-        .expect(404);
-
-      prisma.currency.findUnique.mockResolvedValue({
-        id: currencyId,
-        isActive: false,
-      });
-
-      await withAuth(request(app.getHttpServer()))
-        .post('/api/v1/business-partners')
-        .send(validCreatePayload)
-        .expect(400);
-    });
-
     it('assigns increasing backend codes on consecutive creates', async () => {
-      prisma.currency.findUnique.mockResolvedValue({
-        id: currencyId,
-        isActive: true,
-      });
       numberSequences.nextCode
         .mockResolvedValueOnce('0000001')
         .mockResolvedValueOnce('0000002');
@@ -325,6 +278,7 @@ describe('BusinessPartners (e2e)', () => {
 
       const body = response.body as PaginatedPartnersJson;
       expect(body.data[0].code).toBe('0000001');
+      expect(body.data[0].currentDebtBalance).toBe('0.0000');
       expect(prisma.businessPartner.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           orderBy: [{ code: 'asc' }, { id: 'asc' }],
@@ -411,6 +365,7 @@ describe('BusinessPartners (e2e)', () => {
           phone: null,
           isCustomer: true,
           isSupplier: true,
+          currentDebtBalance: '0.0000',
         }),
       );
       expect(prisma.businessPartner.update).toHaveBeenCalledWith(
@@ -536,10 +491,6 @@ describe('BusinessPartners (e2e)', () => {
     };
 
     it('returns 409 on create when possible duplicates match', async () => {
-      prisma.currency.findUnique.mockResolvedValue({
-        id: currencyId,
-        isActive: true,
-      });
       prisma.businessPartner.findMany.mockResolvedValue([otherPartner]);
 
       const response = await withAuth(request(app.getHttpServer()))
@@ -548,7 +499,6 @@ describe('BusinessPartners (e2e)', () => {
           name: '  NÜMUNƏ   MMC  ',
           isCustomer: true,
           isSupplier: false,
-          defaultCurrencyId: currencyId,
         })
         .expect(409);
 
@@ -571,10 +521,6 @@ describe('BusinessPartners (e2e)', () => {
     });
 
     it('creates when acknowledgeDuplicate is true despite matches', async () => {
-      prisma.currency.findUnique.mockResolvedValue({
-        id: currencyId,
-        isActive: true,
-      });
       prisma.businessPartner.findMany.mockResolvedValue([otherPartner]);
       prisma.businessPartner.create.mockResolvedValue({
         ...basePartner,
@@ -587,7 +533,6 @@ describe('BusinessPartners (e2e)', () => {
           name: 'Nümunə MMC',
           isCustomer: true,
           isSupplier: false,
-          defaultCurrencyId: currencyId,
           acknowledgeDuplicate: true,
         })
         .expect(201);

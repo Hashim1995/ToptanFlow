@@ -6,11 +6,15 @@
 - **Title:** Stock count workflow
 - **Parent User Story:** [US-021](../stories/US-021-inventory-movements-balances.md)
 - **Parent Epic:** [EPIC-008](../epics/EPIC-008-inventory-warehouses.md)
-- **Status:** Planned
+- **Status:** Cancelled
 - **Type:** Full-stack
 - **Priority:** Medium
 - **Estimate:** L
 - **Dependencies:** TASK-021-02; TASK-021-04 recommended first
+
+## Cancellation (2026-07-31)
+
+**Cancelled / abandoned** under [ADR-029](../../decisions/ADR-029-single-product-quantity-no-warehouse.md) / [CHANGE-002](../unplanned/CHANGE-002-single-product-quantity-no-warehouse.md). Warehouse stock-count workflow will not be implemented; product quantity adjustments belong to the Products domain.
 
 ## Objective
 
@@ -38,4 +42,4 @@ negative-stock exceptions; Yatı reconciliation.
 
 ## Result
 
-(To be filled)
+**Cancelled** 2026-07-31 — not started; superseded by ADR-029 / CHANGE-002.

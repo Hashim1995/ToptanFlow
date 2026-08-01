@@ -20,9 +20,6 @@ export const businessPartnerFormSchema = z
     name: requiredText('Ad'),
     isCustomer: z.boolean(),
     isSupplier: z.boolean(),
-    defaultCurrencyId: z
-      .string()
-      .uuid({ message: 'Defolt valyuta seçilməlidir.' }),
     phone: optionalText(255, 'Telefon'),
     email: z
       .string()

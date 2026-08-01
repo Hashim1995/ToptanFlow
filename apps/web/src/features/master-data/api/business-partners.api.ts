@@ -6,14 +6,6 @@ import type {
   PaginatedResponse,
 } from './master-data.types';
 
-export type BusinessPartnerCurrencySummary = {
-  id: string;
-  code: string;
-  name: string;
-  symbol: string | null;
-  isActive: boolean;
-};
-
 export type BusinessPartner = {
   id: string;
   code: string;
@@ -25,8 +17,7 @@ export type BusinessPartner = {
   taxNumber: string | null;
   address: string | null;
   notes: string | null;
-  defaultCurrencyId: string;
-  defaultCurrency: BusinessPartnerCurrencySummary;
+  currentDebtBalance: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -38,7 +29,6 @@ export type CreateBusinessPartnerInput = {
   name: string;
   isCustomer: boolean;
   isSupplier: boolean;
-  defaultCurrencyId: string;
   phone?: string | null;
   email?: string | null;
   taxNumber?: string | null;
@@ -51,7 +41,6 @@ export type UpdateBusinessPartnerInput = {
   name?: string;
   isCustomer?: boolean;
   isSupplier?: boolean;
-  defaultCurrencyId?: string;
   phone?: string | null;
   email?: string | null;
   taxNumber?: string | null;

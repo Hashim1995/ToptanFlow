@@ -71,4 +71,28 @@ export class CreateProductDto {
   @IsString()
   @IsNumericDecimal18_4()
   criticalStockThreshold?: string;
+
+  @ApiPropertyOptional({
+    example: '1234567890123',
+    description: 'Optional barcode.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(128)
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  barcode?: string;
+
+  @ApiPropertyOptional({
+    example: 'Əlavə qeyd',
+    description: 'Optional notes.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(4000)
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  notes?: string;
 }

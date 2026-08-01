@@ -12,6 +12,10 @@
 - **Estimate:** M
 - **Dependencies:** TASK-020-01; ADR-026; ADR-024 sequence pattern
 
+## Superseded note
+
+Runtime warehouse/inventory code is removed under [CHANGE-002](../unplanned/CHANGE-002-single-product-quantity-no-warehouse.md) / [ADR-029](../../decisions/ADR-029-single-product-quantity-no-warehouse.md). This task remains **Done** as planning history only.
+
 ## Objective
 
 Add `Warehouse` to PostgreSQL via Prisma Migrate; seed one GENERAL warehouse;

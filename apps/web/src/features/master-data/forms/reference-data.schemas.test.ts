@@ -1,29 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
-  currencyFormSchema,
   productCategoryFormSchema,
   unitFormSchema,
 } from './reference-data.schemas';
-
-describe('currencyFormSchema', () => {
-  it('accepts code, name, and optional symbol', () => {
-    const result = currencyFormSchema.safeParse({
-      code: 'AZN',
-      name: 'Azərbaycan manatı',
-      symbol: '₼',
-    });
-    expect(result.success).toBe(true);
-  });
-
-  it('rejects empty code', () => {
-    const result = currencyFormSchema.safeParse({
-      code: '  ',
-      name: 'Manat',
-      symbol: '',
-    });
-    expect(result.success).toBe(false);
-  });
-});
 
 describe('unitFormSchema', () => {
   it('accepts fractional flag', () => {

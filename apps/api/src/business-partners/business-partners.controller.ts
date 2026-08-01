@@ -41,6 +41,7 @@ export class BusinessPartnersController {
       'Creates a unified counterparty. At least one of isCustomer or isSupplier must be true; both may be true. ' +
       'BusinessPartner.code is allocated by the backend (ADR-024); clients must not supply code. ' +
       'Code is immutable after creation — UpdateBusinessPartnerDto must not contain code. ' +
+      'currentDebtBalance starts at 0 (ADR-030). Amounts are AZN-only (ADR-031); no currency field. ' +
       'US-016: possible duplicates on normalized name/phone/taxNumber return 409 with candidates unless ' +
       'acknowledgeDuplicate is true. Soft flag only — uuid/code uniqueness is separate.',
   })
@@ -52,7 +53,6 @@ export class BusinessPartnersController {
           name: 'Nümunə MMC',
           isCustomer: true,
           isSupplier: false,
-          defaultCurrencyId: '22222222-2222-4222-8222-222222222222',
           phone: '+994 50 123 45 67',
           email: 'info@example.com',
         },
@@ -62,9 +62,8 @@ export class BusinessPartnersController {
   @ApiCreatedResponse({ type: BusinessPartnerResponseDto })
   @ApiBadRequestResponse({
     description:
-      'Invalid field values, both roles false, empty name, inactive currency, or forbidden properties (e.g. code)',
+      'Invalid field values, both roles false, empty name, or forbidden properties (e.g. code)',
   })
-  @ApiNotFoundResponse({ description: 'Currency not found' })
   @ApiConflictResponse({
     description:
       'Business partner code already exists, or possible duplicate partners found (US-016 soft flag; retry with acknowledgeDuplicate)',
@@ -110,6 +109,7 @@ export class BusinessPartnersController {
       'Inactive partners may be updated for administrative correction. ' +
       'PATCH may set isActive true to reactivate, or false to deactivate. ' +
       'BusinessPartner.code is immutable and must not be sent (ADR-024). ' +
+      'currentDebtBalance is not accepted here (ADR-030 — changed only via debt movements). ' +
       'US-016: when name/phone/taxNumber change, possible duplicates return 409 unless acknowledgeDuplicate is true.',
   })
   @ApiBody({ type: UpdateBusinessPartnerDto })
@@ -117,10 +117,10 @@ export class BusinessPartnersController {
   @ApiOkResponse({ type: BusinessPartnerResponseDto })
   @ApiBadRequestResponse({
     description:
-      'Invalid UUID, empty update body, invalid field values, both roles false, inactive currency, or forbidden properties (e.g. code)',
+      'Invalid UUID, empty update body, invalid field values, both roles false, or forbidden properties (e.g. code)',
   })
   @ApiNotFoundResponse({
-    description: 'Business partner or currency not found',
+    description: 'Business partner not found',
   })
   @ApiConflictResponse({
     description:

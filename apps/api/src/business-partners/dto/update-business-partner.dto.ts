@@ -5,7 +5,6 @@ import {
   IsEmail,
   IsNotEmpty,
   IsString,
-  IsUUID,
   MaxLength,
   ValidateIf,
 } from 'class-validator';
@@ -58,14 +57,6 @@ export class UpdateBusinessPartnerDto {
   @ValidateIf((_object, value) => value !== undefined)
   @IsBoolean()
   isSupplier?: boolean;
-
-  @ApiPropertyOptional({
-    format: 'uuid',
-    description: 'Cannot be null. Omit to leave unchanged.',
-  })
-  @ValidateIf((_object, value) => value !== undefined)
-  @IsUUID()
-  defaultCurrencyId?: string;
 
   @ApiPropertyOptional({
     example: '+994 50 123 45 67',

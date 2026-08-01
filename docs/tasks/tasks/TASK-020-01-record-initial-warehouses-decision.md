@@ -12,6 +12,10 @@
 - **Estimate:** S
 - **Dependencies:** None
 
+## Superseded note
+
+Runtime warehouse/inventory code is removed under [CHANGE-002](../unplanned/CHANGE-002-single-product-quantity-no-warehouse.md) / [ADR-029](../../decisions/ADR-029-single-product-quantity-no-warehouse.md). This task remains **Done** as planning history only; ADR-026 is superseded for warehouse topology.
+
 ## Objective
 
 Unlock US-020 by recording Approved Human Decision for BRD-OD-02 (v1 warehouse

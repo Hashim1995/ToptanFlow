@@ -16,7 +16,7 @@ To give every agent and human a single, high-level reference for how TOPTANFLOW'
 
 ## System Context
 
-TOPTANFLOW is a business-critical ERP system covering inventory, cash, receivables/payables, and field sales (Yatı), per `AGENTS.md` and `docs/analysis/01-document-analysis.md`. It consists of a browser-based frontend application and a backend API, backed by a single primary relational database, operated as a monorepo (ADR-001).
+TOPTANFLOW is a business-critical ERP system covering products (including product quantity), cash, business partner debt balance, and (deferred) field sales (Yatı), per `AGENTS.md` and `docs/analysis/01-document-analysis.md`. There is no separate Warehouse or Stock module; sellable goods quantity lives on Product (`currentQuantity` + quantity history) per ADR-029. Partner debt is one signed AZN balance per ADR-030; Currency is not an active current-domain module (reserved for future Cash per ADR-031). It consists of a browser-based frontend application and a backend API, backed by a single primary relational database, operated as a monorepo (ADR-001).
 
 ## Applications
 
@@ -54,7 +54,7 @@ TOPTANFLOW is a business-critical ERP system covering inventory, cash, receivabl
 
 ## Business Module Boundaries
 
-Business module boundaries follow the business capabilities already mapped in `docs/analysis/01-document-analysis.md` (Section 3, "Business Modules") and `docs/business/workflow-map.md` (e.g., Users, Business Partners, Products, Sales, Purchasing, Inventory, Costing, Cash, Receivables & Payables, Expenses, Fixed Assets, Field Sales/Yatı, Audit, Reporting). Backend module structure (ADR-007) and any future package structure (`docs/technical/repository-structure.md`) must reflect these boundaries, not an arbitrary technical layering.
+Business module boundaries follow the business capabilities already mapped in `docs/analysis/01-document-analysis.md` (Section 3, "Business Modules") and `docs/business/workflow-map.md`, aligned with ADR-029 / ADR-030 / ADR-031 for active modules (e.g., Users, Business Partners including signed Debt Balance, Products including product quantity, Sales, Purchasing, Costing, Cash, Expenses, Fixed Assets, Audit, Reporting). A separate Warehouse / Inventory / Stock module is **not** an active boundary (ADR-029 supersedes ADR-026). A separate Currency reference module is **not** an active boundary in current domains (ADR-031 — Currency reserved for future Cash). Separate Receivables & Payables primary ledgers are **not** the active boundary; use Business Partner Debt Balance (ADR-030). Field Sales/Yatı remains deferred pending redesign without multi-location stock. Backend module structure (ADR-007) and any future package structure (`docs/technical/repository-structure.md`) must reflect these boundaries, not an arbitrary technical layering.
 
 ## Request and Response Flow
 

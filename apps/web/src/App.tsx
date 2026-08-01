@@ -3,15 +3,16 @@ import { AppShellLayout } from './app/app-shell-layout';
 import { RequireAuth } from './features/auth/require-auth';
 import { LoginPage } from './features/auth/pages/login-page';
 import { BusinessPartnersPage } from './features/master-data/pages/business-partners-page';
-import { CurrenciesPage } from './features/master-data/pages/currencies-page';
 import { ProductCategoriesPage } from './features/master-data/pages/product-categories-page';
 import { ProductsPage } from './features/master-data/pages/products-page';
 import { UnitsPage } from './features/master-data/pages/units-page';
-import { WarehousesPage } from './features/master-data/pages/warehouses-page';
+import { PurchaseDetailPage } from './features/purchases/pages/purchase-detail-page';
+import { PurchasesPage } from './features/purchases/pages/purchases-page';
 import { HomePage } from './pages/home-page';
 
 /**
- * App routes — auth gate (US-019) + master-data screens.
+ * App routes — auth gate (US-019) + master-data screens (ADR-029 / ADR-031:
+ * no warehouse/inventory/currency routes).
  */
 function App() {
   return (
@@ -21,7 +22,6 @@ function App() {
         <Route element={<RequireAuth />}>
           <Route element={<AppShellLayout />}>
             <Route index element={<HomePage />} />
-            <Route path="currencies" element={<CurrenciesPage />} />
             <Route path="units" element={<UnitsPage />} />
             <Route
               path="product-categories"
@@ -32,7 +32,8 @@ function App() {
               path="business-partners"
               element={<BusinessPartnersPage />}
             />
-            <Route path="warehouses" element={<WarehousesPage />} />
+            <Route path="purchases" element={<PurchasesPage />} />
+            <Route path="purchases/:id" element={<PurchaseDetailPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Route>

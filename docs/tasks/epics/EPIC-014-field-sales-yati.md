@@ -16,13 +16,17 @@ Mobile wholesale route operations.
 
 Vehicle warehouse/cash; trip state machine; field workflows.
 
+## Blocker (2026-07-31 — ADR-029)
+
+**Redesign required before implementation.** [ADR-029](../../decisions/ADR-029-single-product-quantity-no-warehouse.md) / [CHANGE-002](../unplanned/CHANGE-002-single-product-quantity-no-warehouse.md) withdraw the vehicle-warehouse model and the separate Warehouse/Stock module. Do not implement Yatı against EPIC-008 warehouse assumptions; trip load/custody/reconciliation must be redesigned under the single product-quantity model.
+
 ## Exclusions
 
-Closed-trip reopen policy until decided.
+Closed-trip reopen policy until decided. Prior vehicle-warehouse design (withdrawn until redesign).
 
 ## Dependencies
 
-EPIC-008–012; preferably EPIC-016 if bundles sold in field.
+EPIC-009–012 (sales/cash/settlement); EPIC-008 **Cancelled** — do not depend on warehouses; preferably EPIC-016 if bundles sold in field; **ADR-029 Yatı redesign** before activation.
 
 ## Related ADRs / docs
 

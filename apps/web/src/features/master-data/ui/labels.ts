@@ -3,16 +3,6 @@
  * for known delivered enums without stopping the task for confirmation.
  */
 export const MASTER_DATA_LABELS = {
-  currencies: {
-    nav: 'Valyutalar',
-    title: 'Valyutalar',
-    description: 'Sistemdə istifadə olunan valyuta istinadları.',
-    create: 'Yeni valyuta',
-    edit: 'Valyutanı redaktə et',
-    empty: 'Heç bir valyuta tapılmadı.',
-    deactivateConfirm: 'Bu valyutanı deaktiv etmək istəyirsiniz?',
-    activateConfirm: 'Bu valyutanı yenidən aktiv etmək istəyirsiniz?',
-  },
   units: {
     nav: 'Ölçü vahidləri',
     title: 'Ölçü vahidləri',
@@ -37,7 +27,8 @@ export const MASTER_DATA_LABELS = {
   products: {
     nav: 'Məhsullar',
     title: 'Məhsullar',
-    description: 'Məhsul kataloqu, tip, kateqoriya və qiymət məlumatları.',
+    description:
+      'Məhsul kataloqu, cari miqdar, tip, kateqoriya və qiymət məlumatları.',
     create: 'Yeni məhsul',
     edit: 'Məhsulu redaktə et',
     empty: 'Heç bir məhsul tapılmadı.',
@@ -50,12 +41,19 @@ export const MASTER_DATA_LABELS = {
     filterCategory: 'Kateqoriya',
     unit: 'Ölçü vahidi',
     unitPlaceholder: 'Ölçü vahidi seçin',
+    currentQuantity: 'Cari miqdar',
     standardSalePrice: 'Standart satış qiyməti',
     latestPurchasePrice: 'Son alış qiyməti',
-    criticalStockThreshold: 'Kritik stok həddi',
+    criticalStockThreshold: 'Minimum miqdar həddi',
+    barcode: 'Barkod',
+    barcodePlaceholder: 'Barkodu daxil edin (ixtiyari)',
+    notes: 'Qeydlər',
+    notesPlaceholder: 'Əlavə qeydlər (ixtiyari)',
     decimalPlaceholder: '0.0000',
     filterType: 'Tip',
     codeReadonlyHint: 'Kod sistem tərəfindən yaradılır və dəyişdirilə bilməz.',
+    quantityReadonlyHint:
+      'Cari miqdar yalnız alış, satış və ya əl ilə düzəliş ilə dəyişir.',
     types: {
       FINISHED_GOOD: 'Hazır məhsul',
       RAW_MATERIAL: 'Xammal',
@@ -76,8 +74,10 @@ export const MASTER_DATA_LABELS = {
     supplier: 'Təchizatçı',
     bothRoles: 'Hər ikisi',
     filterRole: 'Rol',
-    defaultCurrency: 'Defolt valyuta',
-    defaultCurrencyPlaceholder: 'Valyuta seçin',
+    debtBalance: 'Borc balansı',
+    debtBalancePositive: 'Tərəfdaş bizə borcludur',
+    debtBalanceNegative: 'Biz tərəfdaşa borcluyuq',
+    debtBalanceZero: 'Borc yoxdur',
     phone: 'Telefon',
     phonePlaceholder: 'Məsələn: +994501234567',
     email: 'E-poçt',
@@ -98,24 +98,6 @@ export const MASTER_DATA_LABELS = {
       name: 'Ad',
       phone: 'Telefon',
       taxNumber: 'Vergi nömrəsi',
-    },
-  },
-  warehouses: {
-    nav: 'Anbarlar',
-    title: 'Anbarlar',
-    description: 'Anbar istinad məlumatları və növ təyinatı.',
-    create: 'Yeni anbar',
-    edit: 'Anbarı redaktə et',
-    empty: 'Heç bir anbar tapılmadı.',
-    deactivateConfirm: 'Bu anbarı deaktiv etmək istəyirsiniz?',
-    activateConfirm: 'Bu anbarı yenidən aktiv etmək istəyirsiniz?',
-    kind: 'Növ',
-    kindPlaceholder: 'Növ seçin',
-    filterKind: 'Növ',
-    codeReadonlyHint: 'Kod sistem tərəfindən yaradılır və dəyişdirilə bilməz.',
-    kinds: {
-      GENERAL: 'Ümumi',
-      DAMAGED: 'Zədələnmiş',
     },
   },
   common: {
@@ -155,11 +137,4 @@ export type ProductTypeLabelKey =
 
 export function productTypeLabel(type: ProductTypeLabelKey): string {
   return MASTER_DATA_LABELS.products.types[type];
-}
-
-export type WarehouseKindLabelKey =
-  keyof typeof MASTER_DATA_LABELS.warehouses.kinds;
-
-export function warehouseKindLabel(kind: WarehouseKindLabelKey): string {
-  return MASTER_DATA_LABELS.warehouses.kinds[kind];
 }

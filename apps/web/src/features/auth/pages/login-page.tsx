@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { Alert, Button, Card, Form, Input, Typography } from 'antd';
+import { Alert, Button, Card, Form, Input, Space, Typography } from 'antd';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { SignIn } from '@phosphor-icons/react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { mapApiError } from '../../../api/map-api-error';
+import { ICON_SIZE, phIcon } from '../../../shared/ui/ph-icon';
 import { useAuth } from '../use-auth';
 import { AUTH_LABELS } from '../ui/labels';
 
@@ -67,9 +69,25 @@ export function LoginPage() {
       }}
     >
       <Card style={{ width: '100%', maxWidth: 420 }}>
-        <Title level={3} style={{ marginTop: 0 }}>
-          {AUTH_LABELS.loginTitle}
-        </Title>
+        <Space align="center" size={12} style={{ marginBottom: 8 }}>
+          <span
+            style={{
+              display: 'inline-flex',
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'rgba(22, 119, 255, 0.08)',
+              color: '#1677ff',
+            }}
+          >
+            {phIcon(SignIn, { size: ICON_SIZE.xl, weight: 'duotone' })}
+          </span>
+          <Title level={3} style={{ margin: 0 }}>
+            {AUTH_LABELS.loginTitle}
+          </Title>
+        </Space>
         <Paragraph type="secondary">{AUTH_LABELS.loginDescription}</Paragraph>
 
         {submitError ? (
@@ -123,6 +141,7 @@ export function LoginPage() {
             htmlType="submit"
             block
             loading={isSubmitting}
+            icon={phIcon(SignIn, { size: ICON_SIZE.md })}
           >
             {AUTH_LABELS.submit}
           </Button>

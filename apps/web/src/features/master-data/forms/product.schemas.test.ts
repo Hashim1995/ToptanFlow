@@ -9,6 +9,8 @@ const validBase = {
   standardSalePrice: '',
   latestPurchasePrice: '',
   criticalStockThreshold: '',
+  barcode: '',
+  notes: '',
 };
 
 describe('productFormSchema decimal boundary', () => {

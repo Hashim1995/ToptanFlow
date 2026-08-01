@@ -26,7 +26,7 @@ describe('Auth (e2e)', () => {
       update: jest.fn(),
       updateMany: jest.fn(),
     },
-    currency: {
+    unit: {
       findMany: jest.fn(),
       count: jest.fn(),
     },
@@ -106,15 +106,15 @@ describe('Auth (e2e)', () => {
   });
 
   it('protected route returns 401 without Bearer token', async () => {
-    await request(app.getHttpServer()).get('/api/v1/currencies').expect(401);
+    await request(app.getHttpServer()).get('/api/v1/units').expect(401);
   });
 
   it('protected route succeeds with valid Bearer token', async () => {
-    prisma.currency.findMany.mockResolvedValue([]);
-    prisma.currency.count.mockResolvedValue(0);
+    prisma.unit.findMany.mockResolvedValue([]);
+    prisma.unit.count.mockResolvedValue(0);
 
     const response = await withAuth(request(app.getHttpServer()))
-      .get('/api/v1/currencies')
+      .get('/api/v1/units')
       .expect(200);
 
     expect(response.body).toEqual(

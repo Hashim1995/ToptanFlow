@@ -39,7 +39,6 @@ describe('Business code sequences (concurrency)', () => {
   const createdProductIds: string[] = [];
   const createdPartnerIds: string[] = [];
   let unitId: string;
-  let currencyId: string;
 
   beforeAll(async () => {
     const moduleFixture = await Test.createTestingModule({
@@ -64,16 +63,6 @@ describe('Business code sequences (concurrency)', () => {
       },
     });
     unitId = unit.id;
-
-    const currency = await prisma.currency.create({
-      data: {
-        code: `CC${suffix}`.slice(0, 32),
-        name: `Concurrency currency ${suffix}`,
-        symbol: '₼',
-        isActive: true,
-      },
-    });
-    currencyId = currency.id;
   });
 
   afterAll(async () => {
@@ -86,11 +75,6 @@ describe('Business code sequences (concurrency)', () => {
       await prisma.businessPartner.deleteMany({
         where: { id: { in: createdPartnerIds } },
       });
-    }
-    if (currencyId) {
-      await prisma.currency
-        .delete({ where: { id: currencyId } })
-        .catch(() => undefined);
     }
     if (unitId) {
       await prisma.unit
@@ -117,7 +101,6 @@ describe('Business code sequences (concurrency)', () => {
             name: `Concurrent partner ${index}`,
             isCustomer: true,
             isSupplier: false,
-            defaultCurrencyId: currencyId,
           }),
         ),
       ),

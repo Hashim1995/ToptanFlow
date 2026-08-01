@@ -38,7 +38,10 @@ describe('ProductsService', () => {
     unitId,
     standardSalePrice: new Decimal('12.5000'),
     latestPurchasePrice: new Decimal('10'),
+    currentQuantity: new Decimal('0'),
     criticalStockThreshold: null,
+    barcode: null,
+    notes: null,
     isActive: true,
     createdAt: new Date('2026-07-28T00:00:00.000Z'),
     updatedAt: new Date('2026-07-28T00:00:00.000Z'),
@@ -48,6 +51,10 @@ describe('ProductsService', () => {
 
   const numberSequences = {
     nextCode: jest.fn(),
+  };
+
+  const productQuantity = {
+    applyChange: jest.fn(),
   };
 
   const prisma = {
@@ -63,6 +70,10 @@ describe('ProductsService', () => {
       update: jest.fn(),
       delete: jest.fn(),
     },
+    productQuantityHistory: {
+      findMany: jest.fn(),
+      count: jest.fn(),
+    },
     unit: {
       findUnique: jest.fn(),
     },
@@ -77,8 +88,9 @@ describe('ProductsService', () => {
     jest.clearAllMocks();
     numberSequences.nextCode.mockResolvedValue('0000001');
     service = new ProductsService(
-      prisma,
+      prisma as never,
       numberSequences as unknown as NumberSequencesService,
+      productQuantity as never,
     );
   });
 

@@ -1,5 +1,5 @@
 import { JwtService } from '@nestjs/jwt';
-import type { SuperTest, Test } from 'supertest';
+import type { Test } from 'supertest';
 
 export const E2E_AUTH_USER = {
   id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
@@ -24,7 +24,7 @@ export function signE2eAccessToken(
   });
 }
 
-type AuthedAgent = {
+type HttpAgent = {
   get: (url: string) => Test;
   post: (url: string) => Test;
   patch: (url: string) => Test;
@@ -32,11 +32,13 @@ type AuthedAgent = {
   delete: (url: string) => Test;
 };
 
+type AuthedAgent = HttpAgent;
+
 /**
  * Wrap a Supertest agent so every verb attaches a valid Bearer access JWT.
  * Usage: `withAuth(request(app.getHttpServer())).get('/api/v1/...')`
  */
-export function withAuth(agent: SuperTest<Test>): AuthedAgent {
+export function withAuth(agent: HttpAgent): AuthedAgent {
   const authorization = `Bearer ${signE2eAccessToken()}`;
   return {
     get: (url) => agent.get(url).set('Authorization', authorization),
@@ -56,6 +58,7 @@ type PrismaUserMockHost = {
     findUnique?: jest.Mock;
     [key: string]: unknown;
   };
+  [key: string]: unknown;
 };
 
 /**

@@ -34,6 +34,8 @@ const emptyValues: ProductFormValues = {
   standardSalePrice: '',
   latestPurchasePrice: '',
   criticalStockThreshold: '',
+  barcode: '',
+  notes: '',
 };
 
 export function ProductFormModal({
@@ -292,6 +294,43 @@ export function ProductFormModal({
                 onChange={field.onChange}
                 onBlur={field.onBlur}
                 placeholder={labels.decimalPlaceholder}
+              />
+            )}
+          />
+        </Form.Item>
+
+        <Form.Item
+          label={labels.barcode}
+          validateStatus={errors.barcode ? 'error' : undefined}
+          help={errors.barcode?.message}
+        >
+          <Controller
+            name="barcode"
+            control={control}
+            render={({ field }) => (
+              <Input
+                {...field}
+                placeholder={labels.barcodePlaceholder}
+                maxLength={128}
+              />
+            )}
+          />
+        </Form.Item>
+
+        <Form.Item
+          label={labels.notes}
+          validateStatus={errors.notes ? 'error' : undefined}
+          help={errors.notes?.message}
+        >
+          <Controller
+            name="notes"
+            control={control}
+            render={({ field }) => (
+              <Input.TextArea
+                {...field}
+                placeholder={labels.notesPlaceholder}
+                rows={3}
+                maxLength={4000}
               />
             )}
           />

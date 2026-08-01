@@ -3,9 +3,13 @@
 - **ID:** US-020
 - **Title:** Warehouse master data
 - **Parent Epic:** [EPIC-008](../epics/EPIC-008-inventory-warehouses.md)
-- **Status:** Done
+- **Status:** Cancelled
 - **Priority:** High
 - **Business actor:** Warehouse officer / master-data maintainer
+
+## Cancellation (2026-07-31)
+
+**Superseded by [ADR-029](../../decisions/ADR-029-single-product-quantity-no-warehouse.md) / [CHANGE-002](../unplanned/CHANGE-002-single-product-quantity-no-warehouse.md).** Warehouse master module withdrawn; quantity belongs to Products. Task history below remains **Done** for planning audit only; runtime warehouse code is removed under CHANGE-002.
 
 ## Statement
 
@@ -69,4 +73,4 @@ None for US-020 after ADR-026. AD-05 damaged receipt posting waits purchasing.
 
 ## Result
 
-Done 2026-07-31. Warehouse master operable (Prisma + API + Anbarlar UI). Next: [US-021](US-021-inventory-movements-balances.md).
+**Done** historically 2026-07-31 (Prisma + API + Anbarlar UI). Story then **Cancelled** same day under ADR-029 / CHANGE-002 — do not resume warehouse master work.

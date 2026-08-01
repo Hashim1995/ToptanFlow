@@ -6,13 +6,19 @@ const { Title, Text } = Typography;
 type PageHeaderProps = {
   title: string;
   description?: string;
+  icon?: ReactNode;
   extra?: ReactNode;
 };
 
 /**
- * Shared master-data page header (CHANGE-001 / US-042 UX kit).
+ * Shared page header (CHANGE-001 / US-042 UX kit).
  */
-export function PageHeader({ title, description, extra }: PageHeaderProps) {
+export function PageHeader({
+  title,
+  description,
+  icon,
+  extra,
+}: PageHeaderProps) {
   return (
     <Space
       style={{
@@ -24,11 +30,37 @@ export function PageHeader({ title, description, extra }: PageHeaderProps) {
       wrap
     >
       <div style={{ minWidth: 0, flex: 1 }}>
-        <Title level={3} style={{ margin: 0 }}>
-          {title}
-        </Title>
+        <Space align="center" size={10} style={{ marginBottom: 2 }}>
+          {icon ? (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                background: 'rgba(22, 119, 255, 0.08)',
+                color: '#1677ff',
+                flexShrink: 0,
+              }}
+            >
+              {icon}
+            </span>
+          ) : null}
+          <Title level={3} style={{ margin: 0 }}>
+            {title}
+          </Title>
+        </Space>
         {description ? (
-          <Text type="secondary" style={{ display: 'block', marginTop: 4 }}>
+          <Text
+            type="secondary"
+            style={{
+              display: 'block',
+              marginTop: 4,
+              marginLeft: icon ? 46 : 0,
+            }}
+          >
             {description}
           </Text>
         ) : null}

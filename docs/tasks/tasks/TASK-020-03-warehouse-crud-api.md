@@ -12,6 +12,10 @@
 - **Estimate:** M
 - **Dependencies:** TASK-020-02
 
+## Superseded note
+
+Runtime warehouse/inventory code is removed under [CHANGE-002](../unplanned/CHANGE-002-single-product-quantity-no-warehouse.md) / [ADR-029](../../decisions/ADR-029-single-product-quantity-no-warehouse.md). This task remains **Done** as planning history only.
+
 ## Objective
 
 Nest `warehouses` module: list/get/create/patch/soft-deactivate/reactivate under

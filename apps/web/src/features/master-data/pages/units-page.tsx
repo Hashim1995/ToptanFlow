@@ -9,11 +9,15 @@ import {
   Pagination,
   Space,
   Table,
+  Tag,
   Typography,
   message,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import { PencilSimple, Plus, Power, Prohibit, Ruler } from '@phosphor-icons/react';
 import { mapApiError } from '../../../api/map-api-error';
+import { ICON_SIZE, phIcon } from '../../../shared/ui/ph-icon';
+import { CodeText } from '../../../shared/ui/table-cells';
 import type { Unit } from '../api/units.api';
 import {
   useCreateUnit,
@@ -73,34 +77,68 @@ export function UnitsPage() {
   const submitting = createMutation.isPending || updateMutation.isPending;
 
   const columns: ColumnsType<Unit> = [
-    { title: common.code, dataIndex: 'code', key: 'code' },
-    { title: common.name, dataIndex: 'name', key: 'name' },
-    {
-      title: common.fractional,
-      dataIndex: 'allowsFractionalQuantity',
-      key: 'allowsFractionalQuantity',
-      render: (value: boolean) => (value ? common.yes : common.no),
-    },
     {
       title: common.status,
       dataIndex: 'isActive',
       key: 'isActive',
+      width: 110,
       render: (isActive: boolean) => <ActiveStatusTag isActive={isActive} />,
+    },
+    {
+      title: common.code,
+      dataIndex: 'code',
+      key: 'code',
+      width: 120,
+      render: (value: string) => <CodeText value={value} />,
+    },
+    {
+      title: common.name,
+      dataIndex: 'name',
+      key: 'name',
+      render: (value: string) => <Text strong>{value}</Text>,
+    },
+    {
+      title: common.fractional,
+      dataIndex: 'allowsFractionalQuantity',
+      key: 'allowsFractionalQuantity',
+      width: 140,
+      render: (value: boolean) => (
+        <Tag color={value ? 'blue' : 'default'} style={{ marginInlineEnd: 0 }}>
+          {value ? common.yes : common.no}
+        </Tag>
+      ),
     },
     {
       title: common.actions,
       key: 'actions',
+      width: 180,
       render: (_, record) => (
-        <Space wrap>
-          <Button type="link" onClick={() => openEdit(record)}>
+        <Space size={4}>
+          <Button
+            type="text"
+            size="small"
+            icon={phIcon(PencilSimple, { size: ICON_SIZE.sm })}
+            onClick={() => openEdit(record)}
+          >
             {common.edit}
           </Button>
           {record.isActive ? (
-            <Button type="link" danger onClick={() => confirmDeactivate(record)}>
+            <Button
+              type="text"
+              size="small"
+              danger
+              icon={phIcon(Prohibit, { size: ICON_SIZE.sm })}
+              onClick={() => confirmDeactivate(record)}
+            >
               {common.deactivate}
             </Button>
           ) : (
-            <Button type="link" onClick={() => confirmActivate(record)}>
+            <Button
+              type="text"
+              size="small"
+              icon={phIcon(Power, { size: ICON_SIZE.sm })}
+              onClick={() => confirmActivate(record)}
+            >
               {common.activate}
             </Button>
           )}
@@ -201,8 +239,13 @@ export function UnitsPage() {
       <PageHeader
         title={labels.title}
         description={labels.description}
+        icon={phIcon(Ruler, { size: ICON_SIZE.xl, weight: 'duotone' })}
         extra={
-          <Button type="primary" onClick={openCreate}>
+          <Button
+            type="primary"
+            icon={phIcon(Plus, { size: ICON_SIZE.md, weight: 'bold' })}
+            onClick={openCreate}
+          >
             {labels.create}
           </Button>
         }

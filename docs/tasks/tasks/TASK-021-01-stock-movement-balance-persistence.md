@@ -6,11 +6,15 @@
 - **Title:** Stock movement and balance persistence
 - **Parent User Story:** [US-021](../stories/US-021-inventory-movements-balances.md)
 - **Parent Epic:** [EPIC-008](../epics/EPIC-008-inventory-warehouses.md)
-- **Status:** Ready
+- **Status:** Done
 - **Type:** Database
 - **Priority:** High
 - **Estimate:** L
 - **Dependencies:** US-020 Done (Warehouse exists); ADR-026
+
+## Superseded note
+
+Runtime warehouse/inventory code is removed under [CHANGE-002](../unplanned/CHANGE-002-single-product-quantity-no-warehouse.md) / [ADR-029](../../decisions/ADR-029-single-product-quantity-no-warehouse.md). This task remains **Done** as planning history only.
 
 ## Objective
 
@@ -35,10 +39,17 @@ API posting logic (TASK-021-02).
 
 ## Acceptance criteria
 
-- [ ] Movements are insert-only at schema/service contract level
-- [ ] Balance row is the operational cache; must stay reconcilable to movements
-- [ ] Migration applies cleanly
+- [x] Movements are insert-only at schema/service contract level
+- [x] Balance row is the operational cache; must stay reconcilable to movements
+- [x] Migration applies cleanly
+
+## Evidence
+
+- Schema: `StockMovementKind`, `StockMovement` (no `updatedAt`), `StockBalance` unique `(warehouseId, productId)`
+- Migration: `apps/api/prisma/migrations/20260731090000_add_stock_movement_balance/`
+- Applied on `toptanflow_dev`; `prisma migrate status` up to date
+- Quantity signed `Decimal(18, 4)` (ADR-023); FKs Restrict to Warehouse / Product / User
 
 ## Result
 
-(To be filled)
+Done 2026-07-31. Next: TASK-021-02 Inventory movement post API.

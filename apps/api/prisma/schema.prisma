@@ -7,33 +7,27 @@
 // The backend application layer remains authoritative (ADR-003).
 //
 // Deliberately NOT modeled yet (distinct future tasks):
-//   - Stock movements / inventory balances (US-021)
-//   - Receivables, payables, allocations, advances (Settlement module)
 //   - Sales returns, purchase returns as separate documents
 //   - Bundles/components (Bundles and Promotions module)
-//   - Field Sales / Yatı trips, vehicle warehouses, vehicle cash accounts
-//   - Fixed assets
+//   - Field Sales / Yatı trips (EPIC-014 — redesign required under ADR-029;
+//     no vehicle warehouses)
+//   - Fixed assets (separate from Products; documentation/future)
 //   - A full append-only Audit History log entity (docs/business/terminology.md,
 //     "Audit (Audit History)") — only per-record audit timestamps/actors are
 //     included here where required.
+//   - Purchase/Sale Nest posting services (EPIC-009 / EPIC-010) — schema ready;
+//     quantity → ProductQuantityHistory; debt → BusinessPartnerDebtMovement
+//   - Full NegativeStockCase machinery (BRD-OD-04)
+//   - Multi-currency Cash accounts (ADR-031 — future Cash only; YAGNI now)
 //
-// Warehouses (GENERAL | DAMAGED) are modeled per ADR-026 / US-020. VEHICLE
-// warehouse kind is deferred with Yatı (EPIC-014).
+// Product quantity (ADR-029): one currentQuantity per Product + history.
+// Partner debt (ADR-030): one signed currentDebtBalance per BusinessPartner +
+// auditable BusinessPartnerDebtMovement. Sign: >0 partner owes us; <0 we owe
+// partner; =0 none.
 //
-// Money/quantity precision: ADR-023 for annotated decimals; unconstrained
-// Decimal remains only where legacy initial models have not yet been refined.
-//
-// Currency handling (Approved Human Decision, recorded 2026-07-28; see
-// docs/business/invariants.md, "Currency"): currency selection is optional
-// on documents and money accounts; an omitted (null) `currencyId` defaults
-// to AZN and carries no other, undocumented business meaning. Foreign-
-// currency documents/movements MAY additionally record the selected
-// currency, the amount in that foreign currency, and the exchange rate
-// applied; the pre-existing `totalAmount` / `amount` fields remain the
-// authoritative AZN-equivalent value in every case. Remaining unresolved
-// details (e.g., exchange-rate source/timing, whether money accounts may
-// hold a native non-AZN balance) are listed in the task handoff, not decided
-// here.
+// Money amounts (ADR-031): static base currency AZN for all current domains.
+// No Currency reference model. Currency may return only under future Cash.
+// Precision: ADR-023 for annotated decimals.
 //
 // UUID version/storage representation is not decided by ADR-020 ("Future
 // Structure Decisions"). This schema uses Prisma's default `uuid()` (v4) as a
@@ -62,11 +56,31 @@ enum ProductType {
   MIXED_USE
 }
 
-/// Warehouse kind for inventory custody (ADR-026 / US-020).
-/// VEHICLE is deferred with Yatı (EPIC-014) and must not be added here yet.
-enum WarehouseKind {
-  GENERAL
-  DAMAGED
+/// Product quantity history kinds (ADR-029). Lives inside Products — not a
+/// separate Warehouse or Stock module.
+enum ProductQuantityHistoryKind {
+  PURCHASE
+  PURCHASE_RETURN
+  SALE
+  SALE_RETURN
+  INITIAL_QUANTITY
+  MANUAL_ADJUSTMENT
+  CANCELLATION_REVERSAL
+}
+
+/// Business partner debt movement kinds (ADR-030).
+enum BusinessPartnerDebtMovementKind {
+  SALE
+  SALE_RETURN
+  SALE_CANCELLATION
+  PURCHASE
+  PURCHASE_RETURN
+  PURCHASE_CANCELLATION
+  CASH_RECEIPT
+  CASH_PAYMENT
+  MANUAL_ADJUSTMENT
+  OPENING_BALANCE
+  REVERSAL
 }
 
 /// Shared document lifecycle status for transactional documents.
@@ -127,11 +141,11 @@ enum CashTransactionType {
 // ---------------------------------------------------------------------------
 
 /// Internal, database-backed counter for automatic business codes
-/// (Product, BusinessPartner, Warehouse). Not exposed via HTTP. Allocation
-/// must run inside the same Prisma transaction as entity creation so a failed
-/// create rolls back the increment. See ADR-024 / ADR-026.
+/// (Product, BusinessPartner). Not exposed via HTTP. Allocation must run
+/// inside the same Prisma transaction as entity creation so a failed create
+/// rolls back the increment. See ADR-024. Warehouse sequence removed (ADR-029).
 model NumberSequence {
-  /// Internal sequence key (e.g. PRODUCT, BUSINESS_PARTNER, WAREHOUSE).
+  /// Internal sequence key (e.g. PRODUCT, BUSINESS_PARTNER, PURCHASE).
   /// Application constants only — never accepted from HTTP input.
   key          String   @id
   /// Last allocated integer value. Next allocation returns currentValue + 1.
@@ -166,16 +180,18 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  createdSales       Sale[]            @relation("SaleCreatedBy")
-  postedSales        Sale[]            @relation("SalePostedBy")
-  cancelledSales     Sale[]            @relation("SaleCancelledBy")
-  createdPurchases   Purchase[]        @relation("PurchaseCreatedBy")
-  postedPurchases    Purchase[]        @relation("PurchasePostedBy")
-  cancelledPurchases Purchase[]        @relation("PurchaseCancelledBy")
-  createdCashTxns    CashTransaction[] @relation("CashTransactionCreatedBy")
-  postedCashTxns     CashTransaction[] @relation("CashTransactionPostedBy")
-  cancelledCashTxns  CashTransaction[] @relation("CashTransactionCancelledBy")
-  refreshTokens      RefreshToken[]
+  createdSales          Sale[]            @relation("SaleCreatedBy")
+  postedSales           Sale[]            @relation("SalePostedBy")
+  cancelledSales        Sale[]            @relation("SaleCancelledBy")
+  createdPurchases      Purchase[]        @relation("PurchaseCreatedBy")
+  postedPurchases       Purchase[]        @relation("PurchasePostedBy")
+  cancelledPurchases    Purchase[]        @relation("PurchaseCancelledBy")
+  createdCashTxns              CashTransaction[]         @relation("CashTransactionCreatedBy")
+  postedCashTxns               CashTransaction[]         @relation("CashTransactionPostedBy")
+  cancelledCashTxns            CashTransaction[]         @relation("CashTransactionCancelledBy")
+  createdProductQuantityHistory ProductQuantityHistory[] @relation("ProductQuantityHistoryCreatedBy")
+  createdPartnerDebtMovements  BusinessPartnerDebtMovement[] @relation("PartnerDebtMovementCreatedBy")
+  refreshTokens                RefreshToken[]
 
   @@index([isActive])
 }
@@ -202,20 +218,8 @@ model RefreshToken {
 // ---------------------------------------------------------------------------
 
 /// A single business-partner record that may act as a customer, a supplier,
-/// or both at once.
-///
-/// IMPORTANT — deliberate deviation from this task's literal "customers" /
-/// "suppliers" wording, required by a higher-priority source per AGENTS.md's
-/// Source of Truth Hierarchy: docs/business/invariants.md, "Business
-/// Partners" states "One partner record represents the same person or
-/// company in both the customer role and the supplier role; the receivable
-/// direction and the payable direction are never merged into a single
-/// balance." Modeling separate `Customer` and `Supplier` tables would make it
-/// impossible to represent one real-world partner acting in both roles
-/// without duplicating the record, which directly violates this invariant.
-/// This single `BusinessPartner` model with independent `isCustomer` /
-/// `isSupplier` flags is therefore the correct structure; per-direction
-/// balances (receivable vs. payable) are not merged anywhere in this schema.
+/// or both at once (ADR-030). One signed AZN debt balance; sales and purchases
+/// with the same partner intentionally offset on that balance.
 model BusinessPartner {
   id                String   @id @default(uuid())
   name              String
@@ -233,19 +237,11 @@ model BusinessPartner {
   notes             String?
   /// Business partner code is backend-generated (ADR-024), globally unique
   /// including inactive rows, immutable after creation, and never reused.
-  /// Application-layer clients must not supply this value. [Approved Human
-  /// Decision, recorded 2026-07-28; see docs/business/invariants.md,
-  /// "Business Partners".]
   code              String   @unique
-  /// Preferred/default Currency for creating future documents. Not a stored
-  /// balance currency, not a reporting-base restriction, and not a ban on
-  /// multi-currency sales, purchases, payments, or collections. Partner
-  /// balances remain derived from auditable transactions and are never
-  /// stored as mutable fields on this row
-  /// (docs/business/invariants.md, "Business Partners", "Receivables and
-  /// Payables").
-  defaultCurrencyId String
-  defaultCurrency   Currency @relation(fields: [defaultCurrencyId], references: [id], onDelete: Restrict)
+  /// Signed AZN debt balance (ADR-030). >0 partner owes us; <0 we owe partner;
+  /// =0 none. Updated only with a matching BusinessPartnerDebtMovement insert
+  /// in the same transaction. Scale: ADR-023 money → Decimal(18, 4).
+  currentDebtBalance Decimal @default(0) @db.Decimal(18, 4)
   /// Source: docs/business/invariants.md, "Business Partners" — "A partner
   /// that has been used in transactions is inactivated, not deleted."
   isActive          Boolean  @default(true)
@@ -255,17 +251,55 @@ model BusinessPartner {
   sales            Sale[]
   purchases        Purchase[]
   cashTransactions CashTransaction[]
+  debtMovements    BusinessPartnerDebtMovement[]
 
-  @@index([defaultCurrencyId])
   @@index([taxNumber])
   @@index([phone])
   @@index([isCustomer])
   @@index([isSupplier])
   @@index([isActive])
+  @@index([currentDebtBalance])
+}
+
+/// Append-only partner debt movements (ADR-030). `signedAmount` uses the same
+/// sign convention as currentDebtBalance changes (positive increases the
+/// displayed debt balance toward "partner owes us").
+model BusinessPartnerDebtMovement {
+  id             String                         @id @default(uuid())
+  partnerId      String
+  partner        BusinessPartner                @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  kind           BusinessPartnerDebtMovementKind
+  signedAmount   Decimal                        @db.Decimal(18, 4)
+  balanceBefore  Decimal                        @db.Decimal(18, 4)
+  balanceAfter   Decimal                        @db.Decimal(18, 4)
+  reason         String?
+  saleId         String?
+  sale           Sale?                          @relation(fields: [saleId], references: [id], onDelete: Restrict)
+  purchaseId     String?
+  purchase       Purchase?                      @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
+  cashTransactionId String?
+  cashTransaction   CashTransaction?            @relation(fields: [cashTransactionId], references: [id], onDelete: Restrict)
+  relatedDocumentType String?
+  relatedDocumentId   String?
+  reversalOfId   String?
+  reversalOf     BusinessPartnerDebtMovement?   @relation("PartnerDebtReversal", fields: [reversalOfId], references: [id], onDelete: Restrict)
+  reversals      BusinessPartnerDebtMovement[]  @relation("PartnerDebtReversal")
+
+  createdAt       DateTime @default(now())
+  createdByUserId String
+  createdBy       User     @relation("PartnerDebtMovementCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@index([partnerId, createdAt])
+  @@index([kind])
+  @@index([saleId])
+  @@index([purchaseId])
+  @@index([cashTransactionId])
+  @@index([createdByUserId])
+  @@index([reversalOfId])
 }
 
 // ---------------------------------------------------------------------------
-// Reference data: Units and Currencies
+// Reference data: Units (Currency removed — ADR-031)
 // ---------------------------------------------------------------------------
 
 /// A unit of measure. Source: docs/business/invariants.md, "Products" —
@@ -289,51 +323,45 @@ model Unit {
   purchaseItems PurchaseItem[]
 }
 
-/// A currency in which a document or money account may be denominated.
-/// Source: docs/business/invariants.md, "Currency" (Approved Human Decision,
-/// recorded 2026-07-28) — currency selection is optional; an omitted
-/// selection defaults to AZN. This entity exists to let a document or
-/// account record an explicitly *different*, foreign currency; AZN itself
-/// does not need a row here to be the default, since a null `currencyId`
-/// elsewhere already means AZN (see the "Currency handling" note at the top
-/// of this file). Whether AZN is enforced as the system's single reporting
-/// base currency, or accounts may hold native non-AZN balances, remains an
-/// unresolved detail — see the task handoff report.
-model Currency {
-  id        String   @id @default(uuid())
-  code      String   @unique
-  name      String
-  symbol    String?
-  /// TODO: see Unit.isActive TODO above — same reasoning applies here.
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  businessPartners BusinessPartner[]
-  sales            Sale[]
-  purchases        Purchase[]
-  moneyAccounts    MoneyAccount[]
-  cashTransactions CashTransaction[]
-}
-
 // ---------------------------------------------------------------------------
-// Inventory foundation: Warehouses (US-020 / ADR-026)
+// Products — quantity history (ADR-029)
 // ---------------------------------------------------------------------------
 
-/// Warehouse / stock location. Source: docs/business/terminology.md "Warehouse";
-/// ADR-026 (initial warehouses v1). Soft-deactivate via `isActive` only.
-/// Business `code` is backend-generated (ADR-024 pattern, sequence key WAREHOUSE).
-model Warehouse {
-  id        String        @id @default(uuid())
-  code      String        @unique
-  name      String
-  kind      WarehouseKind
-  isActive  Boolean       @default(true)
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+/// Append-only product quantity history inside the Products domain.
+/// Source: ADR-029; docs/business/invariants.md, "Product Quantity".
+/// `quantityChange` is signed (positive = increase, negative = decrease).
+/// `quantityBefore` / `quantityAfter` snapshot the product's currentQuantity.
+/// No `updatedAt`: rows must not be mutated or deleted in place.
+/// Scale: ADR-023 quantities → `Decimal(18, 4)`.
+model ProductQuantityHistory {
+  id             String                      @id @default(uuid())
+  productId      String
+  product        Product                     @relation(fields: [productId], references: [id], onDelete: Restrict)
+  kind           ProductQuantityHistoryKind
+  quantityChange Decimal                     @db.Decimal(18, 4)
+  quantityBefore Decimal                     @db.Decimal(18, 4)
+  quantityAfter  Decimal                     @db.Decimal(18, 4)
+  /// Mandatory for MANUAL_ADJUSTMENT and for any change that leaves quantity
+  /// negative (ADR-029). Nullable for ordinary purchase/sale posts.
+  reason         String?
+  saleId         String?
+  sale           Sale?                       @relation(fields: [saleId], references: [id], onDelete: Restrict)
+  purchaseId     String?
+  purchase       Purchase?                   @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
+  /// Optional polymorphic link for returns / other documents not yet modeled.
+  relatedDocumentType String?
+  relatedDocumentId   String?
 
-  @@index([isActive])
+  createdAt       DateTime @default(now())
+  createdByUserId String
+  createdBy       User     @relation("ProductQuantityHistoryCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@index([productId, createdAt])
   @@index([kind])
+  @@index([saleId])
+  @@index([purchaseId])
+  @@index([createdByUserId])
+  @@index([relatedDocumentType, relatedDocumentId])
 }
 
 // ---------------------------------------------------------------------------
@@ -355,18 +383,19 @@ model ProductCategory {
   @@index([isActive])
 }
 
-/// Source: docs/business/invariants.md, "Products".
+/// Source: docs/business/invariants.md, "Products"; ADR-029 product quantity.
 ///
 /// Persistence notes:
 /// - Code is backend-generated via NumberSequence (ADR-024); uniqueness is
 ///   global (including inactive rows); soft-delete via `isActive` only —
 ///   never physical delete [Approved Human Decision, recorded 2026-07-28].
-/// - Decimal scales follow ADR-023 (unit prices / stock thresholds:
-///   `NUMERIC(18, 4)`). No stock balance is stored here — inventory is the
-///   sum of future stock movements (docs/business/invariants.md, "Inventory").
+/// - Decimal scales follow ADR-023 (unit prices / quantity thresholds:
+///   `NUMERIC(18, 4)`). Current quantity lives on this row and must reconcile
+///   to SUM(ProductQuantityHistory.quantityChange) (ADR-029).
 /// - No Product-owned currency: master prices are informational defaults in
-///   the system’s AZN reporting context; document-line currency lives on
-///   Sale/Purchase (docs/business/invariants.md, "Currency").
+///   the system’s static AZN context (ADR-031). Sale/Purchase amounts are AZN
+///   with no currency relation.
+/// - Fixed Assets are never modeled as Product rows (ADR-029).
 model Product {
   id                     String           @id @default(uuid())
   /// Product business code is backend-generated (ADR-024), globally unique
@@ -394,25 +423,27 @@ model Product {
   standardSalePrice      Decimal?         @db.Decimal(18, 4)
   /// Scale: ADR-023 unit prices → `Decimal(18, 4)` / PostgreSQL `NUMERIC(18, 4)`.
   latestPurchasePrice    Decimal?         @db.Decimal(18, 4)
-  /// "A critical (minimum) stock threshold must be capable of being
-  /// evaluated at main-warehouse, specific-warehouse, and company-total
-  /// levels separately."
-  /// TODO: only a single, company-total-level threshold is stored here,
-  /// since per-warehouse thresholds require a Warehouse entity, which is out
-  /// of Product-persistence scope (Inventory module, deferred).
-  /// Scale: ADR-023 stock thresholds → `Decimal(18, 4)` / PostgreSQL `NUMERIC(18, 4)`.
+  /// Company-wide current quantity (ADR-029). Default 0. Updated only with
+  /// a matching ProductQuantityHistory insert in the same transaction.
+  /// Scale: ADR-023 → `Decimal(18, 4)`.
+  currentQuantity        Decimal          @default(0) @db.Decimal(18, 4)
+  /// Optional minimum quantity alert threshold (company-wide). Scale ADR-023.
   criticalStockThreshold Decimal?         @db.Decimal(18, 4)
+  barcode                String?
+  notes                  String?
   isActive               Boolean          @default(true)
   createdAt              DateTime         @default(now())
   updatedAt              DateTime         @updatedAt
 
-  saleItems     SaleItem[]
-  purchaseItems PurchaseItem[]
+  saleItems              SaleItem[]
+  purchaseItems          PurchaseItem[]
+  quantityHistory        ProductQuantityHistory[]
 
   @@index([unitId])
   @@index([categoryId])
   @@index([type])
   @@index([isActive])
+  @@index([barcode])
 }
 
 // ---------------------------------------------------------------------------
@@ -429,63 +460,34 @@ model Sale {
   /// document's number is never reused"; a hard, permanent `@unique`
   /// constraint enforces this, consistent with `Sale` rows never being
   /// physically deleted (only cancelled).
-  /// TODO: the exact numbering scheme/format (sequential, per-year, per-
-  /// warehouse, etc.) is not decided here — left to a future task.
   documentNumber        String          @unique
   partnerId             String
   partner               BusinessPartner @relation(fields: [partnerId], references: [id])
-  /// Selected foreign currency, if any. [Approved Human Decision, recorded
-  /// 2026-07-28; see docs/business/invariants.md, "Currency".] Optional: a
-  /// null value means AZN was used by default and carries no other,
-  /// undocumented meaning. `totalAmount` below always remains the
-  /// authoritative amount in AZN.
-  currencyId            String?
-  currency              Currency?       @relation(fields: [currencyId], references: [id])
-  /// The amount denominated in `currency`, present only for a foreign-
-  /// currency sale. [Approved Human Decision, recorded 2026-07-28.]
-  foreignCurrencyAmount Decimal?
-  /// The exchange rate applied between `currency` and AZN for this sale.
-  /// [Approved Human Decision, recorded 2026-07-28.] TODO: the rate's
-  /// source (manual entry vs. an external rate feed) and timing (rate at
-  /// draft time vs. at posting time) are not decided — see task handoff.
-  exchangeRate          Decimal?
   /// The date the sale is considered to have occurred for business purposes,
   /// distinct from `createdAt` (when it was recorded in the system).
   /// Source: docs/business/terminology.md, "Business Date".
   businessDate          DateTime
   status                DocumentStatus  @default(DRAFT)
 
-  /// "A document's stated total must match the total calculated from its own
-  /// lines; a mismatched total is not accepted as authoritative." Enforcing
-  /// this equality is application-level business logic (ADR-003), not a
-  /// schema-level constraint; `totalAmount` is stored as a structural field
-  /// only.
+  /// Amounts are static AZN (ADR-031). Scale follows ADR-023 when refined.
   totalAmount    Decimal
   discountAmount Decimal?
-  /// Source: "A sale may be posted fully paid, partially paid, or unpaid;
-  /// any unpaid remainder becomes an open receivable." Neither a payment-
-  /// status enum nor a `paidAmount` field is stored here: settlement state
-  /// (how much of `totalAmount` has been paid/allocated) belongs to the
-  /// Settlement module (docs/business/terminology.md, "Allocation",
-  /// "Receivable"), which is out of this task's scope and deliberately not
-  /// modeled here, to avoid duplicating data that module will own.
-  /// [Approved Human Decision, recorded 2026-07-28: removed the earlier
-  /// `paidAmount` field for this reason.]
+  /// Open debt effect of a posted sale is applied to BusinessPartner
+  /// currentDebtBalance (ADR-030), not stored as a separate receivable field.
   notes          String?
 
   postedAt       DateTime?
   postedByUserId String?
   postedBy       User?     @relation("SalePostedBy", fields: [postedByUserId], references: [id])
 
-  /// "Cancelling a posted sale reverses its stock, receivable, and eligible
-  /// cash effects; the original document is retained and marked cancelled,
-  /// its number is never reused."
+  /// Cancelling a posted sale reverses product-quantity and partner-debt
+  /// effects via auditable reversing rows (ADR-029 / ADR-030). Linked cash
+  /// is resolved separately (ADR-028).
   cancelledAt       DateTime?
   cancelledByUserId String?
   cancelledBy       User?     @relation("SaleCancelledBy", fields: [cancelledByUserId], references: [id])
   cancelReason      String?
 
-  /// "any replacement document keeps a reference to the original."
   originalSaleId  String?
   originalSale    Sale?   @relation("SaleCorrection", fields: [originalSaleId], references: [id])
   correctionSales Sale[]  @relation("SaleCorrection")
@@ -495,8 +497,10 @@ model Sale {
   createdByUserId String
   createdBy       User     @relation("SaleCreatedBy", fields: [createdByUserId], references: [id])
 
-  items            SaleItem[]
-  cashTransactions CashTransaction[]
+  items                     SaleItem[]
+  cashTransactions          CashTransaction[]
+  productQuantityHistory    ProductQuantityHistory[]
+  partnerDebtMovements      BusinessPartnerDebtMovement[]
 
   @@index([partnerId, businessDate])
   @@index([status])
@@ -538,46 +542,35 @@ model SaleItem {
 
 /// Source: docs/business/invariants.md, "Purchasing"; docs/business/workflow-map.md,
 /// "5. Purchase: Draft to Posted Purchase".
+/// Document numbers are backend-allocated via NumberSequence key PURCHASE
+/// (Approved Human Decision for EPIC-009 / US-022, 2026-07-31) as `PUR-` +
+/// zero-padded sequence (ADR-024 allocation pattern; document numbers were
+/// excluded from ADR-024 scope itself).
+/// Status lifecycle: DRAFT → POSTED → CANCELLED (DocumentStatus). UI may say
+/// "completed" for POSTED; API/schema use POSTED.
 model Purchase {
   id                    String          @id @default(uuid())
-  /// A human-facing purchase document number, globally unique across all
-  /// history. [Approved Human Decision, recorded 2026-07-28.] See
-  /// `Sale.documentNumber` above for the same reasoning and TODO.
   documentNumber        String          @unique
   partnerId             String
   partner               BusinessPartner @relation(fields: [partnerId], references: [id])
-  /// See `Sale.currencyId` above for the shared Currency-handling rules.
-  /// [Approved Human Decision, recorded 2026-07-28.]
-  currencyId            String?
-  currency              Currency?       @relation(fields: [currencyId], references: [id])
-  /// See `Sale.foreignCurrencyAmount` / `Sale.exchangeRate` above.
-  /// [Approved Human Decision, recorded 2026-07-28.]
-  foreignCurrencyAmount Decimal?
-  exchangeRate          Decimal?
   businessDate          DateTime
   status                DocumentStatus  @default(DRAFT)
 
-  /// "Entering the same supplier invoice number more than once triggers a
-  /// duplicate warning." A soft warning, not a hard rejection — therefore
-  /// indexed, not unique.
   supplierInvoiceNumber String?
 
-  totalAmount    Decimal
-  discountAmount Decimal?
-  /// See `Sale.totalAmount`'s comment above: `paidAmount` was removed for
-  /// the same reason (settlement/payable state belongs to the out-of-scope
-  /// Settlement module). [Approved Human Decision, recorded 2026-07-28.]
+  /// Amounts are static AZN (ADR-031). Scale: ADR-023 → Decimal(18, 4).
+  /// Backend recalculates; client-supplied totals are ignored.
+  subtotalAmount Decimal  @db.Decimal(18, 4)
+  discountAmount Decimal? @db.Decimal(18, 4)
+  totalAmount    Decimal  @db.Decimal(18, 4)
   notes          String?
 
   postedAt       DateTime?
   postedByUserId String?
   postedBy       User?     @relation("PurchasePostedBy", fields: [postedByUserId], references: [id])
 
-  /// "Cancelling a posted purchase reverses its inventory increase and
-  /// payable effect... cancellation is blocked if available stock is
-  /// insufficient to reverse the original receipt." (Stock-sufficiency check
-  /// is application-level; not enforceable at the schema level and out of
-  /// this task's scope since Inventory is not modeled here.)
+  /// Cancelling reverses product-quantity and partner-debt effects (ADR-029 /
+  /// ADR-030). Cash resolved separately (ADR-028).
   cancelledAt       DateTime?
   cancelledByUserId String?
   cancelledBy       User?     @relation("PurchaseCancelledBy", fields: [cancelledByUserId], references: [id])
@@ -592,30 +585,46 @@ model Purchase {
   createdByUserId String
   createdBy       User     @relation("PurchaseCreatedBy", fields: [createdByUserId], references: [id])
 
-  items            PurchaseItem[]
-  cashTransactions CashTransaction[]
+  items                     PurchaseItem[]
+  cashTransactions          CashTransaction[]
+  productQuantityHistory    ProductQuantityHistory[]
+  partnerDebtMovements      BusinessPartnerDebtMovement[]
 
   @@index([partnerId, businessDate])
   @@index([status])
   @@index([supplierInvoiceNumber])
+  @@index([createdByUserId])
+  @@index([createdAt])
 }
 
 /// Source: docs/business/invariants.md, "Purchasing" — "A purchase is posted
 /// based on the quantity actually physically received, not the invoiced
 /// quantity; differences between the two are recorded separately."
+/// Product/unit display fields are snapshotted so historical lines stay stable
+/// when master data changes later.
 model PurchaseItem {
   id         String   @id @default(uuid())
   purchaseId String
-  purchase   Purchase @relation(fields: [purchaseId], references: [id])
+  purchase   Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
   productId  String
-  product    Product  @relation(fields: [productId], references: [id])
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
   unitId     String
-  unit       Unit     @relation(fields: [unitId], references: [id])
+  unit       Unit     @relation(fields: [unitId], references: [id], onDelete: Restrict)
 
-  receivedQuantity Decimal
-  invoicedQuantity Decimal?
-  unitCost         Decimal
-  lineTotal        Decimal
+  productCodeSnapshot String
+  productNameSnapshot String
+  unitNameSnapshot    String
+
+  /// Physically received quantity (posting driver). Scale ADR-023.
+  receivedQuantity Decimal  @db.Decimal(18, 4)
+  invoicedQuantity Decimal? @db.Decimal(18, 4)
+  /// Unit price/cost at line entry (AZN). Scale ADR-023 unit prices.
+  unitCost         Decimal  @db.Decimal(18, 4)
+  discountAmount   Decimal? @db.Decimal(18, 4)
+  /// quantity × unitCost before line discount.
+  lineSubtotal     Decimal  @db.Decimal(18, 4)
+  lineTotal        Decimal  @db.Decimal(18, 4)
+  notes            String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -634,13 +643,8 @@ model MoneyAccount {
   id         String           @id @default(uuid())
   name       String
   type       MoneyAccountType
-  /// Optional; defaults to AZN when omitted, per the shared Currency-
-  /// handling rules. [Approved Human Decision, recorded 2026-07-28; see
-  /// docs/business/invariants.md, "Currency".] TODO: whether an account may
-  /// hold a native non-AZN balance (vs. always being converted/reported in
-  /// AZN) is not decided — see task handoff.
-  currencyId String?
-  currency   Currency?        @relation(fields: [currencyId], references: [id])
+  /// Current release: all money is AZN (ADR-031). Multi-currency cash
+  /// accounts are a future Cash-domain extension — not modeled here (YAGNI).
   isActive   Boolean          @default(true)
   createdAt  DateTime         @default(now())
   updatedAt  DateTime         @updatedAt
@@ -654,7 +658,8 @@ model MoneyAccount {
 /// Source: docs/business/invariants.md, "Cash" — "Every money movement
 /// identifies the account, amount, date, movement type, actor, and business
 /// reason or source." `amount` is signed (positive = increase, negative =
-/// decrease) at the account identified by `moneyAccountId`.
+/// decrease) at the account identified by `moneyAccountId`. Amounts are AZN
+/// (ADR-031). Optional links to Sale/Purchase remain (ADR-028).
 model CashTransaction {
   id                    String              @id @default(uuid())
   moneyAccountId        String
@@ -662,36 +667,16 @@ model CashTransaction {
   type                  CashTransactionType
   amount                Decimal
   transactionDate       DateTime
-  /// See `Sale.currencyId` above for the shared Currency-handling rules
-  /// (optional, defaults to AZN, null carries no other meaning).
-  /// [Approved Human Decision, recorded 2026-07-28.] `amount` above always
-  /// remains the authoritative amount in AZN.
-  currencyId            String?
-  currency              Currency?           @relation(fields: [currencyId], references: [id])
-  /// See `Sale.foreignCurrencyAmount` / `Sale.exchangeRate` above.
-  /// [Approved Human Decision, recorded 2026-07-28.]
-  foreignCurrencyAmount Decimal?
-  exchangeRate          Decimal?
   reason                String?
 
-  /// Optional counterparty (customer for a sale receipt, supplier for a
-  /// purchase payment). Source: docs/business/invariants.md, "Receivables &
-  /// Payables" / "Cash".
   partnerId String?
   partner   BusinessPartner? @relation(fields: [partnerId], references: [id])
 
-  /// Optional links back to the source document, where applicable.
   saleId     String?
   sale       Sale?     @relation(fields: [saleId], references: [id])
   purchaseId String?
   purchase   Purchase? @relation(fields: [purchaseId], references: [id])
 
-  /// "A transfer between money accounts is a paired decrease/increase that
-  /// does not change company-total cash." `pairedTransactionId` links the
-  /// two legs of a single transfer to each other; the paired leg's own
-  /// `moneyAccountId` (above) already identifies its account, so a separate
-  /// `pairedMoneyAccountId` relation would duplicate that data and has been
-  /// removed. [Approved Human Decision, recorded 2026-07-28.]
   pairedTransactionId String?          @unique
   pairedTransaction   CashTransaction? @relation("CashTransactionPair", fields: [pairedTransactionId], references: [id])
   pairedWith          CashTransaction? @relation("CashTransactionPair")
@@ -711,6 +696,8 @@ model CashTransaction {
   updatedAt       DateTime @updatedAt
   createdByUserId String
   createdBy       User     @relation("CashTransactionCreatedBy", fields: [createdByUserId], references: [id])
+
+  partnerDebtMovements BusinessPartnerDebtMovement[]
 
   @@index([moneyAccountId, transactionDate])
   @@index([type])

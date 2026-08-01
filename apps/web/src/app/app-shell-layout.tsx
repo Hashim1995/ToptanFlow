@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
+  Avatar,
   Button,
   Drawer,
   Grid,
@@ -11,15 +12,35 @@ import {
   theme,
 } from 'antd';
 import type { MenuProps } from 'antd';
-import { LogoutOutlined, MenuOutlined } from '@ant-design/icons';
+import {
+  House,
+  List,
+  Package,
+  Ruler,
+  ShoppingCart,
+  SignOut,
+  SquaresFour,
+  UsersThree,
+} from '@phosphor-icons/react';
 import { MASTER_DATA_LABELS } from '../features/master-data/ui/labels';
 import { AUTH_LABELS } from '../features/auth/ui/labels';
 import { useAuth } from '../features/auth/use-auth';
+import { PURCHASE_LABELS } from '../features/purchases/ui/labels';
+import { ICON_SIZE, phIcon } from '../shared/ui/ph-icon';
 
 const { Header, Sider, Content } = Layout;
 const { Title, Text } = Typography;
 
 type MenuItem = Required<MenuProps>['items'][number];
+
+function navLabel(icon: ReactNode, text: string, to: string) {
+  return (
+    <Link to={to} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      {icon}
+      <span>{text}</span>
+    </Link>
+  );
+}
 
 const NAV_ITEMS: MenuItem[] = [
   {
@@ -29,56 +50,71 @@ const NAV_ITEMS: MenuItem[] = [
     children: [
       {
         key: '/',
-        label: <Link to="/">Ana səhifə</Link>,
+        label: navLabel(
+          phIcon(House, { size: ICON_SIZE.md }),
+          'Ana səhifə',
+          '/',
+        ),
       },
     ],
   },
   {
-    key: 'group-reference',
+    key: 'group-products',
     type: 'group',
-    label: 'İstinad məlumatları',
+    label: 'Məhsullar',
     children: [
       {
-        key: '/currencies',
-        label: (
-          <Link to="/currencies">{MASTER_DATA_LABELS.currencies.nav}</Link>
+        key: '/products',
+        label: navLabel(
+          phIcon(Package, { size: ICON_SIZE.md }),
+          MASTER_DATA_LABELS.products.nav,
+          '/products',
+        ),
+      },
+      {
+        key: '/product-categories',
+        label: navLabel(
+          phIcon(SquaresFour, { size: ICON_SIZE.md }),
+          MASTER_DATA_LABELS.categories.nav,
+          '/product-categories',
         ),
       },
       {
         key: '/units',
-        label: <Link to="/units">{MASTER_DATA_LABELS.units.nav}</Link>,
-      },
-      {
-        key: '/product-categories',
-        label: (
-          <Link to="/product-categories">
-            {MASTER_DATA_LABELS.categories.nav}
-          </Link>
+        label: navLabel(
+          phIcon(Ruler, { size: ICON_SIZE.md }),
+          MASTER_DATA_LABELS.units.nav,
+          '/units',
         ),
       },
     ],
   },
   {
-    key: 'group-catalog',
+    key: 'group-partners',
     type: 'group',
-    label: 'Kataloq',
+    label: 'Tərəfdaşlar',
     children: [
       {
-        key: '/products',
-        label: <Link to="/products">{MASTER_DATA_LABELS.products.nav}</Link>,
-      },
-      {
         key: '/business-partners',
-        label: (
-          <Link to="/business-partners">
-            {MASTER_DATA_LABELS.partners.nav}
-          </Link>
+        label: navLabel(
+          phIcon(UsersThree, { size: ICON_SIZE.md }),
+          MASTER_DATA_LABELS.partners.nav,
+          '/business-partners',
         ),
       },
+    ],
+  },
+  {
+    key: 'group-purchases',
+    type: 'group',
+    label: PURCHASE_LABELS.nav,
+    children: [
       {
-        key: '/warehouses',
-        label: (
-          <Link to="/warehouses">{MASTER_DATA_LABELS.warehouses.nav}</Link>
+        key: '/purchases',
+        label: navLabel(
+          phIcon(ShoppingCart, { size: ICON_SIZE.md }),
+          PURCHASE_LABELS.nav,
+          '/purchases',
         ),
       },
     ],
@@ -87,8 +123,7 @@ const NAV_ITEMS: MenuItem[] = [
 
 /**
  * Responsive app chrome (US-037 / TASK-037-03; uplifted CHANGE-001 / US-042).
- * Desktop: sider with grouped nav. Mobile: header button + drawer.
- * Logout: US-019 / ADR-025.
+ * Navigation simplified under ADR-029 / ADR-031 (no Warehouse / Inventar / Currency).
  */
 export function AppShellLayout() {
   const location = useLocation();
@@ -100,7 +135,13 @@ export function AppShellLayout() {
   const [loggingOut, setLoggingOut] = useState(false);
   const { token } = theme.useToken();
 
-  const selectedKeys = [location.pathname === '/' ? '/' : location.pathname];
+  const selectedKeys = [
+    location.pathname === '/'
+      ? '/'
+      : location.pathname.startsWith('/purchases')
+        ? '/purchases'
+        : location.pathname,
+  ];
 
   async function handleLogout() {
     setLoggingOut(true);
@@ -122,26 +163,39 @@ export function AppShellLayout() {
     />
   );
 
+  const displayName = auth.user?.fullName ?? auth.user?.username ?? 'İstifadəçi';
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
       {isDesktop ? (
         <Sider
-          breakpoint="md"
-          collapsedWidth={0}
           width={248}
-          theme="light"
           style={{
+            background: token.colorBgContainer,
             borderInlineEnd: `1px solid ${token.colorBorderSecondary}`,
-            paddingBottom: 24,
           }}
         >
-          <div style={{ padding: '20px 20px 12px' }}>
-            <Title level={4} style={{ margin: 0, letterSpacing: '0.02em' }}>
-              TOPTANFLOW
-            </Title>
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              Topdan satış əməliyyatları
-            </Text>
+          <div style={{ padding: '16px 16px 8px' }}>
+            <Space align="center" size={10}>
+              <Avatar
+                shape="square"
+                style={{
+                  background: token.colorPrimary,
+                  borderRadius: 8,
+                  fontWeight: 700,
+                }}
+              >
+                TF
+              </Avatar>
+              <div>
+                <Title level={4} style={{ margin: 0, lineHeight: 1.2 }}>
+                  TOPTANFLOW
+                </Title>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  İdarə paneli
+                </Text>
+              </div>
+            </Space>
           </div>
           {menu}
         </Sider>
@@ -150,37 +204,44 @@ export function AppShellLayout() {
       <Layout>
         <Header
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            paddingInline: isDesktop ? 28 : 16,
-            height: 64,
             background: token.colorBgContainer,
             borderBottom: `1px solid ${token.colorBorderSecondary}`,
+            paddingInline: 16,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            height: 56,
+            lineHeight: '56px',
           }}
         >
-          {!isDesktop ? (
-            <Button
-              type="text"
-              icon={<MenuOutlined />}
-              aria-label="Menyunu aç"
-              onClick={() => setDrawerOpen(true)}
-            />
-          ) : null}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <Title level={4} style={{ margin: 0 }}>
-              TOPTANFLOW
-            </Title>
-          </div>
           <Space>
-            {auth.user ? (
-              <Text type="secondary" ellipsis style={{ maxWidth: 160 }}>
-                {auth.user.fullName}
+            {!isDesktop ? (
+              <Button
+                type="text"
+                icon={phIcon(List, { size: ICON_SIZE.lg })}
+                aria-label="Menyu"
+                onClick={() => setDrawerOpen(true)}
+              />
+            ) : null}
+            {!isDesktop ? (
+              <Title level={5} style={{ margin: 0 }}>
+                TOPTANFLOW
+              </Title>
+            ) : (
+              <Text type="secondary" style={{ fontSize: 13 }}>
+                {displayName}
+              </Text>
+            )}
+          </Space>
+          <Space size={8}>
+            {!isDesktop ? (
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                {displayName}
               </Text>
             ) : null}
             <Button
-              type="default"
-              icon={<LogoutOutlined />}
+              icon={phIcon(SignOut, { size: ICON_SIZE.md })}
               loading={loggingOut}
               onClick={() => void handleLogout()}
             >
@@ -188,24 +249,22 @@ export function AppShellLayout() {
             </Button>
           </Space>
         </Header>
-
-        <Content
-          style={{
-            padding: isDesktop ? '28px 32px 40px' : '20px 16px 32px',
-          }}
-        >
-          <div style={{ maxWidth: 1280, margin: '0 auto' }}>
-            <Outlet />
-          </div>
+        <Content style={{ padding: isDesktop ? 24 : 16 }}>
+          <Outlet />
         </Content>
       </Layout>
 
       <Drawer
-        title="Naviqasiya"
+        title={
+          <Space>
+            {phIcon(List, { size: ICON_SIZE.md })}
+            Menyu
+          </Space>
+        }
         placement="left"
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        styles={{ body: { paddingInline: 0 } }}
+        styles={{ body: { padding: 0 } }}
       >
         {menu}
       </Drawer>

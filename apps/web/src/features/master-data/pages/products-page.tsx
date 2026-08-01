@@ -3,6 +3,7 @@ import {
   Alert,
   Button,
   Card,
+  Dropdown,
   Grid,
   Input,
   Modal,
@@ -10,11 +11,29 @@ import {
   Select,
   Space,
   Table,
+  Tag,
+  Tooltip,
   Typography,
   message,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import type { MenuProps } from 'antd';
+import {
+  Package,
+  PencilSimple,
+  Plus,
+  Power,
+  Prohibit,
+} from '@phosphor-icons/react';
 import { mapApiError } from '../../../api/map-api-error';
+import { formatMoney } from '../../../shared/money/format-money';
+import { formatQuantity } from '../../../shared/ui/format';
+import { ICON_SIZE, phIcon } from '../../../shared/ui/ph-icon';
+import {
+  CodeText,
+  EntityCell,
+  MoneyCell,
+} from '../../../shared/ui/table-cells';
 import type { Product, ProductType } from '../api/products.api';
 import {
   useCreateProduct,
@@ -96,60 +115,122 @@ export function ProductsPage() {
 
   const columns: ColumnsType<Product> = [
     {
+      title: common.status,
+      dataIndex: 'isActive',
+      key: 'isActive',
+      width: 110,
+      render: (isActive: boolean) => <ActiveStatusTag isActive={isActive} />,
+    },
+    {
       title: common.code,
       dataIndex: 'code',
       key: 'code',
       width: 110,
       sorter: true,
+      render: (value: string) => <CodeText value={value} />,
     },
-    { title: common.name, dataIndex: 'name', key: 'name', sorter: true },
+    {
+      title: common.name,
+      dataIndex: 'name',
+      key: 'name',
+      sorter: true,
+      ellipsis: true,
+      render: (value: string, record) => (
+        <EntityCell
+          name={value}
+          secondary={record.category?.name ?? undefined}
+        />
+      ),
+    },
     {
       title: labels.type,
       dataIndex: 'type',
       key: 'type',
-      render: (type: ProductType) => productTypeLabel(type),
-    },
-    {
-      title: labels.category,
-      key: 'category',
-      render: (_, record) => record.category?.name ?? '—',
+      width: 140,
+      render: (type: ProductType) => (
+        <Tag style={{ marginInlineEnd: 0 }}>{productTypeLabel(type)}</Tag>
+      ),
     },
     {
       title: labels.unit,
       key: 'unit',
-      render: (_, record) => `${record.unit.code} — ${record.unit.name}`,
+      width: 130,
+      render: (_, record) => (
+        <Text type="secondary">
+          {record.unit.code} · {record.unit.name}
+        </Text>
+      ),
+    },
+    {
+      title: labels.currentQuantity,
+      dataIndex: 'currentQuantity',
+      key: 'currentQuantity',
+      width: 120,
+      align: 'right',
+      render: (value: string) => (
+        <Text strong style={{ fontVariantNumeric: 'tabular-nums' }}>
+          {formatQuantity(value)}
+        </Text>
+      ),
     },
     {
       title: labels.standardSalePrice,
       dataIndex: 'standardSalePrice',
       key: 'standardSalePrice',
-      render: (value: string | null) => value ?? '—',
-    },
-    {
-      title: common.status,
-      dataIndex: 'isActive',
-      key: 'isActive',
-      render: (isActive: boolean) => <ActiveStatusTag isActive={isActive} />,
+      width: 130,
+      align: 'right',
+      render: (value: string | null) => (
+        <MoneyCell value={value} format={formatMoney} />
+      ),
     },
     {
       title: common.actions,
       key: 'actions',
-      render: (_, record) => (
-        <Space wrap>
-          <Button type="link" onClick={() => openEdit(record)}>
-            {common.edit}
-          </Button>
-          {record.isActive ? (
-            <Button type="link" danger onClick={() => confirmDeactivate(record)}>
-              {common.deactivate}
-            </Button>
-          ) : (
-            <Button type="link" onClick={() => confirmActivate(record)}>
-              {common.activate}
-            </Button>
-          )}
-        </Space>
-      ),
+      fixed: 'right',
+      width: 120,
+      render: (_, record) => {
+        const menuItems: MenuProps['items'] = [
+          {
+            key: 'edit',
+            icon: phIcon(PencilSimple, { size: ICON_SIZE.sm }),
+            label: common.edit,
+            onClick: () => openEdit(record),
+          },
+          { type: 'divider' },
+          record.isActive
+            ? {
+                key: 'deactivate',
+                danger: true,
+                icon: phIcon(Prohibit, { size: ICON_SIZE.sm }),
+                label: common.deactivate,
+                onClick: () => confirmDeactivate(record),
+              }
+            : {
+                key: 'activate',
+                icon: phIcon(Power, { size: ICON_SIZE.sm }),
+                label: common.activate,
+                onClick: () => confirmActivate(record),
+              },
+        ];
+        return (
+          <Space size={4}>
+            <Tooltip title={common.edit}>
+              <Button
+                type="text"
+                size="small"
+                icon={phIcon(PencilSimple, { size: ICON_SIZE.sm })}
+                aria-label={common.edit}
+                onClick={() => openEdit(record)}
+              />
+            </Tooltip>
+            <Dropdown menu={{ items: menuItems }} trigger={['click']}>
+              <Button type="text" size="small">
+                •••
+              </Button>
+            </Dropdown>
+          </Space>
+        );
+      },
     },
   ];
 
@@ -184,6 +265,8 @@ export function ProductsPage() {
           criticalStockThreshold: emptyToUndefined(
             values.criticalStockThreshold,
           ),
+          barcode: emptyToUndefined(values.barcode),
+          notes: emptyToUndefined(values.notes),
         });
         message.success(common.createSuccess);
       } else if (formMode.kind === 'edit') {
@@ -197,6 +280,8 @@ export function ProductsPage() {
             standardSalePrice: emptyToNull(values.standardSalePrice),
             latestPurchasePrice: emptyToNull(values.latestPurchasePrice),
             criticalStockThreshold: emptyToNull(values.criticalStockThreshold),
+            barcode: emptyToNull(values.barcode),
+            notes: emptyToNull(values.notes),
           },
         });
         message.success(common.updateSuccess);
@@ -256,6 +341,8 @@ export function ProductsPage() {
           latestPurchasePrice: formMode.product.latestPurchasePrice ?? '',
           criticalStockThreshold:
             formMode.product.criticalStockThreshold ?? '',
+          barcode: formMode.product.barcode ?? '',
+          notes: formMode.product.notes ?? '',
         }
       : undefined;
 
@@ -296,8 +383,13 @@ export function ProductsPage() {
       <PageHeader
         title={labels.title}
         description={labels.description}
+        icon={phIcon(Package, { size: ICON_SIZE.xl, weight: 'duotone' })}
         extra={
-          <Button type="primary" onClick={openCreate}>
+          <Button
+            type="primary"
+            icon={phIcon(Plus, { size: ICON_SIZE.md, weight: 'bold' })}
+            onClick={openCreate}
+          >
             {labels.create}
           </Button>
         }
@@ -396,6 +488,9 @@ export function ProductsPage() {
                 </Text>
                 <Text type="secondary">
                   {labels.category}: {product.category?.name ?? '—'}
+                </Text>
+                <Text type="secondary">
+                  {labels.currentQuantity}: {product.currentQuantity}
                 </Text>
                 <Text type="secondary">
                   {labels.standardSalePrice}:{' '}

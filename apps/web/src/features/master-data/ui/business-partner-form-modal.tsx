@@ -1,8 +1,7 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Alert, Checkbox, Form, Input, Modal, Select, Space } from 'antd';
-import { useCurrenciesList } from '../api/currencies.hooks';
+import { Alert, Checkbox, Form, Input, Modal, Space } from 'antd';
 import {
   businessPartnerFormSchema,
   type BusinessPartnerFormValues,
@@ -16,7 +15,6 @@ type BusinessPartnerFormModalProps = {
   title: string;
   mode: 'create' | 'edit';
   readOnlyCode?: string;
-  fallbackCurrencyOption?: { value: string; label: string };
   initialValues?: BusinessPartnerFormValues;
   submitting: boolean;
   errorMessage?: string;
@@ -28,7 +26,6 @@ const emptyValues: BusinessPartnerFormValues = {
   name: '',
   isCustomer: true,
   isSupplier: false,
-  defaultCurrencyId: '',
   phone: '',
   email: '',
   taxNumber: '',
@@ -41,7 +38,6 @@ export function BusinessPartnerFormModal({
   title,
   mode,
   readOnlyCode,
-  fallbackCurrencyOption,
   initialValues,
   submitting,
   errorMessage,
@@ -50,13 +46,6 @@ export function BusinessPartnerFormModal({
 }: BusinessPartnerFormModalProps) {
   const labels = MASTER_DATA_LABELS.partners;
   const common = MASTER_DATA_LABELS.common;
-
-  const currenciesQuery = useCurrenciesList({
-    isActive: true,
-    pageSize: 100,
-    sortBy: 'code',
-    sortOrder: 'asc',
-  });
 
   const {
     control,
@@ -73,23 +62,6 @@ export function BusinessPartnerFormModal({
       reset(initialValues ?? emptyValues);
     }
   }, [open, initialValues, reset]);
-
-  const currencyOptions = useMemo(() => {
-    const currencies = currenciesQuery.data?.data ?? [];
-    const options = currencies.map((currency) => ({
-      value: currency.id,
-      label: `${currency.code} — ${currency.name}`,
-    }));
-
-    if (
-      fallbackCurrencyOption &&
-      !options.some((option) => option.value === fallbackCurrencyOption.value)
-    ) {
-      options.unshift(fallbackCurrencyOption);
-    }
-
-    return options;
-  }, [currenciesQuery.data?.data, fallbackCurrencyOption]);
 
   return (
     <Modal
@@ -170,31 +142,6 @@ export function BusinessPartnerFormModal({
               )}
             />
           </Space>
-        </Form.Item>
-
-        <Form.Item
-          label={labels.defaultCurrency}
-          required
-          validateStatus={errors.defaultCurrencyId ? 'error' : undefined}
-          help={errors.defaultCurrencyId?.message}
-        >
-          <Controller
-            name="defaultCurrencyId"
-            control={control}
-            render={({ field }) => (
-              <Select
-                showSearch
-                optionFilterProp="label"
-                loading={currenciesQuery.isLoading}
-                options={currencyOptions}
-                style={{ width: '100%' }}
-                placeholder={labels.defaultCurrencyPlaceholder}
-                value={field.value || undefined}
-                onChange={(value) => field.onChange(value ?? '')}
-                onBlur={field.onBlur}
-              />
-            )}
-          />
         </Form.Item>
 
         <Form.Item

@@ -99,6 +99,36 @@ export class UpdateProductDto {
   criticalStockThreshold?: string | null;
 
   @ApiPropertyOptional({
+    example: '1234567890123',
+    nullable: true,
+    type: String,
+    description: 'Send null to clear. Omit to leave unchanged.',
+  })
+  @ValidateIf((_object, value) => value !== undefined)
+  @ValidateIf((_object, value) => value !== null)
+  @IsString()
+  @MaxLength(128)
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  barcode?: string | null;
+
+  @ApiPropertyOptional({
+    example: 'Əlavə qeyd',
+    nullable: true,
+    type: String,
+    description: 'Send null to clear. Omit to leave unchanged.',
+  })
+  @ValidateIf((_object, value) => value !== undefined)
+  @ValidateIf((_object, value) => value !== null)
+  @IsString()
+  @MaxLength(4000)
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  notes?: string | null;
+
+  @ApiPropertyOptional({
     example: true,
     description:
       'Set true to reactivate an inactive product. Set false to deactivate (DELETE also deactivates).',

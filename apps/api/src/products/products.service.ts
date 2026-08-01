@@ -16,6 +16,13 @@ import { ListProductsQueryDto } from './dto/list-products-query.dto';
 import { PaginatedProductsResponseDto } from './dto/paginated-products-response.dto';
 import { ProductResponseDto } from './dto/product-response.dto';
 import { ProductTypeApi } from './dto/product-type.enum';
+import { AdjustProductQuantityDto } from './dto/adjust-product-quantity.dto';
+import { ProductQuantityHistoryResponseDto } from './dto/adjust-product-quantity.dto';
+import {
+  ProductQuantityKind,
+  ProductQuantityService,
+} from './product-quantity.service';
+import { PaginationQueryDto } from '../common/pagination/pagination-query.dto';
 
 const unitSummarySelect = {
   id: true,
@@ -40,7 +47,10 @@ const productSelect = {
   unitId: true,
   standardSalePrice: true,
   latestPurchasePrice: true,
+  currentQuantity: true,
   criticalStockThreshold: true,
+  barcode: true,
+  notes: true,
   isActive: true,
   createdAt: true,
   updatedAt: true,
@@ -50,11 +60,38 @@ const productSelect = {
 
 type ProductRecord = Prisma.ProductGetPayload<{ select: typeof productSelect }>;
 
+type ProductQuantityHistoryRecord = {
+  id: string;
+  productId: string;
+  kind: string;
+  quantityChange: Decimal;
+  quantityBefore: Decimal;
+  quantityAfter: Decimal;
+  reason: string | null;
+  saleId: string | null;
+  purchaseId: string | null;
+  createdByUserId: string;
+  createdAt: Date;
+};
+
+type ProductQuantityHistoryReader = {
+  productQuantityHistory: {
+    findMany(args: {
+      where: { productId: string };
+      orderBy: Array<{ createdAt: 'desc' } | { id: 'desc' }>;
+      skip: number;
+      take: number;
+    }): Promise<ProductQuantityHistoryRecord[]>;
+    count(args: { where: { productId: string } }): Promise<number>;
+  };
+};
+
 @Injectable()
 export class ProductsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly numberSequences: NumberSequencesService,
+    private readonly productQuantity: ProductQuantityService,
   ) {}
 
   async create(dto: CreateProductDto): Promise<ProductResponseDto> {
@@ -82,6 +119,9 @@ export class ProductsService {
             criticalStockThreshold: this.toPrismaDecimal(
               dto.criticalStockThreshold,
             ),
+            barcode: this.normalizeOptionalText(dto.barcode),
+            notes: this.normalizeOptionalText(dto.notes),
+            currentQuantity: new Decimal(0),
             isActive: true,
           },
           select: productSelect,
@@ -154,6 +194,8 @@ export class ProductsService {
       standardSalePrice?: Decimal | null;
       latestPurchasePrice?: Decimal | null;
       criticalStockThreshold?: Decimal | null;
+      barcode?: string | null;
+      notes?: string | null;
       isActive?: boolean;
     } = {};
 
@@ -186,6 +228,12 @@ export class ProductsService {
       data.criticalStockThreshold = this.toPrismaDecimalOrNull(
         dto.criticalStockThreshold,
       );
+    }
+    if (dto.barcode !== undefined) {
+      data.barcode = this.normalizeOptionalText(dto.barcode);
+    }
+    if (dto.notes !== undefined) {
+      data.notes = this.normalizeOptionalText(dto.notes);
     }
     if (dto.isActive !== undefined) {
       data.isActive = dto.isActive;
@@ -221,6 +269,79 @@ export class ProductsService {
       return this.toResponse(product);
     }
     return this.toResponse(existing);
+  }
+
+  /**
+   * Manual quantity adjustment (ADR-029). Always requires a reason.
+   * Under ADR-025 v1, every active user may post negative results with reason.
+   */
+  async adjustQuantity(
+    productId: string,
+    dto: AdjustProductQuantityDto,
+    userId: string,
+  ): Promise<ProductResponseDto> {
+    await this.prisma.$transaction(async (tx) => {
+      await this.productQuantity.applyChange(tx, {
+        productId,
+        quantityChange: dto.quantityChange,
+        kind: ProductQuantityKind.MANUAL_ADJUSTMENT,
+        createdByUserId: userId,
+        reason: dto.reason,
+        allowNegativeQuantity: true,
+      });
+    });
+    return this.findOne(productId);
+  }
+
+  async listQuantityHistory(
+    productId: string,
+    query: PaginationQueryDto,
+  ): Promise<{
+    data: ProductQuantityHistoryResponseDto[];
+    meta: { page: number; pageSize: number; total: number; totalPages: number };
+  }> {
+    const existing = await this.prisma.product.findUnique({
+      where: { id: productId },
+      select: { id: true },
+    });
+    if (!existing) {
+      throw new NotFoundException('Product not found');
+    }
+
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? 20;
+    const where = { productId };
+    const historyReader = this
+      .prisma as unknown as ProductQuantityHistoryReader;
+
+    const [rows, total] = await Promise.all([
+      historyReader.productQuantityHistory.findMany({
+        where,
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      historyReader.productQuantityHistory.count({ where }),
+    ]);
+
+    const totalPages = total === 0 ? 0 : Math.ceil(total / pageSize);
+
+    return {
+      data: rows.map((row) => ({
+        id: row.id,
+        productId: row.productId,
+        kind: row.kind,
+        quantityChange: this.decimalToStringRequired(row.quantityChange),
+        quantityBefore: this.decimalToStringRequired(row.quantityBefore),
+        quantityAfter: this.decimalToStringRequired(row.quantityAfter),
+        reason: row.reason,
+        saleId: row.saleId,
+        purchaseId: row.purchaseId,
+        createdByUserId: row.createdByUserId,
+        createdAt: row.createdAt,
+      })),
+      meta: { page, pageSize, total, totalPages },
+    };
   }
 
   private async resolveCategoryId(
@@ -322,12 +443,24 @@ export class ProductsService {
       dto.standardSalePrice !== undefined ||
       dto.latestPurchasePrice !== undefined ||
       dto.criticalStockThreshold !== undefined ||
+      dto.barcode !== undefined ||
+      dto.notes !== undefined ||
       dto.isActive !== undefined
     );
   }
 
+  private normalizeOptionalText(value: unknown): string | null {
+    if (typeof value !== 'string') return null;
+    const trimmed = value.trim();
+    return trimmed.length === 0 ? null : trimmed;
+  }
+
   private decimalToString(value: Decimal | null | undefined): string | null {
     if (value === null || value === undefined) return null;
+    return value.toFixed(4);
+  }
+
+  private decimalToStringRequired(value: Decimal): string {
     return value.toFixed(4);
   }
 
@@ -355,9 +488,12 @@ export class ProductsService {
       },
       standardSalePrice: this.decimalToString(product.standardSalePrice),
       latestPurchasePrice: this.decimalToString(product.latestPurchasePrice),
+      currentQuantity: this.decimalToStringRequired(product.currentQuantity),
       criticalStockThreshold: this.decimalToString(
         product.criticalStockThreshold,
       ),
+      barcode: product.barcode,
+      notes: product.notes,
       isActive: product.isActive,
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,

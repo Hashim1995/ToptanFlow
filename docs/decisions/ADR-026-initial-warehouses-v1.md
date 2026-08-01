@@ -2,7 +2,10 @@
 
 ## Status
 
-Accepted
+**Superseded** by [ADR-029](ADR-029-single-product-quantity-no-warehouse.md)
+(owner 2026-07-31 — no separate Warehouse/Stock module; single product quantity).
+
+Retained for history only. Do not implement warehouse topology from this ADR.
 
 ## Context
 
@@ -31,9 +34,10 @@ scope used to unlock EPIC-008 implementation tasks.
 - Inventory transfers for v1 are **one-step** (analysis AD-06 recommendation
   accepted for inventory module only): atomic paired issue + receipt; no
   in-transit staging.
-- **Negative inventory exceptions** (BRD-OD-04) remain open; v1 inventory posting
-  **hard-blocks** any movement that would make a warehouse/product balance &lt; 0.
-  Controlled negative-stock cases are **not** implemented in this epic slice.
+- **Negative inventory:** ADR-026 originally hard-blocked balance &lt; 0. That
+  hard-block is **superseded** by [ADR-027](ADR-027-allow-negative-stock-v1.md)
+  (owner 2026-07-31): negative quantities are allowed. Full BRD-OD-04
+  controlled-exception cases remain deferred.
 - Costing method (BRD-OD-06 / EPIC-013) is **not** decided here; movements track
   **quantity** only.
 
@@ -61,7 +65,9 @@ scope used to unlock EPIC-008 implementation tasks.
 ## Consequences
 
 - BRD-OD-02 is **resolved for v1 go-live topology** by this ADR.
-- BRD-OD-04, AD-05, costing, Yatı vehicle warehouses remain open/deferred.
+- Negative-quantity hard-block from this ADR is superseded by ADR-027.
+- AD-05, costing, Yatı vehicle warehouses, and remaining BRD-OD-04 controls
+  remain open/deferred.
 - Implementation tasks: TASK-020-* then TASK-021-* under EPIC-008.
 
 ## References

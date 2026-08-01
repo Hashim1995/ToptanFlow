@@ -2,59 +2,67 @@
 
 - **ID:** EPIC-008
 - **Title:** Inventory and warehouses
-- **Status:** In Progress
+- **Status:** Cancelled
 
-## Business objective
+## Cancellation (2026-07-31)
+
+**Superseded by [ADR-029](../../decisions/ADR-029-single-product-quantity-no-warehouse.md) / [CHANGE-002](../unplanned/CHANGE-002-single-product-quantity-no-warehouse.md)** (owner decision 2026-07-31).
+
+- Separate Warehouse / Stock module withdrawn.
+- Product quantity moves to the **Products** domain (`Product.currentQuantity` + product quantity history).
+- Do not implement further EPIC-008 work (including TASK-021-05).
+- Historical Done tasks under US-020 / US-021 remain as planning history; runtime warehouse/inventory code is removed under CHANGE-002.
+
+## Business objective (historical)
 
 Immutable stock movements, warehouses, balances, transfers, counts, adjustments.
 
-## User / business value
+## User / business value (historical)
 
 Stock truth before safe purchase receipt and sale issue.
 
-## Scope
+## Scope (historical — withdrawn)
 
 - Warehouse master (US-020)
 - Movement ledger, balances, one-step transfers, adjustments, write-offs, stock count (US-021)
-- Quantity-only; hard-block negative balances in v1 ([ADR-026](../../decisions/ADR-026-initial-warehouses-v1.md))
+- Quantity-only; negative balances allowed in v1 (ADR-027; superseded for module scope by ADR-029)
 
-## Exclusions
+## Exclusions (historical)
 
 - Costing engine (EPIC-013)
-- Yatı / vehicle warehouses (EPIC-014)
-- Purchase/sale posting into inventory (EPIC-009 / EPIC-010)
-- Controlled negative-stock exception cases (BRD-OD-04) — deferred; v1 hard-blocks only
-- Damaged goods-receipt destination policy (AD-05) — purchasing epic
+- Yatı / vehicle warehouses (EPIC-014) — vehicle-warehouse model also withdrawn pending redesign under ADR-029
+- Purchase/sale posting into inventory (EPIC-009 / EPIC-010) — retarget to product quantity
+- Controlled negative-stock exception cases — see ADR-029 product-level rules
 
-## Dependencies
+## Dependencies (historical)
 
-EPIC-005 Done; EPIC-007 Done; ADR-026.
+EPIC-005 Done; EPIC-007 Done; ADR-026 (superseded by ADR-029 for warehouse topology).
 
 ## Related ADRs / docs
 
-invariants Inventory; workflow-map Inventory; ADR-026; ADR-024; ADR-025.
+ADR-029 (authoritative); ADR-026 superseded; ADR-027 intent re-homed to product quantity; CHANGE-002.
 
 ## Child user stories
 
-- [US-020](../stories/US-020-warehouse-master-data.md) — **Done**
-- [US-021](../stories/US-021-inventory-movements-balances.md) — **Ready** (next TASK-021-01)
+- [US-020](../stories/US-020-warehouse-master-data.md) — **Cancelled** (was Done; superseded ADR-029)
+- [US-021](../stories/US-021-inventory-movements-balances.md) — **Cancelled** (superseded; TASK-021-05 abandoned)
 
 ## Completion definition
 
-Warehouse master operable; posted inventory effects auditable and reconcilable to movements for in-module operations.
+N/A — epic cancelled. Product quantity capability delivered under Products / CHANGE-002, not this epic.
 
 ## Known risks
 
-Initial stock may require adjustments until purchase posting exists.
+N/A for cancelled epic.
 
 ## Open questions
 
-BRD-OD-04 exception policy; AD-05 (purchase). AD-06 accepted for v1 one-step transfers (ADR-026).
+N/A for cancelled epic. Remaining quantity rules: ADR-029.
 
 ## Repository evidence
 
-ADR-026 accepted; Warehouse master (DB + API + Anbarlar UI) Done. Stock movements still absent (US-021).
+Prior warehouse/inventory delivery (US-020 / US-021 tasks) is historical. CHANGE-002 removes runtime Warehouse/Stock modules.
 
-## 2026-07-31 activation
+## 2026-07-31 activation (historical)
 
-Owner: inventory module only. Tasks TASK-020-01..05 and TASK-021-01..05 elaborated.
+Owner initially activated inventory module only. Later same day superseded by ADR-029 / CHANGE-002.

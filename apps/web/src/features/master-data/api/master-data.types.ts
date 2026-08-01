@@ -30,16 +30,13 @@ export type MasterDataListQuery = {
   categoryId?: string;
   isCustomer?: boolean;
   isSupplier?: boolean;
-  defaultCurrencyId?: string;
 };
 
 export type MasterDataEntityName =
-  | 'currencies'
   | 'units'
   | 'products'
   | 'product-categories'
-  | 'business-partners'
-  | 'warehouses';
+  | 'business-partners';
 
 export type BusinessPartnerDuplicateMatchedField =
   | 'name'
