@@ -75,6 +75,10 @@
   margin-bottom: 12px;
 }
 
+.reference-filter-card:has(.ui-filter-collapse) .reference-filter-heading {
+  display: none;
+}
+
 .reference-filter-heading > div {
   gap: 8px;
 }

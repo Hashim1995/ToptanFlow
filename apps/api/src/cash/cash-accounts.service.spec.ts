@@ -1,4 +1,8 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Decimal } from '@prisma/client/runtime/client';
 import { SortOrder } from '../common/sorting/sort-order.enum';
 import { CashAccountsService } from './cash-accounts.service';
@@ -7,6 +11,7 @@ import { CashAccountSortByField } from './dto/list-cash-accounts-query.dto';
 describe('CashAccountsService', () => {
   const actorId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
   const accountId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+  const responsibleUserId = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 
   const baseAccount = {
     id: accountId,
@@ -14,14 +19,14 @@ describe('CashAccountsService', () => {
     code: 'CA-0000001',
     currentBalance: new Decimal('1000.00'),
     notes: null as string | null,
-    responsibleUserId: null as string | null,
+    responsibleUserId,
     isActive: true,
     deactivatedAt: null as Date | null,
     deactivationReason: null as string | null,
     createdAt: new Date('2026-08-01T00:00:00.000Z'),
     updatedAt: new Date('2026-08-01T00:00:00.000Z'),
     createdByUserId: actorId,
-    responsibleUser: null as { id: string; fullName: string } | null,
+    responsibleUser: { id: responsibleUserId, fullName: 'Responsible user' },
   };
 
   const prisma = {
@@ -52,6 +57,10 @@ describe('CashAccountsService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    prisma.user.findUnique.mockResolvedValue({
+      id: responsibleUserId,
+      isActive: true,
+    });
     service = new CashAccountsService(
       prisma as never,
       numberSequences as never,
@@ -79,7 +88,10 @@ describe('CashAccountsService', () => {
         },
       );
 
-      const result = await service.create({ name: 'Ofis kassası' }, actorId);
+      const result = await service.create(
+        { name: 'Ofis kassası', responsibleUserId },
+        actorId,
+      );
 
       expect(result.code).toBe('CA-0000001');
       expect(result.currentBalance).toBe('0.00');
@@ -107,7 +119,11 @@ describe('CashAccountsService', () => {
       );
 
       const result = await service.create(
-        { name: 'Ofis kassası', openingBalance: '1000.00' },
+        {
+          name: 'Ofis kassası',
+          responsibleUserId,
+          openingBalance: '1000.00',
+        },
         actorId,
       );
 
@@ -126,8 +142,21 @@ describe('CashAccountsService', () => {
       prisma.$transaction.mockRejectedValue({ code: 'P2002' });
 
       await expect(
-        service.create({ name: 'Ofis kassası' }, actorId),
+        service.create({ name: 'Ofis kassası', responsibleUserId }, actorId),
       ).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it('reports a distinct conflict when the user already owns an account', async () => {
+      prisma.$transaction.mockRejectedValue({
+        code: 'P2002',
+        meta: { target: ['responsibleUserId'] },
+      });
+
+      await expect(
+        service.create({ name: 'Yeni kassa', responsibleUserId }, actorId),
+      ).rejects.toMatchObject({
+        response: { code: 'CASH_ACCOUNT_RESPONSIBLE_USER_CONFLICT' },
+      });
     });
   });
 
@@ -173,6 +202,41 @@ describe('CashAccountsService', () => {
         }),
       );
       expect(result.name).toBe('Yeni ad');
+    });
+
+    it('rejects an ownership change by an ordinary user', async () => {
+      prisma.cashAccount.findUnique.mockResolvedValue(baseAccount);
+
+      await expect(
+        service.update(
+          accountId,
+          { responsibleUserId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd' },
+          false,
+        ),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(prisma.cashAccount.update).not.toHaveBeenCalled();
+    });
+
+    it('allows a Super Admin to assign an active unowned user', async () => {
+      const nextOwner = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+      prisma.cashAccount.findUnique.mockResolvedValue(baseAccount);
+      prisma.user.findUnique.mockResolvedValue({
+        id: nextOwner,
+        isActive: true,
+      });
+      prisma.cashAccount.update.mockResolvedValue({
+        ...baseAccount,
+        responsibleUserId: nextOwner,
+        responsibleUser: { id: nextOwner, fullName: 'Yeni məsul şəxs' },
+      });
+
+      const result = await service.update(
+        accountId,
+        { responsibleUserId: nextOwner },
+        true,
+      );
+
+      expect(result.responsibleUserId).toBe(nextOwner);
     });
   });
 

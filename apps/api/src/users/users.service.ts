@@ -117,7 +117,7 @@ export class UsersService {
     }
 
     if (dto.isActive === false) {
-      this.assertMayDeactivate(existing);
+      await this.assertMayDeactivate(existing);
     }
 
     const data: {
@@ -185,7 +185,7 @@ export class UsersService {
       return this.toResponse(existing);
     }
 
-    this.assertMayDeactivate(existing);
+    await this.assertMayDeactivate(existing);
 
     const user = await this.prisma.user.update({
       where: { id },
@@ -195,12 +195,26 @@ export class UsersService {
     return this.toResponse(user);
   }
 
-  private assertMayDeactivate(user: UserRecord): void {
+  private async assertMayDeactivate(user: UserRecord): Promise<void> {
     // Super Admin is the root operator (ADR-039): never soft-deactivate.
     if (user.isSuperAdmin) {
       throw new ForbiddenException({
         message: 'Super Admin cannot be deactivated',
         code: 'SUPERADMIN_IMMUTABLE',
+      });
+    }
+
+    const responsibleAccount = await this.prisma.cashAccount.findUnique({
+      where: { responsibleUserId: user.id },
+      select: { id: true, name: true },
+    });
+    if (responsibleAccount) {
+      throw new ConflictException({
+        message:
+          'Reassign the responsible Cash Account before deactivating this user',
+        code: 'USER_RESPONSIBLE_FOR_CASH_ACCOUNT',
+        cashAccountId: responsibleAccount.id,
+        cashAccountName: responsibleAccount.name,
       });
     }
   }

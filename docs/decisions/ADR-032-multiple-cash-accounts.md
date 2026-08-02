@@ -34,6 +34,10 @@ account balances.
    authorization or business-logic branches.
 7. Vehicle-cash / Yatı-specific account rules remain deferred with EPIC-014.
 8. Personal-funds reimbursement ledger remains gated by AD-08 (Deferred).
+9. **Amended by ADR-040 (2026-08-03):** each Cash Account has exactly one
+   responsible active User and a User may own at most one Cash Account.
+   Ownership supplies the logged-in user's default selection, but does not
+   prevent selecting another active account.
 
 ### BRD-OD-03
 
@@ -61,7 +65,8 @@ people.
 
 - EPIC-011 scope is Multi-Cash-Account Management (not a single till).
 - Invariants and UI must show per-account balances and Total Company Cash.
-- ADR-025 still applies: v1 has no Role/Permission tables. Cash **capability
+- ADR-025 still applies: v1 has no Role/Permission tables. Except for Cash
+  Account creation/ownership under ADR-040, Cash **capability
   catalog** is documented for future auth; v1 = any active authenticated user
   may operate Cash, with mandatory reasons for high-risk actions (see
   CHANGE-004 impact report §12 and ADR-037).

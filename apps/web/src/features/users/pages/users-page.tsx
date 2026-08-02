@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState } from "react";
 import {
   Alert,
   Button,
@@ -12,58 +12,59 @@ import {
   Tag,
   Typography,
   message,
-} from 'antd';
-import type { ColumnsType } from 'antd/es/table';
+} from "antd";
+import type { ColumnsType } from "antd/es/table";
 import {
   PencilSimple,
   Plus,
   Power,
   Prohibit,
   UsersThree,
-} from '@phosphor-icons/react';
-import { mapApiError } from '../../../api/map-api-error';
-import { ICON_SIZE, phIcon } from '../../../shared/ui/ph-icon';
-import { CodeText } from '../../../shared/ui/table-cells';
+} from "@phosphor-icons/react";
+import { mapApiError } from "../../../api/map-api-error";
+import { ICON_SIZE, phIcon } from "../../../shared/ui/ph-icon";
+import { CodeText } from "../../../shared/ui/table-cells";
 import {
   ActiveStatusFilter,
   FilterBar,
   FilterField,
-} from '../../master-data/ui/list-toolbar';
-import { PageHeader } from '../../master-data/ui/page-header';
-import { ActiveStatusTag } from '../../master-data/ui/active-status-tag';
+} from "../../master-data/ui/list-toolbar";
+import { PageHeader } from "../../master-data/ui/page-header";
+import { ActiveStatusTag } from "../../master-data/ui/active-status-tag";
 import {
   activeFilterToIsActive,
   type ActiveFilterValue,
-} from '../../master-data/ui/active-filter';
-import type { AppUser } from '../api/users.api';
+} from "../../master-data/ui/active-filter";
+import type { AppUser } from "../api/users.api";
 import {
   useCreateUser,
   useDeactivateUser,
   useUpdateUser,
   useUsersList,
-} from '../api/users.hooks';
+} from "../api/users.hooks";
 import type {
   CreateUserFormValues,
   EditUserFormValues,
-} from '../forms/users.schemas';
-import { USERS_LABELS } from '../ui/labels';
-import { CreateUserFormModal, EditUserFormModal } from '../ui/user-form-modals';
+} from "../forms/users.schemas";
+import { USERS_LABELS } from "../ui/labels";
+import { CreateUserFormModal, EditUserFormModal } from "../ui/user-form-modals";
+import "./users-page.css";
 
 const { Text } = Typography;
 
 type FormMode =
-  { kind: 'closed' } | { kind: 'create' } | { kind: 'edit'; user: AppUser };
+  { kind: "closed" } | { kind: "create" } | { kind: "edit"; user: AppUser };
 
 export function UsersPage() {
   const screens = Grid.useBreakpoint();
   const isDesktop = Boolean(screens.md);
 
-  const [searchInput, setSearchInput] = useState('');
-  const [search, setSearch] = useState('');
-  const [activeFilter, setActiveFilter] = useState<ActiveFilterValue>('all');
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [activeFilter, setActiveFilter] = useState<ActiveFilterValue>("all");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [formMode, setFormMode] = useState<FormMode>({ kind: 'closed' });
+  const [formMode, setFormMode] = useState<FormMode>({ kind: "closed" });
   const [formError, setFormError] = useState<string | undefined>();
 
   const listQuery = useMemo(
@@ -72,8 +73,8 @@ export function UsersPage() {
       pageSize,
       search: search || undefined,
       isActive: activeFilterToIsActive(activeFilter),
-      sortBy: 'username' as const,
-      sortOrder: 'asc' as const,
+      sortBy: "username" as const,
+      sortOrder: "asc" as const,
     }),
     [page, pageSize, search, activeFilter],
   );
@@ -87,15 +88,15 @@ export function UsersPage() {
   const columns: ColumnsType<AppUser> = [
     {
       title: USERS_LABELS.status,
-      dataIndex: 'isActive',
-      key: 'isActive',
+      dataIndex: "isActive",
+      key: "isActive",
       width: 110,
       render: (isActive: boolean) => <ActiveStatusTag isActive={isActive} />,
     },
     {
       title: USERS_LABELS.fullName,
-      dataIndex: 'fullName',
-      key: 'fullName',
+      dataIndex: "fullName",
+      key: "fullName",
       render: (value: string, row) => (
         <Space wrap size={6}>
           <Text strong>{value}</Text>
@@ -107,14 +108,14 @@ export function UsersPage() {
     },
     {
       title: USERS_LABELS.username,
-      dataIndex: 'username',
-      key: 'username',
+      dataIndex: "username",
+      key: "username",
       width: 160,
       render: (value: string) => <CodeText value={value} />,
     },
     {
       title: USERS_LABELS.actions,
-      key: 'actions',
+      key: "actions",
       width: 200,
       render: (_, record) => (
         <Space size={4}>
@@ -155,16 +156,16 @@ export function UsersPage() {
 
   function openCreate() {
     setFormError(undefined);
-    setFormMode({ kind: 'create' });
+    setFormMode({ kind: "create" });
   }
 
   function openEdit(user: AppUser) {
     setFormError(undefined);
-    setFormMode({ kind: 'edit', user });
+    setFormMode({ kind: "edit", user });
   }
 
   function closeForm() {
-    setFormMode({ kind: 'closed' });
+    setFormMode({ kind: "closed" });
     setFormError(undefined);
   }
 
@@ -184,7 +185,7 @@ export function UsersPage() {
   }
 
   async function handleEdit(values: EditUserFormValues) {
-    if (formMode.kind !== 'edit') return;
+    if (formMode.kind !== "edit") return;
     setFormError(undefined);
     const password = values.password?.trim();
     try {
@@ -209,7 +210,7 @@ export function UsersPage() {
       return;
     }
     Modal.confirm({
-      className: 'app-mobile-modal',
+      className: "app-mobile-modal",
       title: USERS_LABELS.deactivateConfirm,
       okText: USERS_LABELS.confirm,
       cancelText: USERS_LABELS.cancel,
@@ -227,7 +228,7 @@ export function UsersPage() {
 
   function confirmActivate(user: AppUser) {
     Modal.confirm({
-      className: 'app-mobile-modal',
+      className: "app-mobile-modal",
       title: USERS_LABELS.activateConfirm,
       okText: USERS_LABELS.confirm,
       cancelText: USERS_LABELS.cancel,
@@ -251,11 +252,11 @@ export function UsersPage() {
   const rows = list.data?.data ?? [];
 
   return (
-    <div className="ui-page ui-list-page">
+    <div className="ui-page ui-list-page users-page">
       <PageHeader
         title={USERS_LABELS.title}
         description={USERS_LABELS.description}
-        icon={phIcon(UsersThree, { size: ICON_SIZE.xl, weight: 'duotone' })}
+        icon={phIcon(UsersThree, { size: ICON_SIZE.xl, weight: "duotone" })}
         extra={
           <Button
             type="primary"
@@ -267,20 +268,37 @@ export function UsersPage() {
         }
       />
 
-      <FilterBar>
-        <FilterField label={USERS_LABELS.search}>
-          <Input.Search
-            allowClear
-            placeholder={USERS_LABELS.searchPlaceholder}
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
-            onSearch={(value) => {
-              setSearch(value.trim());
-              setPage(1);
-            }}
-          />
-        </FilterField>
-        <FilterField label={USERS_LABELS.status}>
+      <Card className="users-filter-card" size="small">
+        <div className="users-filter-heading">
+          <Text strong>{USERS_LABELS.search}</Text>
+          <span className="users-result-count">
+            {list.data?.meta.total ?? 0}
+          </span>
+        </div>
+        <FilterBar
+          onSearch={() => {
+            setSearch(searchInput.trim());
+            setPage(1);
+          }}
+          onReset={() => {
+            setSearchInput("");
+            setSearch("");
+            setActiveFilter("all");
+            setPage(1);
+          }}
+        >
+          <FilterField label={USERS_LABELS.search}>
+            <Input
+              allowClear
+              placeholder={USERS_LABELS.searchPlaceholder}
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              onPressEnter={() => {
+                setSearch(searchInput.trim());
+                setPage(1);
+              }}
+            />
+          </FilterField>
           <ActiveStatusFilter
             value={activeFilter}
             onChange={(value) => {
@@ -288,8 +306,8 @@ export function UsersPage() {
               setPage(1);
             }}
           />
-        </FilterField>
-      </FilterBar>
+        </FilterBar>
+      </Card>
 
       {listError ? (
         <Alert
@@ -306,20 +324,27 @@ export function UsersPage() {
       ) : null}
 
       {isDesktop ? (
-        <Table
-          rowKey="id"
-          size="small"
-          loading={list.isLoading}
-          columns={columns}
-          dataSource={rows}
-          pagination={false}
-          locale={{ emptyText: USERS_LABELS.empty }}
-        />
+        <div className="users-table-shell">
+          <Table
+            className="users-table"
+            rowKey="id"
+            size="small"
+            loading={list.isLoading}
+            columns={columns}
+            dataSource={rows}
+            pagination={false}
+            locale={{ emptyText: USERS_LABELS.empty }}
+          />
+        </div>
       ) : (
-        <Space className="ui-mobile-list" direction="vertical" size={12}>
+        <div className="users-mobile-list">
           {rows.map((user) => (
-            <Card className="ui-mobile-card" key={user.id} size="small">
-              <Space direction="vertical" size={8} style={{ width: '100%' }}>
+            <Card
+              className={`users-mobile-card${user.isActive ? "" : " is-inactive"}`}
+              key={user.id}
+              size="small"
+            >
+              <Space direction="vertical" size={8} style={{ width: "100%" }}>
                 <Space wrap>
                   <Text strong>{user.fullName}</Text>
                   <ActiveStatusTag isActive={user.isActive} />
@@ -361,21 +386,20 @@ export function UsersPage() {
             </Card>
           ))}
           {!list.isLoading && rows.length === 0 ? (
-            <Card className="ui-mobile-card ui-empty-card" size="small">
+            <Card className="users-mobile-card users-empty-card" size="small">
               <Text type="secondary">{USERS_LABELS.empty}</Text>
             </Card>
           ) : null}
-        </Space>
+        </div>
       )}
 
-      <div
-        style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}
-      >
+      <div className="users-pagination">
         <Pagination
           current={page}
           pageSize={pageSize}
           total={list.data?.meta.total ?? 0}
           showSizeChanger
+          responsive
           onChange={(nextPage, nextSize) => {
             setPage(nextPage);
             setPageSize(nextSize);
@@ -384,24 +408,24 @@ export function UsersPage() {
       </div>
 
       <CreateUserFormModal
-        open={formMode.kind === 'create'}
+        open={formMode.kind === "create"}
         submitting={submitting}
         errorMessage={formError}
         onCancel={closeForm}
         onSubmit={handleCreate}
       />
       <EditUserFormModal
-        open={formMode.kind === 'edit'}
+        open={formMode.kind === "edit"}
         submitting={submitting}
         errorMessage={formError}
         initialValues={
-          formMode.kind === 'edit'
+          formMode.kind === "edit"
             ? {
                 fullName: formMode.user.fullName,
                 username: formMode.user.username,
-                password: '',
+                password: "",
               }
-            : { fullName: '', username: '', password: '' }
+            : { fullName: "", username: "", password: "" }
         }
         onCancel={closeForm}
         onSubmit={handleEdit}

@@ -29,6 +29,9 @@ export const cashAccountFormSchema = z.object({
     .max(255),
   notes: z.string().trim().max(2000),
   openingBalance: moneyOptionalNonNegative,
+  responsibleUserId: z
+    .string()
+    .uuid({ message: CASH_LABELS.validation.responsibleUserRequired }),
 });
 
 export type CashAccountFormValues = z.infer<typeof cashAccountFormSchema>;

@@ -7,7 +7,8 @@ import {
 import type { AuthenticatedUser } from './jwt.strategy';
 
 /**
- * Users module only (ADR-039). Other domains remain flat equal active users.
+ * Narrow administrative boundary: Users plus Cash Account creation/ownership
+ * (ADR-039 / ADR-040). Cash transactions remain flat-equal active-user actions.
  */
 @Injectable()
 export class SuperAdminGuard implements CanActivate {

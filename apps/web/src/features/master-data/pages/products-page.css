@@ -71,6 +71,10 @@
   margin-bottom: 12px;
 }
 
+.products-filter-card:has(.ui-filter-collapse) .products-filter-heading {
+  display: none;
+}
+
 .products-filter-heading > div {
   display: flex;
   align-items: center;
@@ -172,15 +176,15 @@
 
 .products-mobile-list {
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 .product-mobile-card.ant-card,
 .products-empty-card.ant-card {
   overflow: hidden;
   border-color: #e4e9ef;
-  border-radius: var(--products-radius-md);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.055);
+  border-radius: 11px;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.045);
 }
 
 .product-mobile-card.is-inactive {
@@ -189,7 +193,7 @@
 }
 
 .product-mobile-card > .ant-card-body {
-  padding: 16px;
+  padding: 11px 12px;
 }
 
 .product-mobile-topline {
@@ -203,7 +207,7 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  gap: 10px;
+  gap: 2px;
 }
 
 .product-mobile-identity-field {
@@ -219,7 +223,7 @@
 }
 
 .product-mobile-name.ant-typography {
-  font-size: 16px;
+  font-size: 14px;
   line-height: 1.35;
   overflow-wrap: anywhere;
 }
@@ -233,14 +237,14 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 11px;
+  margin-top: 7px;
 }
 
 .product-mobile-primary {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
-  margin-top: 15px;
+  margin-top: 9px;
 }
 
 .product-mobile-primary > div {
@@ -248,10 +252,10 @@
   flex-direction: column;
   min-width: 0;
   gap: 4px;
-  padding: 12px;
+  padding: 8px 9px;
   background: linear-gradient(135deg, #f7faff, #eef5ff);
   border: 1px solid #e0eaf6;
-  border-radius: 11px;
+  border-radius: 8px;
 }
 
 .product-mobile-primary .ant-typography {
@@ -260,7 +264,7 @@
 
 .product-mobile-primary strong {
   color: #102a43;
-  font-size: 17px;
+  font-size: 14px;
   line-height: 1.25;
   overflow-wrap: anywhere;
 }
@@ -268,8 +272,8 @@
 .product-mobile-details {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: 15px;
+  gap: 7px 12px;
+  margin-top: 9px;
 }
 
 .product-mobile-details > div {
@@ -310,6 +314,27 @@
   min-height: 40px;
   border-radius: 9px;
   font-weight: 600;
+}
+
+.product-mobile-head-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 3px;
+}
+
+.product-mobile-head-actions .ant-btn {
+  width: 29px;
+  min-width: 29px;
+  height: 29px;
+  padding: 0;
+  color: #31506f;
+  background: #f1f5f9;
+  border-radius: 7px;
+}
+
+.product-mobile-head-actions .ant-btn-dangerous {
+  background: #fff1f0;
 }
 
 .products-empty-card > .ant-card-body {

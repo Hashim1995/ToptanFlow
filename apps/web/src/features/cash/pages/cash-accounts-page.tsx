@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Alert,
   Button,
@@ -34,6 +34,7 @@ import {
   Wallet,
 } from "@phosphor-icons/react";
 import { mapApiError } from "../../../api/map-api-error";
+import { useAuth } from "../../auth/use-auth";
 import { formatDateTime } from "../../../shared/datetime";
 import { formatMoney } from "../../../shared/money/format-money";
 import { ICON_SIZE, phIcon } from "../../../shared/ui/ph-icon";
@@ -91,12 +92,20 @@ function isNegativeBalance(value: string): boolean {
 
 export function CashAccountsPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { user } = useAuth();
+  const isSuperAdmin = Boolean(user?.isSuperAdmin);
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [formMode, setFormMode] = useState<AccountFormMode>({ kind: "closed" });
-  const [movementMode, setMovementMode] = useState<MovementMode>({
-    kind: "closed",
+  const [movementMode, setMovementMode] = useState<MovementMode>(() => {
+    const action = searchParams.get("action");
+    if (action === "cash-in") return { kind: "in", account: null };
+    if (action === "cash-out") return { kind: "out", account: null };
+    if (action === "expense") return { kind: "expense", account: null };
+    if (action === "transfer") return { kind: "transfer", account: null };
+    return { kind: "closed" };
   });
   const [formError, setFormError] = useState<string | undefined>();
   const [movementError, setMovementError] = useState<string | undefined>();
@@ -139,6 +148,7 @@ export function CashAccountsPage() {
           name: values.name,
           notes: values.notes || undefined,
           openingBalance: values.openingBalance || undefined,
+          responsibleUserId: values.responsibleUserId,
         });
         message.success(CASH_LABELS.success.created);
       } else if (formMode.kind === "edit") {
@@ -147,6 +157,9 @@ export function CashAccountsPage() {
           input: {
             name: values.name,
             notes: values.notes || null,
+            ...(isSuperAdmin
+              ? { responsibleUserId: values.responsibleUserId }
+              : {}),
           },
         });
         message.success(CASH_LABELS.success.updated);
@@ -366,13 +379,15 @@ export function CashAccountsPage() {
               </Title>
             </div>
           </div>
-          <Button
-            className="cash-create-button"
-            icon={phIcon(Plus, { size: ICON_SIZE.md, weight: "bold" })}
-            onClick={() => setFormMode({ kind: "create" })}
-          >
-            {CASH_LABELS.createAccount}
-          </Button>
+          {isSuperAdmin ? (
+            <Button
+              className="cash-create-button"
+              icon={phIcon(Plus, { size: ICON_SIZE.md, weight: "bold" })}
+              onClick={() => setFormMode({ kind: "create" })}
+            >
+              {CASH_LABELS.createAccount}
+            </Button>
+          ) : null}
         </header>
 
         <Card className="cash-hero-card">
@@ -552,13 +567,15 @@ export function CashAccountsPage() {
                   </Space>
                 }
               >
-                <Button
-                  type="primary"
-                  icon={phIcon(Plus, { size: ICON_SIZE.sm })}
-                  onClick={() => setFormMode({ kind: "create" })}
-                >
-                  {CASH_LABELS.createAccount}
-                </Button>
+                {isSuperAdmin ? (
+                  <Button
+                    type="primary"
+                    icon={phIcon(Plus, { size: ICON_SIZE.sm })}
+                    onClick={() => setFormMode({ kind: "create" })}
+                  >
+                    {CASH_LABELS.createAccount}
+                  </Button>
+                ) : null}
               </Empty>
             </Card>
           ) : null}
@@ -586,7 +603,7 @@ export function CashAccountsPage() {
                           <Text strong className="cash-account-name" ellipsis>
                             {account.name}
                           </Text>
-                        </Link>
+                        </Link>{" "}
                         <div className="cash-account-tags">
                           <ActiveStatusTag isActive={account.isActive} />
                           {negative ? (
@@ -749,7 +766,7 @@ export function CashAccountsPage() {
 
                     <div className="cash-account-footer">
                       <Button
-                        className="cash-details-button"
+                        className="cash-card-action cash-details-button"
                         block
                         onClick={() => navigate(`/cash/accounts/${account.id}`)}
                       >
@@ -757,7 +774,7 @@ export function CashAccountsPage() {
                         {phIcon(CaretRight, { size: ICON_SIZE.sm })}
                       </Button>
                       <Button
-                        type="primary"
+                        className="cash-card-action cash-card-action-in"
                         disabled={!account.isActive}
                         icon={phIcon(ArrowDown, { size: ICON_SIZE.sm })}
                         onClick={() => setMovementMode({ kind: "in", account })}
@@ -765,7 +782,7 @@ export function CashAccountsPage() {
                         {CASH_LABELS.cashIn}
                       </Button>
                       <Button
-                        danger
+                        className="cash-card-action cash-card-action-out"
                         disabled={!account.isActive}
                         icon={phIcon(ArrowUp, { size: ICON_SIZE.sm })}
                         onClick={() =>
@@ -775,6 +792,7 @@ export function CashAccountsPage() {
                         {CASH_LABELS.cashOut}
                       </Button>
                       <Button
+                        className="cash-card-action cash-card-action-expense"
                         disabled={!account.isActive}
                         icon={phIcon(Receipt, { size: ICON_SIZE.sm })}
                         onClick={() =>
@@ -784,6 +802,7 @@ export function CashAccountsPage() {
                         {CASH_LABELS.expense}
                       </Button>
                       <Button
+                        className="cash-card-action cash-card-action-transfer"
                         disabled={!account.isActive}
                         icon={phIcon(ArrowsLeftRight, { size: ICON_SIZE.sm })}
                         onClick={() =>

@@ -1,0 +1,202 @@
+.home-page {
+  width: 100%;
+  max-width: 1680px;
+  margin: 0 auto;
+}
+
+.home-hero {
+  margin-bottom: 18px;
+}
+
+.home-eyebrow.ant-typography {
+  color: #1677ff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.home-title.ant-typography {
+  margin: 5px 0 4px;
+}
+
+.home-description.ant-typography {
+  margin-bottom: 0;
+}
+
+.home-quick-section {
+  margin-bottom: 18px;
+  padding: 12px 0 4px;
+  border-top: 1px solid #e3eaf3;
+  border-bottom: 1px solid #e3eaf3;
+}
+
+.home-section-heading {
+  margin-bottom: 9px;
+}
+
+.home-section-heading .ant-typography {
+  margin: 0;
+}
+
+.home-section-heading .ant-typography-secondary {
+  font-size: 12px;
+}
+
+.home-quick-grid {
+  display: grid;
+  grid-auto-columns: minmax(154px, 68vw);
+  grid-auto-flow: column;
+  gap: 8px;
+  margin: 0 -6px;
+  padding: 2px 6px 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-inline: contain;
+  scroll-snap-type: inline proximity;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd8e8 transparent;
+  -webkit-overflow-scrolling: touch;
+}
+
+.home-quick-grid::-webkit-scrollbar {
+  height: 5px;
+}
+
+.home-quick-grid::-webkit-scrollbar-thumb {
+  background: #cbd8e8;
+  border-radius: 999px;
+}
+
+.home-quick-link {
+  display: block;
+  min-width: 0;
+  color: inherit;
+  scroll-snap-align: start;
+}
+
+.home-quick-card.ant-card {
+  height: 100%;
+  min-height: 60px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.045);
+}
+
+.home-quick-card > .ant-card-body {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 9px;
+  padding: 10px !important;
+  color: #172033;
+}
+
+.home-quick-link:hover .home-quick-card.ant-card,
+.home-quick-link:focus-visible .home-quick-card.ant-card {
+  color: #172033;
+  border-color: #9fc5f8;
+  box-shadow: 0 7px 18px rgba(22, 119, 255, 0.1);
+}
+
+.home-quick-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  color: #1677ff;
+  background: #eaf3ff;
+  border-radius: 11px;
+}
+
+.home-quick-card.is-in .home-quick-icon {
+  color: #16803c;
+  background: #edf9f1;
+}
+
+.home-quick-card.is-out .home-quick-icon,
+.home-quick-card.is-expense .home-quick-icon {
+  color: #c2413a;
+  background: #fff1f0;
+}
+
+.home-quick-card.is-purchase .home-quick-icon {
+  color: #7c3aed;
+  background: #f3efff;
+}
+
+.home-quick-card.is-sale .home-quick-icon {
+  color: #be185d;
+  background: #fff0f6;
+}
+
+.home-quick-card.is-transfer .home-quick-icon {
+  color: #0369a1;
+  background: #eaf7ff;
+}
+
+.home-quick-copy {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+
+.home-quick-copy strong {
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.home-quick-copy span {
+  display: none;
+  color: #7a8799;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.home-quick-arrow {
+  display: inline-flex;
+  flex: 0 0 auto;
+  color: #94a3b8;
+}
+
+.home-shortcuts {
+  margin-top: 0;
+}
+
+.home-shortcut-link {
+  display: block;
+  height: 100%;
+}
+
+.home-shortcut-card.ant-card {
+  height: 100%;
+  border-color: #e3e9f1;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.045);
+}
+
+@media (min-width: 640px) {
+  .home-quick-grid {
+    grid-auto-columns: minmax(190px, 30vw);
+  }
+
+  .home-quick-copy span {
+    display: block;
+  }
+}
+
+@media (min-width: 1200px) {
+  .home-quick-section {
+    padding: 13px 0 5px;
+  }
+
+  .home-quick-grid {
+    grid-auto-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    overflow-x: hidden;
+  }
+}

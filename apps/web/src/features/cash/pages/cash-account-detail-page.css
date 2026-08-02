@@ -97,7 +97,11 @@
   padding: 22px;
   color: #fff;
   background:
-    radial-gradient(circle at 90% 0%, rgba(255, 255, 255, 0.18), transparent 38%),
+    radial-gradient(
+      circle at 90% 0%,
+      rgba(255, 255, 255, 0.18),
+      transparent 38%
+    ),
     linear-gradient(135deg, #0c315f 0%, #1457a6 58%, #1677ff 100%);
 }
 
@@ -262,14 +266,14 @@
 
 .cash-detail-mobile-list {
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 .cash-transaction-card.ant-card,
 .cash-detail-empty.ant-card {
   border-color: #e6ebf1;
-  border-radius: var(--cash-detail-radius-md);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.055);
+  border-radius: 11px;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.045);
 }
 
 .cash-transaction-card.is-cancelled {
@@ -278,7 +282,7 @@
 }
 
 .cash-transaction-card > .ant-card-body {
-  padding: 16px;
+  padding: 11px 12px;
 }
 
 .cash-transaction-topline {
@@ -296,88 +300,94 @@
 
 .cash-transaction-identity {
   display: flex;
-  flex-direction: column;
   min-width: 0;
-  gap: 5px;
+  align-items: center;
+  gap: 8px;
 }
 
-.cash-transaction-identity strong {
-  overflow-wrap: anywhere;
-}
-
-.cash-transaction-date.ant-typography {
-  display: block;
-  margin-top: 5px;
-  font-size: 12px;
-}
-
-.cash-transaction-amount {
+.cash-transaction-identity > div,
+.cash-transaction-result {
   display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cash-transaction-direction {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+}
+
+.cash-transaction-direction.is-incoming {
+  color: #237804;
+  background: #f0f9e8;
+}
+
+.cash-transaction-direction.is-outgoing {
+  color: #ad4e00;
+  background: #fff7e8;
+}
+
+.cash-transaction-result {
+  flex: 0 0 auto;
   align-items: flex-end;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 15px;
-  padding: 13px;
-  background: #f6f9fd;
-  border: 1px solid #e4edf8;
-  border-radius: 12px;
 }
 
-.cash-transaction-amount .ant-typography {
-  font-size: 12px;
+.cash-transaction-result > strong {
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
 }
 
-.cash-transaction-amount strong {
-  font-size: 20px;
-  line-height: 1.2;
-  text-align: right;
-  overflow-wrap: anywhere;
-}
-
-.cash-transaction-amount.is-incoming strong {
+.cash-transaction-result > strong.is-incoming {
   color: #237804;
 }
 
-.cash-transaction-amount.is-outgoing strong {
+.cash-transaction-result > strong.is-outgoing {
   color: #ad4e00;
 }
 
-.cash-transaction-details {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: 15px;
-}
-
-.cash-transaction-details > div {
+.cash-transaction-result-actions {
   display: flex;
-  flex-direction: column;
-  min-width: 0;
+  align-items: center;
   gap: 3px;
 }
 
-.cash-transaction-details .ant-typography {
+.cash-transaction-details {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-top: 9px;
+  padding-top: 9px;
+  color: #64748b;
   font-size: 11px;
-}
-
-.cash-transaction-details strong {
-  font-size: 13px;
-  line-height: 1.4;
-  overflow-wrap: anywhere;
-}
-
-.cash-transaction-note {
-  grid-column: 1 / -1;
-  padding-top: 12px;
   border-top: 1px solid #edf0f4;
 }
 
-.cash-transaction-cancel.ant-btn {
+.cash-transaction-details > span {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+}
+
+.cash-transaction-note {
   width: 100%;
-  min-height: 40px;
-  margin-top: 16px;
-  border-radius: 9px;
-  font-weight: 600;
+}
+
+.cash-transaction-cancel.ant-btn {
+  width: 27px;
+  min-width: 27px;
+  height: 27px;
+  min-height: 27px;
+  padding: 0;
+  background: #fff1f0;
+  border-radius: 7px;
 }
 
 .cash-detail-pagination {
@@ -418,6 +428,123 @@
 .cash-detail-table .ant-btn-link {
   padding-inline: 6px;
   font-weight: 600;
+}
+
+@media (max-width: 575px) {
+  .cash-detail-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .cash-detail-back.ant-btn {
+    width: 34px;
+    height: 34px;
+  }
+
+  .cash-detail-title.ant-typography {
+    margin-bottom: 3px;
+    font-size: 21px;
+  }
+
+  .cash-detail-edit.ant-btn {
+    width: 38px;
+    min-width: 38px;
+    height: 38px;
+    min-height: 38px;
+    padding: 0;
+    font-size: 0;
+  }
+
+  .cash-detail-summary.ant-card {
+    margin-bottom: 16px;
+    border-radius: 14px;
+  }
+
+  .cash-detail-balance {
+    padding: 15px 18px;
+  }
+
+  .cash-detail-balance-label.ant-typography {
+    margin-bottom: 4px;
+    font-size: 10px;
+  }
+
+  .cash-detail-balance-value {
+    font-size: 31px;
+  }
+
+  .cash-detail-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 10px;
+    padding: 5px 12px;
+  }
+
+  .cash-detail-fact {
+    gap: 7px;
+    padding: 9px 0;
+  }
+
+  .cash-detail-fact + .cash-detail-fact {
+    border-top: 0;
+  }
+
+  .cash-detail-fact-notes {
+    grid-column: 1 / -1;
+    border-top: 1px solid #edf0f4 !important;
+  }
+
+  .cash-detail-fact-icon {
+    width: 29px;
+    height: 29px;
+    border-radius: 8px;
+  }
+
+  .cash-detail-fact .ant-typography {
+    font-size: 10px;
+  }
+
+  .cash-detail-fact strong {
+    font-size: 11px;
+    line-height: 1.35;
+  }
+
+  .cash-detail-actions {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    padding: 9px 12px 11px;
+  }
+
+  .cash-detail-actions .ant-btn {
+    min-height: 36px;
+    padding: 0;
+    font-size: 0;
+    border-radius: 8px;
+  }
+
+  .cash-detail-history-header {
+    margin-bottom: 9px;
+  }
+
+  .cash-detail-history-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+  }
+
+  .cash-detail-history-heading h4.ant-typography {
+    font-size: 17px;
+  }
+
+  .cash-detail-history-heading .ant-typography-secondary {
+    display: none;
+  }
+
+  .cash-detail-filter.ant-card {
+    margin-bottom: 10px;
+  }
 }
 
 @media (min-width: 480px) {

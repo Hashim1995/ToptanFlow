@@ -87,6 +87,12 @@ function mapHttpStatusToAz(statusCode: number, code?: string): string {
   if (code === 'CASH_ACCOUNT_NAME_CONFLICT') {
     return 'Bu adda kassa hesabı artıq mövcuddur. Başqa ad seçin.';
   }
+  if (code === 'CASH_ACCOUNT_RESPONSIBLE_USER_CONFLICT') {
+    return 'Bu istifadəçiyə artıq başqa kassa hesabı təyin edilib.';
+  }
+  if (code === 'USER_RESPONSIBLE_FOR_CASH_ACCOUNT') {
+    return 'İstifadəçini deaktiv etməzdən əvvəl ona təyin edilmiş kassa hesabını başqa məsul şəxsə keçirin.';
+  }
   if (code === 'EXPENSE_CATEGORY_NOT_FOUND') {
     return 'Xərc kateqoriyası tapılmadı.';
   }

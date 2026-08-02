@@ -130,7 +130,7 @@ Workflows are grouped by business area and numbered as in the source analysis (S
 ### 10. Cash In
 - **Purpose:** Record money entering a Cash Account **from a Business Partner** (ADR-038). Primary settlement path that increases cash and decreases partner debt (ADR-028, ADR-030).
 - **Trigger:** Cash is physically received (from Cash module, or optionally via Sale “Receive payment” that creates this separate record — US-048).
-- **Main Steps:** Select Cash Account → Business Partner → amount / date / note → optional Sale link → confirm cash + partner debt before/after → post in one step (ADR-036).
+- **Main Steps:** Default Cash Account to the logged-in user's responsible account (editable to any active account) → Business Partner → amount / date / note → optional Sale link → confirm cash + partner debt before/after → post in one step as the authenticated actor (ADR-036, ADR-040).
 - **Result:** Selected Cash Account increases; partner Debt Balance decreases. Sale documents are not mutated.
 - **Involved Modules:** Cash, Settlement, Business Partners.
 - **Dependencies:** May accompany Sale Payment (Workflow 2). Feeds Cash Closing.
@@ -138,7 +138,7 @@ Workflows are grouped by business area and numbered as in the source analysis (S
 ### 11. Cash Out
 - **Purpose:** Record money leaving a Cash Account **paid to a Business Partner** (ADR-038). Primary settlement path that decreases cash and increases partner debt.
 - **Trigger:** Money is paid (from Cash module, or optionally via Purchase “Pay now” — US-048).
-- **Main Steps:** Select Cash Account → Business Partner → amount / date / note → optional Purchase link → balance check or negative override (ADR-037) → confirm cash + partner debt preview → post.
+- **Main Steps:** Default Cash Account to the logged-in user's responsible account (editable) → Business Partner → amount / date / note → optional Purchase link → balance check or negative override (ADR-037) → confirm cash + partner debt preview → post as the authenticated actor (ADR-040).
 - **Result:** Source Cash Account decreases; partner Debt Balance increases. Purchase documents are not mutated.
 - **Involved Modules:** Cash, Settlement, Business Partners.
 - **Dependencies:** Overlaps with Supplier Payment and Allocation (Workflow 6) for multi-doc allocation later; feeds Cash Closing.
@@ -146,7 +146,7 @@ Workflows are grouped by business area and numbered as in the source analysis (S
 ### 12. Expense
 - **Purpose:** Record an ordinary business operating cost paid from a Cash Account (fuel, rent, utilities, salary, etc.) — **not** a partner settlement (ADR-038).
 - **Trigger:** A business operating cost is paid from a Cash Account.
-- **Main Steps:** Select Cash Account → Expense Category → amount / date → **required description** → confirm cash before/after + category → post. No Business Partner field.
+- **Main Steps:** Default Cash Account to the logged-in user's responsible account (editable) → Expense Category → amount / date → **required description** → confirm cash before/after + category → post as the authenticated actor. No Business Partner field (ADR-040).
 - **Result:** Selected Cash Account decreases; partner debt unchanged.
 - **Involved Modules:** Cash, Expenses.
 - **Dependencies:** Expense categories; AD-07/AD-08 deferred; feeds reporting and Cash Closing.
@@ -154,7 +154,7 @@ Workflows are grouped by business area and numbered as in the source analysis (S
 ### 13. Cash Transfer
 - **Purpose:** Move money from one Cash Account to another as one atomic aggregate (ADR-034 / ADR-038).
 - **Trigger:** Money must move between accounts.
-- **Main Steps:** Select source ≠ destination → amount/date/notes → balance check / override → confirm preview (source/target before/after; Total Company Cash unchanged) → post linked TRANSFER_OUT + TRANSFER_IN.
+- **Main Steps:** Default source to the logged-in user's responsible Cash Account (editable) → select source ≠ destination → amount/date/notes → balance check / override → confirm preview (source/target before/after; Total Company Cash unchanged) → post linked TRANSFER_OUT + TRANSFER_IN as the authenticated actor (ADR-040).
 - **Result:** Source decreases and destination increases by equal amounts; Total Company Cash unchanged; not income/expense; no partner-debt effect.
 - **Involved Modules:** Cash.
 - **Dependencies:** Used by cash float moves between accounts.

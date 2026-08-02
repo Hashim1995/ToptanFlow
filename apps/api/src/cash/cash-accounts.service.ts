@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -71,9 +72,7 @@ export class CashAccountsService {
       throw new BadRequestException('Opening balance cannot be negative');
     }
 
-    if (dto.responsibleUserId) {
-      await this.assertActiveUser(dto.responsibleUserId);
-    }
+    await this.assertActiveUser(dto.responsibleUserId);
 
     try {
       const created = await this.prisma.$transaction(async (tx) => {
@@ -88,7 +87,7 @@ export class CashAccountsService {
             name: dto.name,
             code,
             notes: dto.notes?.trim() || null,
-            responsibleUserId: dto.responsibleUserId ?? null,
+            responsibleUserId: dto.responsibleUserId,
             currentBalance: new Decimal(0),
             createdByUserId: actorUserId,
           },
@@ -115,7 +114,7 @@ export class CashAccountsService {
 
       return this.toResponse(created);
     } catch (error) {
-      this.rethrowUniqueNameConflict(error);
+      this.rethrowUniqueAccountConflict(error);
       throw error;
     }
   }
@@ -185,9 +184,16 @@ export class CashAccountsService {
   async update(
     id: string,
     dto: UpdateCashAccountDto,
+    actorIsSuperAdmin = false,
   ): Promise<CashAccountResponseDto> {
     await this.getById(id);
-    if (dto.responsibleUserId) {
+    if (dto.responsibleUserId !== undefined && !actorIsSuperAdmin) {
+      throw new ForbiddenException({
+        message: 'Only a Super Admin may change Cash Account ownership',
+        code: 'SUPERADMIN_REQUIRED',
+      });
+    }
+    if (dto.responsibleUserId !== undefined) {
       await this.assertActiveUser(dto.responsibleUserId);
     }
 
@@ -205,7 +211,7 @@ export class CashAccountsService {
       });
       return this.toResponse(updated);
     } catch (error) {
-      this.rethrowUniqueNameConflict(error);
+      this.rethrowUniqueAccountConflict(error);
       throw error;
     }
   }
@@ -416,13 +422,25 @@ export class CashAccountsService {
     };
   }
 
-  private rethrowUniqueNameConflict(error: unknown): void {
+  private rethrowUniqueAccountConflict(error: unknown): void {
     if (
       typeof error === 'object' &&
       error !== null &&
       'code' in error &&
       (error as { code: string }).code === 'P2002'
     ) {
+      const target = (error as { meta?: { target?: unknown } }).meta?.target;
+      const targetFields = Array.isArray(target)
+        ? target.filter((field): field is string => typeof field === 'string')
+        : typeof target === 'string'
+          ? [target]
+          : [];
+      if (targetFields.includes('responsibleUserId')) {
+        throw new ConflictException({
+          message: 'This user is already responsible for another Cash Account',
+          code: 'CASH_ACCOUNT_RESPONSIBLE_USER_CONFLICT',
+        });
+      }
       throw new ConflictException({
         message: 'A cash account with this name or code already exists',
         code: 'CASH_ACCOUNT_NAME_CONFLICT',

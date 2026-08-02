@@ -10,10 +10,11 @@ import {
   type UsersListQuery,
 } from './users.api';
 
-export function useUsersList(query: UsersListQuery) {
+export function useUsersList(query: UsersListQuery, enabled = true) {
   return useQuery({
     queryKey: usersQueryKeys.list(query),
     queryFn: () => listUsers(query),
+    enabled,
   });
 }
 

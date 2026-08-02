@@ -29,6 +29,8 @@ import { DecimalInput } from '../../master-data/ui/decimal-input';
 import { useBusinessPartnersList } from '../../master-data/api/business-partners.hooks';
 import { useSalesList } from '../../sales/api/sales.hooks';
 import { usePurchasesList } from '../../purchases/api/purchases.hooks';
+import { useUsersList } from '../../users/api/users.hooks';
+import { useAuth } from '../../auth/use-auth';
 import { formatMoney } from '../../../shared/money/format-money';
 import { ICON_SIZE, phIcon } from '../../../shared/ui/ph-icon';
 import type { CashAccount } from '../api/cash.api';
@@ -60,6 +62,7 @@ import {
   type RelatedDocumentOptionData,
 } from './related-document-option.helpers';
 import './cash-modals.css';
+import { findResponsibleCashAccountId } from './responsible-cash-account';
 
 const { Text } = Typography;
 
@@ -201,6 +204,16 @@ function previewPartnerDebtAfter(
   return Number.isFinite(after) ? after : null;
 }
 
+function useResponsibleDefaultAccountId(
+  accounts: readonly CashAccount[] | undefined,
+): string {
+  const { user } = useAuth();
+  return useMemo(
+    () => findResponsibleCashAccountId(accounts, user?.id),
+    [accounts, user?.id],
+  );
+}
+
 type AccountModalProps = {
   open: boolean;
   mode: 'create' | 'edit';
@@ -220,6 +233,19 @@ export function CashAccountFormModal({
   onCancel,
   onSubmit,
 }: AccountModalProps) {
+  const { user } = useAuth();
+  const canManageOwnership = Boolean(user?.isSuperAdmin);
+  const users = useUsersList(
+    {
+      page: 1,
+      pageSize: 100,
+      isActive: true,
+      sortBy: 'fullName',
+      sortOrder: 'asc',
+    },
+    open && canManageOwnership,
+  );
+  const ownedAccounts = useCashAccountsList({ page: 1, pageSize: 100 });
   const {
     control,
     handleSubmit,
@@ -227,7 +253,12 @@ export function CashAccountFormModal({
     formState: { errors },
   } = useForm<CashAccountFormValues>({
     resolver: zodResolver(cashAccountFormSchema),
-    defaultValues: { name: '', notes: '', openingBalance: '' },
+    defaultValues: {
+      name: '',
+      notes: '',
+      openingBalance: '',
+      responsibleUserId: '',
+    },
   });
 
   useEffect(() => {
@@ -237,9 +268,15 @@ export function CashAccountFormModal({
         name: account.name,
         notes: account.notes ?? '',
         openingBalance: '',
+        responsibleUserId: account.responsibleUserId,
       });
     } else {
-      reset({ name: '', notes: '', openingBalance: '' });
+      reset({
+        name: '',
+        notes: '',
+        openingBalance: '',
+        responsibleUserId: '',
+      });
     }
   }, [open, mode, account, reset]);
 
@@ -339,6 +376,56 @@ export function CashAccountFormModal({
             </Form.Item>
           ) : null}
           <Form.Item
+            label={CASH_LABELS.fields.responsibleUser}
+            required
+            validateStatus={errors.responsibleUserId ? 'error' : undefined}
+            help={errors.responsibleUserId?.message}
+            extra={
+              canManageOwnership
+                ? CASH_LABELS.fields.responsibleUserHint
+                : CASH_LABELS.fields.responsibleUserAdminHint
+            }
+          >
+            <Controller
+              name="responsibleUserId"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  {...field}
+                  showSearch
+                  optionFilterProp="label"
+                  disabled={!canManageOwnership}
+                  loading={users.isLoading}
+                  placeholder={CASH_LABELS.fields.responsibleUserPlaceholder}
+                  options={
+                    canManageOwnership
+                      ? (users.data?.data ?? [])
+                          .filter((candidate) => {
+                            const assigned = ownedAccounts.data?.data.find(
+                              (row) =>
+                                row.responsibleUserId === candidate.id &&
+                                row.id !== account?.id,
+                            );
+                            return !assigned;
+                          })
+                          .map((candidate) => ({
+                            value: candidate.id,
+                            label: `${candidate.fullName} (${candidate.username})`,
+                          }))
+                      : account
+                        ? [
+                            {
+                              value: account.responsibleUserId,
+                              label: account.responsibleUserName,
+                            },
+                          ]
+                        : []
+                  }
+                />
+              )}
+            />
+          </Form.Item>
+          <Form.Item
             className="cash-form-field-wide"
             label={CASH_LABELS.fields.notes}
             validateStatus={errors.notes ? 'error' : undefined}
@@ -395,6 +482,9 @@ export function CashInFormModal({
     sortBy: 'name',
     sortOrder: 'asc',
   });
+  const responsibleAccountId = useResponsibleDefaultAccountId(
+    accounts.data?.data,
+  );
 
   const {
     control,
@@ -419,9 +509,7 @@ export function CashInFormModal({
   const cashAccountId = useWatch({ control, name: 'cashAccountId' });
   const selectedPartner = partners.data?.data.find((p) => p.id === partnerId);
   const resolvedAccount =
-    account ??
-    accounts.data?.data.find((row) => row.id === cashAccountId) ??
-    null;
+    accounts.data?.data.find((row) => row.id === cashAccountId) ?? account;
   const sales = useSalesList(
     {
       page: 1,
@@ -468,14 +556,14 @@ export function CashInFormModal({
   useEffect(() => {
     if (!open) return;
     reset({
-      cashAccountId: account?.id ?? '',
+      cashAccountId: responsibleAccountId || account?.id || '',
       partnerId: '',
       amount: '',
       transactionDate: bakuTodayDateOnly(),
       saleId: '',
       notes: '',
     });
-  }, [open, account, reset]);
+  }, [open, account, responsibleAccountId, reset]);
 
   function submitWithConfirm(values: CashInFormValues) {
     Modal.confirm({
@@ -771,6 +859,9 @@ export function CashOutFormModal({
     sortBy: 'name',
     sortOrder: 'asc',
   });
+  const responsibleAccountId = useResponsibleDefaultAccountId(
+    accounts.data?.data,
+  );
 
   const {
     control,
@@ -797,9 +888,7 @@ export function CashOutFormModal({
   const cashAccountId = useWatch({ control, name: 'cashAccountId' });
   const selectedPartner = partners.data?.data.find((p) => p.id === partnerId);
   const resolvedAccount =
-    account ??
-    accounts.data?.data.find((row) => row.id === cashAccountId) ??
-    null;
+    accounts.data?.data.find((row) => row.id === cashAccountId) ?? account;
   const purchases = usePurchasesList(
     {
       page: 1,
@@ -847,16 +936,18 @@ export function CashOutFormModal({
   useEffect(() => {
     if (!open) return;
     reset({
-      cashAccountId: account?.id ?? '',
+      cashAccountId: responsibleAccountId || account?.id || '',
       partnerId: '',
       amount: '',
       transactionDate: bakuTodayDateOnly(),
       purchaseId: '',
       notes: '',
       negativeBalanceOverrideReason: '',
-      balanceBefore: account?.currentBalance ?? '',
+      balanceBefore:
+        accounts.data?.data.find((row) => row.id === responsibleAccountId)
+          ?.currentBalance ?? account?.currentBalance ?? '',
     });
-  }, [open, account, reset]);
+  }, [open, account, responsibleAccountId, accounts.data?.data, reset]);
 
   useEffect(() => {
     if (!resolvedAccount) return;
@@ -1212,6 +1303,9 @@ export function ExpenseFormModal({
     sortBy: 'name',
     sortOrder: 'asc',
   });
+  const responsibleAccountId = useResponsibleDefaultAccountId(
+    accounts.data?.data,
+  );
 
   const {
     control,
@@ -1236,9 +1330,7 @@ export function ExpenseFormModal({
   const categoryId = useWatch({ control, name: 'expenseCategoryId' });
   const cashAccountId = useWatch({ control, name: 'cashAccountId' });
   const resolvedAccount =
-    account ??
-    accounts.data?.data.find((row) => row.id === cashAccountId) ??
-    null;
+    accounts.data?.data.find((row) => row.id === cashAccountId) ?? account;
   const balanceAfter = useMemo(
     () =>
       resolvedAccount
@@ -1253,15 +1345,17 @@ export function ExpenseFormModal({
   useEffect(() => {
     if (!open) return;
     reset({
-      cashAccountId: account?.id ?? '',
+      cashAccountId: responsibleAccountId || account?.id || '',
       expenseCategoryId: '',
       amount: '',
       transactionDate: bakuTodayDateOnly(),
       notes: '',
       negativeBalanceOverrideReason: '',
-      balanceBefore: account?.currentBalance ?? '',
+      balanceBefore:
+        accounts.data?.data.find((row) => row.id === responsibleAccountId)
+          ?.currentBalance ?? account?.currentBalance ?? '',
     });
-  }, [open, account, reset]);
+  }, [open, account, responsibleAccountId, accounts.data?.data, reset]);
 
   useEffect(() => {
     if (!resolvedAccount) return;
@@ -1525,6 +1619,9 @@ export function TransferFormModal({
     sortBy: 'name',
     sortOrder: 'asc',
   });
+  const responsibleAccountId = useResponsibleDefaultAccountId(
+    accounts.data?.data,
+  );
 
   const {
     control,
@@ -1579,15 +1676,17 @@ export function TransferFormModal({
   useEffect(() => {
     if (!open) return;
     reset({
-      sourceCashAccountId: sourceAccount?.id ?? '',
+      sourceCashAccountId: responsibleAccountId || sourceAccount?.id || '',
       destinationCashAccountId: '',
       amount: '',
       transactionDate: bakuTodayDateOnly(),
       notes: '',
       negativeBalanceOverrideReason: '',
-      balanceBefore: sourceAccount?.currentBalance ?? '',
+      balanceBefore:
+        accounts.data?.data.find((row) => row.id === responsibleAccountId)
+          ?.currentBalance ?? sourceAccount?.currentBalance ?? '',
     });
-  }, [open, sourceAccount, reset]);
+  }, [open, sourceAccount, responsibleAccountId, accounts.data?.data, reset]);
 
   useEffect(() => {
     if (!source) return;

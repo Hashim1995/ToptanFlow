@@ -18,11 +18,13 @@ export class UpdateCashAccountDto {
   )
   name?: string;
 
-  @ApiPropertyOptional({ format: 'uuid', nullable: true, type: String })
+  @ApiPropertyOptional({
+    format: 'uuid',
+    description: 'Super Admin-only responsible-user reassignment.',
+  })
   @IsOptional()
-  @ValidateIf((_o, v) => v !== null && v !== undefined)
   @IsUUID()
-  responsibleUserId?: string | null;
+  responsibleUserId?: string;
 
   @ApiPropertyOptional({ nullable: true, type: String })
   @IsOptional()

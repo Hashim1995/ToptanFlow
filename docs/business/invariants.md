@@ -39,6 +39,7 @@
 - **[Approved Human Decision — recorded 2026-07-29; see ADR-025.]** For v1, the product is single-company; multi-company / membership isolation is not implemented.
 - **[Approved Human Decision — recorded 2026-07-29; see ADR-025.]** For v1, there are no role packages: every authenticated **active** user may perform every available **business** application action (sales, purchases, cash, master data). Granular permission packages remain deferred.
 - **[Approved Human Decision — recorded 2026-08-02; see ADR-039 / CHANGE-007.]** User administration is an exception: only accounts with `isSuperAdmin = true` may create, list, update, deactivate, reactivate users, or set passwords. Ordinary users must not access the Users module. API-created users are never Super Admin. Super Admin accounts cannot be soft-deactivated (root operator). This is not a general RBAC system.
+- **[Approved Human Decision — recorded 2026-08-03; ADR-040 / CHANGE-019.]** The same narrow Super Admin boundary also governs Cash Account creation and responsible-user assignment/change. It does not restrict Cash operations: every active user may operate any active Cash Account, and the authenticated operator remains the recorded actor.
 
 ## Business Partners
 
@@ -140,6 +141,9 @@
 - **Cash Out (primary):** requires Business Partner; cash ↓; partner debt ↑; optional Purchase link; negative override per ADR-037 (ADR-038 / ADR-030).
 - **Expense (primary):** requires Expense Category and description; cash ↓; **no** partner; **no** partner debt (ADR-038).
 - **Multiple Cash Accounts** (e.g. named tills such as office cash or an employee’s operational cash) are separate custody pools; a movement recorded in one account is never used to silently increase another except via an explicit Internal Transfer (ADR-032, ADR-034). Person names appear only as account data — never as hardcoded modules or auth branches.
+- **Cash Account ownership is required and one-to-one:** every Cash Account has exactly one responsible active User; one User is responsible for at most one Cash Account. Only a Super Admin may create an account or assign/change this ownership (ADR-040).
+- A User responsible for a Cash Account cannot be deactivated until a Super Admin reassigns that account; ownership never silently becomes empty (ADR-040).
+- The logged-in user's responsible active Cash Account is the initial default in every Cash selector (Cash In, Cash Out, Expense, Transfer source, Sale collection, Purchase payment), including flows opened from another account's page. The default remains editable and never changes audit attribution: the authenticated operator is always the action actor (ADR-040).
 - **Total Company Cash** = sum of current balances of all **active** Cash Accounts. Inactive accounts remain visible in history but are excluded from that total for normal overview.
 - A transfer between Cash Accounts is one atomic business aggregate producing linked transfer-out and transfer-in movements; it does **not** change Total Company Cash; it is neither income nor expense; it does not affect partner debt (ADR-034).
 - **Opening balance** is posted as an auditable `OPENING_BALANCE` movement when an account starts with a non-zero balance; later corrections use reversal/adjustment, not silent field edit (ADR-033).

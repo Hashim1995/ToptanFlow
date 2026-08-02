@@ -18,13 +18,12 @@ export class CreateCashAccountDto {
   )
   name!: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     format: 'uuid',
-    description: 'Responsible user (optional).',
+    description: 'Required responsible user. Super Admin selects the owner.',
   })
-  @IsOptional()
   @IsUUID()
-  responsibleUserId?: string;
+  responsibleUserId!: string;
 
   @ApiPropertyOptional({ example: 'Əsas ofis kassası' })
   @IsOptional()

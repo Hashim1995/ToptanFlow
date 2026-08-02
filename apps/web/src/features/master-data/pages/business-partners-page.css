@@ -75,6 +75,10 @@
   margin-bottom: 12px;
 }
 
+.partners-filter-card:has(.ui-filter-collapse) .partners-filter-heading {
+  display: none;
+}
+
 .partners-filter-heading > div {
   gap: 8px;
 }
@@ -170,15 +174,15 @@
 
 .partners-mobile-list {
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 .partner-mobile-card.ant-card,
 .partners-empty-card.ant-card {
   overflow: hidden;
   border-color: #e4e9ef;
-  border-radius: var(--partners-radius-md);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.055);
+  border-radius: 11px;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.045);
 }
 
 .partner-mobile-card.is-inactive {
@@ -187,7 +191,7 @@
 }
 
 .partner-mobile-card > .ant-card-body {
-  padding: 16px;
+  padding: 11px 12px;
 }
 
 .partner-mobile-topline {
@@ -210,7 +214,7 @@
 }
 
 .partner-mobile-identity {
-  gap: 10px;
+  gap: 2px;
 }
 
 .partner-mobile-identity > div {
@@ -223,7 +227,7 @@
 }
 
 .partner-mobile-name.ant-typography {
-  font-size: 16px;
+  font-size: 14px;
   line-height: 1.35;
   overflow-wrap: anywhere;
 }
@@ -232,7 +236,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 11px;
+  margin-top: 7px;
 }
 
 .partner-mobile-tags .ant-tag {
@@ -240,11 +244,11 @@
 }
 
 .partner-mobile-balance {
-  margin-top: 15px;
-  padding: 13px;
+  margin-top: 9px;
+  padding: 8px 9px;
   background: linear-gradient(135deg, #f7faff, #eef5ff);
   border: 1px solid #e0eaf6;
-  border-radius: 11px;
+  border-radius: 8px;
 }
 
 .partner-mobile-balance > .ant-typography {
@@ -259,15 +263,15 @@
 
 .partner-mobile-balance .ant-space-item:first-child .ant-typography {
   color: #102a43;
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 750;
 }
 
 .partner-mobile-details {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: 15px;
+  gap: 7px 12px;
+  margin-top: 9px;
 }
 
 .partner-mobile-details > div {
@@ -303,6 +307,27 @@
   padding-inline: 8px;
   border-radius: 9px;
   font-weight: 600;
+}
+
+.partner-mobile-head-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 3px;
+}
+
+.partner-mobile-head-actions .ant-btn {
+  width: 29px;
+  min-width: 29px;
+  height: 29px;
+  padding: 0;
+  color: #31506f;
+  background: #f1f5f9;
+  border-radius: 7px;
+}
+
+.partner-mobile-head-actions .ant-btn-dangerous {
+  background: #fff1f0;
 }
 
 .partners-empty-card > .ant-card-body {

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState } from "react";
 import {
   Alert,
   Button,
@@ -16,9 +16,9 @@ import {
   Tooltip,
   Typography,
   message,
-} from 'antd';
-import type { ColumnsType } from 'antd/es/table';
-import type { MenuProps } from 'antd';
+} from "antd";
+import type { ColumnsType } from "antd/es/table";
+import type { MenuProps } from "antd";
 import {
   DotsThreeVertical,
   FunnelSimple,
@@ -27,33 +27,33 @@ import {
   Power,
   Prohibit,
   Ruler,
-} from '@phosphor-icons/react';
-import { mapApiError } from '../../../api/map-api-error';
-import { ICON_SIZE, phIcon } from '../../../shared/ui/ph-icon';
-import { CodeText } from '../../../shared/ui/table-cells';
-import type { Unit } from '../api/units.api';
+} from "@phosphor-icons/react";
+import { mapApiError } from "../../../api/map-api-error";
+import { ICON_SIZE, phIcon } from "../../../shared/ui/ph-icon";
+import { CodeText } from "../../../shared/ui/table-cells";
+import type { Unit } from "../api/units.api";
 import {
   useCreateUnit,
   useDeactivateUnit,
   useUnitsList,
   useUpdateUnit,
-} from '../api/units.hooks';
-import type { UnitFormValues } from '../forms/reference-data.schemas';
-import { ActiveStatusTag } from '../ui/active-status-tag';
+} from "../api/units.hooks";
+import type { UnitFormValues } from "../forms/reference-data.schemas";
+import { ActiveStatusTag } from "../ui/active-status-tag";
 import {
   activeFilterToIsActive,
   type ActiveFilterValue,
-} from '../ui/active-filter';
-import { MASTER_DATA_LABELS } from '../ui/labels';
-import { ActiveStatusFilter, FilterBar, FilterField } from '../ui/list-toolbar';
-import { PageHeader } from '../ui/page-header';
-import { UnitFormModal } from '../ui/reference-form-modals';
-import './reference-data-pages.css';
+} from "../ui/active-filter";
+import { MASTER_DATA_LABELS } from "../ui/labels";
+import { ActiveStatusFilter, FilterBar, FilterField } from "../ui/list-toolbar";
+import { PageHeader } from "../ui/page-header";
+import { UnitFormModal } from "../ui/reference-form-modals";
+import "./reference-data-pages.css";
 
 const { Text } = Typography;
 
 type FormMode =
-  { kind: 'closed' } | { kind: 'create' } | { kind: 'edit'; unit: Unit };
+  { kind: "closed" } | { kind: "create" } | { kind: "edit"; unit: Unit };
 
 export function UnitsPage() {
   const labels = MASTER_DATA_LABELS.units;
@@ -61,12 +61,12 @@ export function UnitsPage() {
   const screens = Grid.useBreakpoint();
   const isDesktop = Boolean(screens.md);
 
-  const [searchInput, setSearchInput] = useState('');
-  const [search, setSearch] = useState('');
-  const [activeFilter, setActiveFilter] = useState<ActiveFilterValue>('all');
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [activeFilter, setActiveFilter] = useState<ActiveFilterValue>("all");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [formMode, setFormMode] = useState<FormMode>({ kind: 'closed' });
+  const [formMode, setFormMode] = useState<FormMode>({ kind: "closed" });
   const [formError, setFormError] = useState<string | undefined>();
 
   const listQuery = useMemo(
@@ -75,8 +75,8 @@ export function UnitsPage() {
       pageSize,
       search: search || undefined,
       isActive: activeFilterToIsActive(activeFilter),
-      sortBy: 'code',
-      sortOrder: 'asc' as const,
+      sortBy: "code",
+      sortOrder: "asc" as const,
     }),
     [page, pageSize, search, activeFilter],
   );
@@ -91,59 +91,59 @@ export function UnitsPage() {
   const columns: ColumnsType<Unit> = [
     {
       title: common.status,
-      dataIndex: 'isActive',
-      key: 'isActive',
+      dataIndex: "isActive",
+      key: "isActive",
       width: 110,
       render: (isActive: boolean) => <ActiveStatusTag isActive={isActive} />,
     },
     {
       title: common.code,
-      dataIndex: 'code',
-      key: 'code',
+      dataIndex: "code",
+      key: "code",
       width: 120,
       render: (value: string) => <CodeText value={value} />,
     },
     {
       title: common.name,
-      dataIndex: 'name',
-      key: 'name',
+      dataIndex: "name",
+      key: "name",
       render: (value: string) => <Text strong>{value}</Text>,
     },
     {
       title: common.fractional,
-      dataIndex: 'allowsFractionalQuantity',
-      key: 'allowsFractionalQuantity',
+      dataIndex: "allowsFractionalQuantity",
+      key: "allowsFractionalQuantity",
       width: 140,
       render: (value: boolean) => (
-        <Tag color={value ? 'blue' : 'default'} style={{ marginInlineEnd: 0 }}>
+        <Tag color={value ? "blue" : "default"} style={{ marginInlineEnd: 0 }}>
           {value ? common.yes : common.no}
         </Tag>
       ),
     },
     {
       title: common.actions,
-      key: 'actions',
+      key: "actions",
       width: 120,
-      fixed: 'right',
+      fixed: "right",
       render: (_, record) => {
-        const menuItems: MenuProps['items'] = [
+        const menuItems: MenuProps["items"] = [
           {
-            key: 'edit',
+            key: "edit",
             icon: phIcon(PencilSimple, { size: ICON_SIZE.sm }),
             label: common.edit,
             onClick: () => openEdit(record),
           },
-          { type: 'divider' },
+          { type: "divider" },
           record.isActive
             ? {
-                key: 'deactivate',
+                key: "deactivate",
                 danger: true,
                 icon: phIcon(Prohibit, { size: ICON_SIZE.sm }),
                 label: common.deactivate,
                 onClick: () => confirmDeactivate(record),
               }
             : {
-                key: 'activate',
+                key: "activate",
                 icon: phIcon(Power, { size: ICON_SIZE.sm }),
                 label: common.activate,
                 onClick: () => confirmActivate(record),
@@ -160,14 +160,14 @@ export function UnitsPage() {
                 onClick={() => openEdit(record)}
               />
             </Tooltip>
-            <Dropdown menu={{ items: menuItems }} trigger={['click']}>
+            <Dropdown menu={{ items: menuItems }} trigger={["click"]}>
               <Button
                 className="reference-row-menu"
                 type="text"
                 size="small"
                 icon={phIcon(DotsThreeVertical, {
                   size: ICON_SIZE.md,
-                  weight: 'bold',
+                  weight: "bold",
                 })}
                 aria-label={common.actions}
               />
@@ -180,16 +180,16 @@ export function UnitsPage() {
 
   function openCreate() {
     setFormError(undefined);
-    setFormMode({ kind: 'create' });
+    setFormMode({ kind: "create" });
   }
 
   function openEdit(unit: Unit) {
     setFormError(undefined);
-    setFormMode({ kind: 'edit', unit });
+    setFormMode({ kind: "edit", unit });
   }
 
   function closeForm() {
-    setFormMode({ kind: 'closed' });
+    setFormMode({ kind: "closed" });
     setFormError(undefined);
   }
 
@@ -202,10 +202,10 @@ export function UnitsPage() {
     };
 
     try {
-      if (formMode.kind === 'create') {
+      if (formMode.kind === "create") {
         await createMutation.mutateAsync(payload);
         message.success(common.createSuccess);
-      } else if (formMode.kind === 'edit') {
+      } else if (formMode.kind === "edit") {
         await updateMutation.mutateAsync({
           id: formMode.unit.id,
           input: payload,
@@ -220,7 +220,7 @@ export function UnitsPage() {
 
   function confirmDeactivate(unit: Unit) {
     Modal.confirm({
-      className: 'app-mobile-modal reference-confirm-modal',
+      className: "app-mobile-modal reference-confirm-modal",
       centered: true,
       title: labels.deactivateConfirm,
       content: (
@@ -246,7 +246,7 @@ export function UnitsPage() {
 
   function confirmActivate(unit: Unit) {
     Modal.confirm({
-      className: 'app-mobile-modal reference-confirm-modal',
+      className: "app-mobile-modal reference-confirm-modal",
       centered: true,
       title: labels.activateConfirm,
       content: (
@@ -273,7 +273,7 @@ export function UnitsPage() {
   }
 
   const editInitialValues =
-    formMode.kind === 'edit'
+    formMode.kind === "edit"
       ? {
           code: formMode.unit.code,
           name: formMode.unit.name,
@@ -288,11 +288,11 @@ export function UnitsPage() {
       <PageHeader
         title={labels.title}
         description={labels.description}
-        icon={phIcon(Ruler, { size: ICON_SIZE.xl, weight: 'duotone' })}
+        icon={phIcon(Ruler, { size: ICON_SIZE.xl, weight: "duotone" })}
         extra={
           <Button
             type="primary"
-            icon={phIcon(Plus, { size: ICON_SIZE.md, weight: 'bold' })}
+            icon={phIcon(Plus, { size: ICON_SIZE.md, weight: "bold" })}
             onClick={openCreate}
           >
             {labels.create}
@@ -304,7 +304,7 @@ export function UnitsPage() {
         <div className="reference-filter-heading">
           <div>
             <span className="reference-filter-icon">
-              {phIcon(FunnelSimple, { size: ICON_SIZE.sm, weight: 'bold' })}
+              {phIcon(FunnelSimple, { size: ICON_SIZE.sm, weight: "bold" })}
             </span>
             <Text strong>{common.search}</Text>
           </div>
@@ -312,15 +312,26 @@ export function UnitsPage() {
             {unitTotal}
           </Tag>
         </div>
-        <FilterBar>
+        <FilterBar
+          onSearch={() => {
+            setSearch(searchInput.trim());
+            setPage(1);
+          }}
+          onReset={() => {
+            setSearchInput("");
+            setSearch("");
+            setActiveFilter("all");
+            setPage(1);
+          }}
+        >
           <FilterField label={common.search}>
-            <Input.Search
+            <Input
               allowClear
               placeholder={common.searchPlaceholder}
               value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
-              onSearch={(value) => {
-                setSearch(value.trim());
+              onPressEnter={() => {
+                setSearch(searchInput.trim());
                 setPage(1);
               }}
             />
@@ -376,7 +387,7 @@ export function UnitsPage() {
           {units.map((unit) => (
             <Card
               className={`reference-mobile-card${
-                unit.isActive ? '' : ' is-inactive'
+                unit.isActive ? "" : " is-inactive"
               }`}
               key={unit.id}
               size="small"
@@ -390,7 +401,7 @@ export function UnitsPage() {
               </div>
               <div className="reference-mobile-property">
                 <Text type="secondary">{common.fractional}</Text>
-                <Tag color={unit.allowsFractionalQuantity ? 'blue' : 'default'}>
+                <Tag color={unit.allowsFractionalQuantity ? "blue" : "default"}>
                   {unit.allowsFractionalQuantity ? common.yes : common.no}
                 </Tag>
               </div>
@@ -440,8 +451,8 @@ export function UnitsPage() {
       ) : null}
 
       <UnitFormModal
-        open={formMode.kind !== 'closed'}
-        title={formMode.kind === 'edit' ? labels.edit : labels.create}
+        open={formMode.kind !== "closed"}
+        title={formMode.kind === "edit" ? labels.edit : labels.create}
         initialValues={editInitialValues}
         submitting={submitting}
         errorMessage={formError}

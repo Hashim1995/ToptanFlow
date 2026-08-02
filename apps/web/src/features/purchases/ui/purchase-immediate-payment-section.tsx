@@ -2,6 +2,8 @@ import { useMemo } from 'react';
 import { Alert, Checkbox, Form, Input, Select, Space, Typography } from 'antd';
 import { DecimalInput } from '../../master-data/ui/decimal-input';
 import { useCashAccountsList } from '../../cash/api/cash.hooks';
+import { findResponsibleCashAccountId } from '../../cash/ui/responsible-cash-account';
+import { useAuth } from '../../auth/use-auth';
 import { CASH_LABELS } from '../../cash/ui/labels';
 import { formatMoney } from '../../../shared/money/format-money';
 import { appRequiredMark } from '../../../shared/ui/form-required-mark';
@@ -26,6 +28,7 @@ export function PurchaseImmediatePaymentSection({
   documentTotal = '',
   partnerDebtBalance = '',
 }: PurchaseImmediatePaymentSectionProps) {
+  const { user } = useAuth();
   const accounts = useCashAccountsList({
     page: 1,
     pageSize: 100,
@@ -33,6 +36,10 @@ export function PurchaseImmediatePaymentSection({
     sortBy: 'name',
     sortOrder: 'asc',
   });
+  const defaultCashAccountId = useMemo(
+    () => findResponsibleCashAccountId(accounts.data?.data, user?.id),
+    [accounts.data?.data, user?.id],
+  );
 
   const selectedAccount = useMemo(
     () => accounts.data?.data.find((row) => row.id === value.cashAccountId),
@@ -72,10 +79,12 @@ export function PurchaseImmediatePaymentSection({
     <div>
       <Checkbox
         checked={value.enabled}
+        disabled={accounts.isLoading}
         onChange={(event) =>
           onChange({
             ...value,
             enabled: event.target.checked,
+            cashAccountId: value.cashAccountId || defaultCashAccountId,
             amount:
               value.amount ||
               emptyPurchaseImmediatePayment(documentTotal).amount,

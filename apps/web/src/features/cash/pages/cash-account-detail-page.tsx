@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useMemo, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 import {
   Alert,
   Button,
@@ -16,29 +16,33 @@ import {
   Tag,
   Typography,
   message,
-} from 'antd';
-import type { ColumnsType } from 'antd/es/table';
+} from "antd";
+import type { ColumnsType } from "antd/es/table";
 import {
   ArrowDown,
   ArrowLeft,
   ArrowUp,
   ArrowsLeftRight,
+  CalendarBlank,
   ClockCounterClockwise,
   IdentificationCard,
   NotePencil,
+  NoteBlank,
   PencilSimple,
   Prohibit,
   Receipt,
   User,
   Wallet,
-} from '@phosphor-icons/react';
-import { mapApiError } from '../../../api/map-api-error';
-import { formatMoney } from '../../../shared/money/format-money';
-import { formatDateTime } from '../../../shared/ui/format';
-import { ICON_SIZE, phIcon } from '../../../shared/ui/ph-icon';
-import { CodeText, MoneyCell } from '../../../shared/ui/table-cells';
-import { ActiveStatusTag } from '../../master-data/ui/active-status-tag';
-import type { CashAccount, CashTransaction } from '../api/cash.api';
+} from "@phosphor-icons/react";
+import { mapApiError } from "../../../api/map-api-error";
+import { useAuth } from "../../auth/use-auth";
+import { formatMoney } from "../../../shared/money/format-money";
+import { formatDateTime } from "../../../shared/ui/format";
+import { ICON_SIZE, phIcon } from "../../../shared/ui/ph-icon";
+import { CodeText, MoneyCell } from "../../../shared/ui/table-cells";
+import { ActiveStatusTag } from "../../master-data/ui/active-status-tag";
+import { FilterBar, FilterField } from "../../master-data/ui/list-toolbar";
+import type { CashAccount, CashTransaction } from "../api/cash.api";
 import {
   useCancelCashTransaction,
   useCashAccount,
@@ -48,34 +52,34 @@ import {
   useCreateExpense,
   useCreateCashTransfer,
   useUpdateCashAccount,
-} from '../api/cash.hooks';
+} from "../api/cash.hooks";
 import type {
   CashAccountFormValues,
   CashInFormValues,
   CashOutFormValues,
   ExpenseFormValues,
   TransferFormValues,
-} from '../forms/cash.schemas';
+} from "../forms/cash.schemas";
 import {
   CashAccountFormModal,
   CashInFormModal,
   CashOutFormModal,
   ExpenseFormModal,
   TransferFormModal,
-} from '../ui/cash-form-modals';
-import { CASH_LABELS } from '../ui/labels';
-import './cash-account-detail-page.css';
+} from "../ui/cash-form-modals";
+import { CASH_LABELS } from "../ui/labels";
+import "./cash-account-detail-page.css";
 
 const { Text, Title } = Typography;
 
-type TxnStatusFilter = 'all' | 'POSTED' | 'CANCELLED';
+type TxnStatusFilter = "all" | "POSTED" | "CANCELLED";
 
 function typeLabel(type: string): string {
-  return CASH_LABELS.types[type as keyof typeof CASH_LABELS.types] ?? '—';
+  return CASH_LABELS.types[type as keyof typeof CASH_LABELS.types] ?? "—";
 }
 
 function statusLabel(status: string): string {
-  return CASH_LABELS.statuses[status as 'POSTED' | 'CANCELLED'] ?? '—';
+  return CASH_LABELS.statuses[status as "POSTED" | "CANCELLED"] ?? "—";
 }
 
 function isNegativeBalance(value: string): boolean {
@@ -84,22 +88,23 @@ function isNegativeBalance(value: string): boolean {
 }
 
 export function CashAccountDetailPage() {
+  const { user } = useAuth();
   const { id } = useParams<{ id: string }>();
   const screens = Grid.useBreakpoint();
   const isDesktop = Boolean(screens.md);
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [statusFilter, setStatusFilter] = useState<TxnStatusFilter>('all');
+  const [statusFilter, setStatusFilter] = useState<TxnStatusFilter>("all");
   const [editOpen, setEditOpen] = useState(false);
   const [formError, setFormError] = useState<string | undefined>();
   const [movementMode, setMovementMode] = useState<
-    | { kind: 'closed' }
-    | { kind: 'in' }
-    | { kind: 'out' }
-    | { kind: 'expense' }
-    | { kind: 'transfer' }
-  >({ kind: 'closed' });
+    | { kind: "closed" }
+    | { kind: "in" }
+    | { kind: "out" }
+    | { kind: "expense" }
+    | { kind: "transfer" }
+  >({ kind: "closed" });
   const [movementError, setMovementError] = useState<string | undefined>();
 
   const account = useCashAccount(id);
@@ -108,9 +113,9 @@ export function CashAccountDetailPage() {
       page,
       pageSize,
       cashAccountId: id,
-      status: statusFilter === 'all' ? undefined : statusFilter,
-      sortBy: 'transactionDate' as const,
-      sortOrder: 'desc' as const,
+      status: statusFilter === "all" ? undefined : statusFilter,
+      sortBy: "transactionDate" as const,
+      sortOrder: "desc" as const,
     }),
     [page, pageSize, id, statusFilter],
   );
@@ -125,27 +130,27 @@ export function CashAccountDetailPage() {
   const data = account.data;
 
   function cancelEffectsForType(type: string): readonly string[] {
-    if (type === 'CUSTOMER_RECEIPT') {
+    if (type === "CUSTOMER_RECEIPT") {
       return CASH_LABELS.confirmations.cancelEffectsCashIn;
     }
-    if (type === 'SUPPLIER_PAYMENT') {
+    if (type === "SUPPLIER_PAYMENT") {
       return CASH_LABELS.confirmations.cancelEffectsCashOut;
     }
-    if (type === 'EXPENSE') {
+    if (type === "EXPENSE") {
       return CASH_LABELS.confirmations.cancelEffectsExpense;
     }
-    if (type === 'TRANSFER_OUT' || type === 'TRANSFER_IN') {
+    if (type === "TRANSFER_OUT" || type === "TRANSFER_IN") {
       return CASH_LABELS.confirmations.cancelEffectsTransfer;
     }
     return CASH_LABELS.confirmations.cancelEffectsGeneric;
   }
 
   function confirmCancel(txn: CashTransaction) {
-    let reason = '';
+    let reason = "";
     const effects = cancelEffectsForType(txn.type);
-    const isCashIn = txn.type === 'CUSTOMER_RECEIPT';
+    const isCashIn = txn.type === "CUSTOMER_RECEIPT";
     Modal.confirm({
-      className: 'cash-confirm-modal cash-cancel-transaction-confirm',
+      className: "cash-confirm-modal cash-cancel-transaction-confirm",
       centered: true,
       title: CASH_LABELS.confirmations.cancelTxnTitle,
       width: 520,
@@ -153,12 +158,12 @@ export function CashAccountDetailPage() {
         <Space
           className="cash-confirm-content"
           direction="vertical"
-          style={{ width: '100%' }}
+          style={{ width: "100%" }}
           size={12}
         >
           <Text>{CASH_LABELS.confirmations.cancelTxn}</Text>
           <Text type="secondary" className="cash-confirm-summary">
-            {txn.transactionNumber} · {typeLabel(txn.type)} ·{' '}
+            {txn.transactionNumber} · {typeLabel(txn.type)} ·{" "}
             {formatMoney(txn.amount)}
           </Text>
           {isCashIn ? (
@@ -196,7 +201,7 @@ export function CashAccountDetailPage() {
       onOk: async () => {
         if (!reason.trim()) {
           message.error(CASH_LABELS.validation.reasonRequired);
-          return Promise.reject(new Error('reason required'));
+          return Promise.reject(new Error("reason required"));
         }
         try {
           await cancelMutation.mutateAsync({
@@ -221,6 +226,9 @@ export function CashAccountDetailPage() {
         input: {
           name: values.name,
           notes: values.notes || null,
+          ...(user?.isSuperAdmin
+            ? { responsibleUserId: values.responsibleUserId }
+            : {}),
         },
       });
       message.success(CASH_LABELS.success.updated);
@@ -242,7 +250,7 @@ export function CashAccountDetailPage() {
         notes: values.notes || undefined,
       });
       message.success(CASH_LABELS.success.cashIn);
-      setMovementMode({ kind: 'closed' });
+      setMovementMode({ kind: "closed" });
     } catch (error) {
       setMovementError(mapApiError(error).userMessage);
     }
@@ -262,7 +270,7 @@ export function CashAccountDetailPage() {
           values.negativeBalanceOverrideReason || undefined,
       });
       message.success(CASH_LABELS.success.cashOut);
-      setMovementMode({ kind: 'closed' });
+      setMovementMode({ kind: "closed" });
     } catch (error) {
       setMovementError(mapApiError(error).userMessage);
     }
@@ -281,7 +289,7 @@ export function CashAccountDetailPage() {
           values.negativeBalanceOverrideReason || undefined,
       });
       message.success(CASH_LABELS.success.expense);
-      setMovementMode({ kind: 'closed' });
+      setMovementMode({ kind: "closed" });
     } catch (error) {
       setMovementError(mapApiError(error).userMessage);
     }
@@ -300,7 +308,7 @@ export function CashAccountDetailPage() {
           values.negativeBalanceOverrideReason || undefined,
       });
       message.success(CASH_LABELS.success.transfer);
-      setMovementMode({ kind: 'closed' });
+      setMovementMode({ kind: "closed" });
     } catch (error) {
       setMovementError(mapApiError(error).userMessage);
     }
@@ -309,71 +317,71 @@ export function CashAccountDetailPage() {
   const columns: ColumnsType<CashTransaction> = [
     {
       title: CASH_LABELS.columns.date,
-      dataIndex: 'transactionDate',
-      key: 'transactionDate',
+      dataIndex: "transactionDate",
+      key: "transactionDate",
       width: 120,
       render: (value: string) => formatDateTime(value),
     },
     {
       title: CASH_LABELS.columns.number,
-      dataIndex: 'transactionNumber',
-      key: 'transactionNumber',
+      dataIndex: "transactionNumber",
+      key: "transactionNumber",
       width: 140,
       render: (value: string) => <CodeText value={value} />,
     },
     {
       title: CASH_LABELS.columns.type,
-      dataIndex: 'type',
-      key: 'type',
+      dataIndex: "type",
+      key: "type",
       render: (type: string) => typeLabel(type),
     },
     {
       title: CASH_LABELS.columns.partner,
-      dataIndex: 'partnerName',
-      key: 'partnerName',
+      dataIndex: "partnerName",
+      key: "partnerName",
       width: 180,
-      render: (value: string | null) => value || '—',
+      render: (value: string | null) => value || "—",
     },
     {
       title: CASH_LABELS.columns.status,
-      dataIndex: 'status',
-      key: 'status',
+      dataIndex: "status",
+      key: "status",
       width: 130,
       render: (status: string) => (
-        <Tag color={status === 'CANCELLED' ? 'default' : 'success'}>
+        <Tag color={status === "CANCELLED" ? "default" : "success"}>
           {statusLabel(status)}
         </Tag>
       ),
     },
     {
       title: CASH_LABELS.columns.cashIn,
-      key: 'in',
-      align: 'right',
+      key: "in",
+      align: "right",
       width: 120,
       render: (_: unknown, row) =>
-        row.direction === 'IN' ? (
+        row.direction === "IN" ? (
           <MoneyCell value={row.amount} format={formatMoney} />
         ) : (
-          '—'
+          "—"
         ),
     },
     {
       title: CASH_LABELS.columns.cashOut,
-      key: 'out',
-      align: 'right',
+      key: "out",
+      align: "right",
       width: 120,
       render: (_: unknown, row) =>
-        row.direction === 'OUT' ? (
+        row.direction === "OUT" ? (
           <MoneyCell value={row.amount} format={formatMoney} />
         ) : (
-          '—'
+          "—"
         ),
     },
     {
       title: CASH_LABELS.columns.balanceAfter,
-      dataIndex: 'balanceAfter',
-      key: 'balanceAfter',
-      align: 'right',
+      dataIndex: "balanceAfter",
+      key: "balanceAfter",
+      align: "right",
       width: 130,
       render: (value: string) => (
         <MoneyCell value={value} format={formatMoney} />
@@ -381,25 +389,25 @@ export function CashAccountDetailPage() {
     },
     {
       title: CASH_LABELS.columns.notes,
-      dataIndex: 'notes',
-      key: 'notes',
+      dataIndex: "notes",
+      key: "notes",
       ellipsis: true,
-      render: (value: string | null) => value || '—',
+      render: (value: string | null) => value || "—",
     },
     {
       title: CASH_LABELS.columns.createdBy,
-      dataIndex: 'createdByName',
-      key: 'createdByName',
+      dataIndex: "createdByName",
+      key: "createdByName",
       width: 160,
-      render: (value: string | null) => value || '—',
+      render: (value: string | null) => value || "—",
     },
     {
       title: CASH_LABELS.columns.actions,
-      key: 'actions',
+      key: "actions",
       width: 110,
-      fixed: 'right',
+      fixed: "right",
       render: (_: unknown, row) =>
-        row.status === 'POSTED' && row.type !== 'REVERSAL' ? (
+        row.status === "POSTED" && row.type !== "REVERSAL" ? (
           <Button
             type="link"
             danger
@@ -448,7 +456,7 @@ export function CashAccountDetailPage() {
             />
           </Link>
           <span className="cash-detail-heading-icon" aria-hidden="true">
-            {phIcon(Wallet, { size: 24, weight: 'duotone' })}
+            {phIcon(Wallet, { size: 24, weight: "duotone" })}
           </span>
           <div className="cash-detail-heading-copy">
             {data ? (
@@ -499,7 +507,7 @@ export function CashAccountDetailPage() {
               </Text>
               <div
                 className={`cash-detail-balance-value${
-                  isNegativeBalance(data.currentBalance) ? ' is-negative' : ''
+                  isNegativeBalance(data.currentBalance) ? " is-negative" : ""
                 }`}
               >
                 {formatMoney(data.currentBalance)}
@@ -513,7 +521,9 @@ export function CashAccountDetailPage() {
                 </span>
                 <div>
                   <Text type="secondary">{CASH_LABELS.columns.code}</Text>
-                  <strong><CodeText value={data.code} /></strong>
+                  <strong>
+                    <CodeText value={data.code} />
+                  </strong>
                 </div>
               </div>
               <div className="cash-detail-fact">
@@ -524,7 +534,7 @@ export function CashAccountDetailPage() {
                   <Text type="secondary">
                     {CASH_LABELS.columns.responsible}
                   </Text>
-                  <strong>{data.responsibleUserName || '—'}</strong>
+                  <strong>{data.responsibleUserName || "—"}</strong>
                 </div>
               </div>
               <div className="cash-detail-fact cash-detail-fact-notes">
@@ -533,7 +543,7 @@ export function CashAccountDetailPage() {
                 </span>
                 <div>
                   <Text type="secondary">{CASH_LABELS.fields.notes}</Text>
-                  <strong>{data.notes || '—'}</strong>
+                  <strong>{data.notes || "—"}</strong>
                 </div>
               </div>
             </div>
@@ -544,7 +554,7 @@ export function CashAccountDetailPage() {
               type="primary"
               disabled={!data.isActive}
               icon={phIcon(ArrowDown, { size: ICON_SIZE.sm })}
-              onClick={() => setMovementMode({ kind: 'in' })}
+              onClick={() => setMovementMode({ kind: "in" })}
             >
               {CASH_LABELS.cashIn}
             </Button>
@@ -552,21 +562,21 @@ export function CashAccountDetailPage() {
               danger
               disabled={!data.isActive}
               icon={phIcon(ArrowUp, { size: ICON_SIZE.sm })}
-              onClick={() => setMovementMode({ kind: 'out' })}
+              onClick={() => setMovementMode({ kind: "out" })}
             >
               {CASH_LABELS.cashOut}
             </Button>
             <Button
               disabled={!data.isActive}
               icon={phIcon(Receipt, { size: ICON_SIZE.sm })}
-              onClick={() => setMovementMode({ kind: 'expense' })}
+              onClick={() => setMovementMode({ kind: "expense" })}
             >
               {CASH_LABELS.expense}
             </Button>
             <Button
               disabled={!data.isActive}
               icon={phIcon(ArrowsLeftRight, { size: ICON_SIZE.sm })}
-              onClick={() => setMovementMode({ kind: 'transfer' })}
+              onClick={() => setMovementMode({ kind: "transfer" })}
             >
               {CASH_LABELS.transfer}
             </Button>
@@ -584,9 +594,7 @@ export function CashAccountDetailPage() {
             </span>
             <div>
               <Title level={4}>{CASH_LABELS.historyTitle}</Title>
-              <Text type="secondary">
-                {CASH_LABELS.filters.txnStatus}
-              </Text>
+              <Text type="secondary">{CASH_LABELS.filters.txnStatus}</Text>
             </div>
           </div>
           <Tag className="cash-detail-result-count" color="blue">
@@ -595,27 +603,34 @@ export function CashAccountDetailPage() {
         </div>
 
         <Card className="cash-detail-filter" size="small">
-          <label className="cash-detail-filter-field">
-            <Text strong>{CASH_LABELS.filters.txnStatus}</Text>
-            <Select
-              value={statusFilter}
-              onChange={(value: TxnStatusFilter) => {
-                setStatusFilter(value);
-                setPage(1);
-              }}
-              options={[
-                { value: 'all', label: CASH_LABELS.filters.txnStatusAll },
-                {
-                  value: 'POSTED',
-                  label: CASH_LABELS.statuses.POSTED,
-                },
-                {
-                  value: 'CANCELLED',
-                  label: CASH_LABELS.statuses.CANCELLED,
-                },
-              ]}
-            />
-          </label>
+          <FilterBar
+            onSearch={() => setPage(1)}
+            onReset={() => {
+              setStatusFilter("all");
+              setPage(1);
+            }}
+          >
+            <FilterField label={CASH_LABELS.filters.txnStatus}>
+              <Select
+                value={statusFilter}
+                onChange={(value: TxnStatusFilter) => {
+                  setStatusFilter(value);
+                  setPage(1);
+                }}
+                options={[
+                  { value: "all", label: CASH_LABELS.filters.txnStatusAll },
+                  {
+                    value: "POSTED",
+                    label: CASH_LABELS.statuses.POSTED,
+                  },
+                  {
+                    value: "CANCELLED",
+                    label: CASH_LABELS.statuses.CANCELLED,
+                  },
+                ]}
+              />
+            </FilterField>
+          </FilterBar>
         </Card>
 
         {transactions.isError ? (
@@ -660,69 +675,78 @@ export function CashAccountDetailPage() {
               <Card
                 key={row.id}
                 className={`cash-transaction-card${
-                  row.status === 'CANCELLED' ? ' is-cancelled' : ''
+                  row.status === "CANCELLED" ? " is-cancelled" : ""
                 }`}
                 size="small"
               >
                 <div className="cash-transaction-topline">
                   <div className="cash-transaction-identity">
-                    <CodeText value={row.transactionNumber} />
-                    <Text strong>{typeLabel(row.type)}</Text>
+                    <span
+                      className={`cash-transaction-direction${
+                        row.direction === "IN" ? " is-incoming" : " is-outgoing"
+                      }`}
+                    >
+                      {phIcon(row.direction === "IN" ? ArrowDown : ArrowUp, {
+                        size: ICON_SIZE.md,
+                        weight: "bold",
+                      })}
+                    </span>
+                    <div>
+                      <Text strong>{typeLabel(row.type)}</Text>
+                      <CodeText value={row.transactionNumber} />
+                    </div>
                   </div>
-                  <Tag color={row.status === 'CANCELLED' ? 'default' : 'success'}>
-                    {statusLabel(row.status)}
-                  </Tag>
-                </div>
-
-                <Text type="secondary" className="cash-transaction-date">
-                  {formatDateTime(row.transactionDate)}
-                </Text>
-
-                <div
-                  className={`cash-transaction-amount${
-                    row.direction === 'IN' ? ' is-incoming' : ' is-outgoing'
-                  }`}
-                >
-                  <Text type="secondary">
-                    {row.direction === 'IN'
-                      ? CASH_LABELS.cashIn
-                      : CASH_LABELS.cashOut}
-                  </Text>
-                  <strong>
-                    {row.direction === 'IN' ? '+' : '−'}
-                    {formatMoney(row.amount)}
-                  </strong>
+                  <div className="cash-transaction-result">
+                    <strong
+                      className={
+                        row.direction === "IN" ? "is-incoming" : "is-outgoing"
+                      }
+                    >
+                      {row.direction === "IN" ? "+" : "−"}
+                      {formatMoney(row.amount)}
+                    </strong>
+                    <div className="cash-transaction-result-actions">
+                      <Tag
+                        color={
+                          row.status === "CANCELLED" ? "default" : "success"
+                        }
+                      >
+                        {statusLabel(row.status)}
+                      </Tag>
+                      {row.status === "POSTED" && row.type !== "REVERSAL" ? (
+                        <Button
+                          className="cash-transaction-cancel"
+                          type="text"
+                          danger
+                          icon={phIcon(Prohibit, { size: ICON_SIZE.sm })}
+                          aria-label={CASH_LABELS.cancelTxn}
+                          onClick={() => confirmCancel(row)}
+                        />
+                      ) : null}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="cash-transaction-details">
-                  <div>
-                    <Text type="secondary">{CASH_LABELS.columns.partner}</Text>
-                    <strong>{row.partnerName || '—'}</strong>
-                  </div>
-                  <div>
-                    <Text type="secondary">
-                      {CASH_LABELS.columns.balanceAfter}
-                    </Text>
-                    <strong>{formatMoney(row.balanceAfter)}</strong>
-                  </div>
+                  <span>
+                    {phIcon(CalendarBlank, { size: ICON_SIZE.sm })}
+                    {formatDateTime(row.transactionDate)}
+                  </span>
+                  <span>
+                    {phIcon(User, { size: ICON_SIZE.sm })}
+                    {row.partnerName || "—"}
+                  </span>
+                  <span>
+                    {phIcon(Wallet, { size: ICON_SIZE.sm })}
+                    {formatMoney(row.balanceAfter)}
+                  </span>
                   {row.notes ? (
-                    <div className="cash-transaction-note">
-                      <Text type="secondary">{CASH_LABELS.columns.notes}</Text>
-                      <strong>{row.notes}</strong>
-                    </div>
+                    <span className="cash-transaction-note">
+                      {phIcon(NoteBlank, { size: ICON_SIZE.sm })}
+                      {row.notes}
+                    </span>
                   ) : null}
                 </div>
-
-                {row.status === 'POSTED' && row.type !== 'REVERSAL' ? (
-                  <Button
-                    className="cash-transaction-cancel"
-                    danger
-                    icon={phIcon(Prohibit, { size: ICON_SIZE.sm })}
-                    onClick={() => confirmCancel(row)}
-                  >
-                    {CASH_LABELS.cancelTxn}
-                  </Button>
-                ) : null}
               </Card>
             ))}
           </div>
@@ -759,48 +783,48 @@ export function CashAccountDetailPage() {
       />
 
       <CashInFormModal
-        open={movementMode.kind === 'in'}
+        open={movementMode.kind === "in"}
         account={(data as CashAccount | undefined) ?? null}
         submitting={cashInMutation.isPending}
         error={movementError}
         onCancel={() => {
-          setMovementMode({ kind: 'closed' });
+          setMovementMode({ kind: "closed" });
           setMovementError(undefined);
         }}
         onSubmit={handleCashIn}
       />
 
       <CashOutFormModal
-        open={movementMode.kind === 'out'}
+        open={movementMode.kind === "out"}
         account={(data as CashAccount | undefined) ?? null}
         submitting={cashOutMutation.isPending}
         error={movementError}
         onCancel={() => {
-          setMovementMode({ kind: 'closed' });
+          setMovementMode({ kind: "closed" });
           setMovementError(undefined);
         }}
         onSubmit={handleCashOut}
       />
 
       <ExpenseFormModal
-        open={movementMode.kind === 'expense'}
+        open={movementMode.kind === "expense"}
         account={(data as CashAccount | undefined) ?? null}
         submitting={expenseMutation.isPending}
         error={movementError}
         onCancel={() => {
-          setMovementMode({ kind: 'closed' });
+          setMovementMode({ kind: "closed" });
           setMovementError(undefined);
         }}
         onSubmit={handleExpense}
       />
 
       <TransferFormModal
-        open={movementMode.kind === 'transfer'}
+        open={movementMode.kind === "transfer"}
         sourceAccount={(data as CashAccount | undefined) ?? null}
         submitting={transferMutation.isPending}
         error={movementError}
         onCancel={() => {
-          setMovementMode({ kind: 'closed' });
+          setMovementMode({ kind: "closed" });
           setMovementError(undefined);
         }}
         onSubmit={handleTransfer}

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState } from "react";
 import {
   Alert,
   Button,
@@ -13,93 +13,83 @@ import {
   Tag,
   Typography,
   message,
-} from 'antd';
-import type { ColumnsType } from 'antd/es/table';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+} from "antd";
+import type { ColumnsType } from "antd/es/table";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
+  CalendarBlank,
   CheckCircle,
   FileText,
   NoteBlank,
   Package,
   PencilSimple,
   Printer,
-  Scales,
   ShoppingBag,
   Trash,
   WarningCircle,
   Wallet,
   XCircle,
-} from '@phosphor-icons/react';
-import { mapApiError } from '../../../api/map-api-error';
-import { debtBalanceSignLabel } from '../../../shared/money/debt-balance-label';
-import { formatMoney } from '../../../shared/money/format-money';
+} from "@phosphor-icons/react";
+import { mapApiError } from "../../../api/map-api-error";
+import { debtBalanceSignLabel } from "../../../shared/money/debt-balance-label";
+import { formatMoney } from "../../../shared/money/format-money";
 import {
   emptyDash,
   formatDateTime,
   formatQuantity,
-} from '../../../shared/ui/format';
-import { ICON_SIZE, phIcon } from '../../../shared/ui/ph-icon';
-import { printCommercialDocument } from '../../../shared/ui/print-commercial-document';
-import { PrintableCommercialDocument } from '../../../shared/ui/printable-commercial-document';
+} from "../../../shared/ui/format";
+import { ICON_SIZE, phIcon } from "../../../shared/ui/ph-icon";
+import { printCommercialDocument } from "../../../shared/ui/print-commercial-document";
+import { PrintableCommercialDocument } from "../../../shared/ui/printable-commercial-document";
 import {
   CodeText,
   EntityCell,
   MoneyCell,
-} from '../../../shared/ui/table-cells';
-import { CASH_LABELS } from '../../cash/ui/labels';
-import { useProductsList } from '../../master-data/api/products.hooks';
-import { PageHeader } from '../../master-data/ui/page-header';
+} from "../../../shared/ui/table-cells";
+import { CASH_LABELS } from "../../cash/ui/labels";
+import { useProductsList } from "../../master-data/api/products.hooks";
+import { PageHeader } from "../../master-data/ui/page-header";
 import type {
   SaleDebtMovement,
   SaleItem,
   SaleLinkedCashTransaction,
-  SaleQuantityHistory,
   SaleStatus,
-} from '../api/sales.api';
+} from "../api/sales.api";
 import {
   useCancelSale,
   usePostSale,
   useRemoveSale,
   useSale,
-} from '../api/sales.hooks';
-import { SaleFormModal } from '../ui/sale-form-modal';
-import { SALES_LABELS, saleStatusLabel } from '../ui/labels';
-import { computeQuantityShortages } from '../ui/quantity-shortage';
-import { SalePostConfirmModal } from '../ui/sale-post-confirm-modal';
-import '../../../shared/ui/commercial-documents.css';
+} from "../api/sales.hooks";
+import { SaleFormModal } from "../ui/sale-form-modal";
+import { SALES_LABELS, saleStatusLabel } from "../ui/labels";
+import { computeQuantityShortages } from "../ui/quantity-shortage";
+import { SalePostConfirmModal } from "../ui/sale-post-confirm-modal";
+import "../../../shared/ui/commercial-documents.css";
 
 const { Text, Title } = Typography;
 
 function statusColor(status: SaleStatus) {
-  return status === 'POSTED'
-    ? 'success'
-    : status === 'CANCELLED'
-      ? 'error'
-      : 'warning';
+  return status === "POSTED"
+    ? "success"
+    : status === "CANCELLED"
+      ? "error"
+      : "warning";
 }
 
-const quantityKindLabels: Record<string, string> = {
-  PURCHASE: 'Alış',
-  PURCHASE_RETURN: 'Alış qaytarılması',
-  SALE: 'Satış',
-  SALE_RETURN: 'Satış qaytarılması',
-  INITIAL_QUANTITY: 'İlkin miqdar',
-  MANUAL_ADJUSTMENT: 'Miqdar düzəlişi',
-  CANCELLATION_REVERSAL: 'Ləğv geri qaytarması',
-};
 const debtKindLabels: Record<string, string> = {
-  PURCHASE: 'Alış',
-  PURCHASE_RETURN: 'Alış qaytarılması',
-  PURCHASE_CANCELLATION: 'Alışın ləğvi',
-  SALE: 'Satış',
-  SALE_RETURN: 'Satış qaytarılması',
-  SALE_CANCELLATION: 'Satışın ləğvi',
-  CASH_RECEIPT: 'Pul mədaxili',
-  CASH_PAYMENT: 'Pul məxarici',
-  MANUAL_ADJUSTMENT: 'Borc düzəlişi',
-  OPENING_BALANCE: 'İlkin qalıq',
-  REVERSAL: 'Geri qaytarma',
+  PURCHASE: "Alış",
+  PURCHASE_RETURN: "Alış qaytarılması",
+  PURCHASE_CANCELLATION: "Alışın ləğvi",
+  SALE: "Satış",
+  SALE_RETURN: "Satış qaytarılması",
+  SALE_CANCELLATION: "Satışın ləğvi",
+  CASH_RECEIPT: "Pul mədaxili",
+  CASH_PAYMENT: "Pul məxarici",
+  MANUAL_ADJUSTMENT: "Borc düzəlişi",
+  OPENING_BALANCE: "İlkin qalıq",
+  REVERSAL: "Geri qaytarma",
 };
 
 export function SaleDetailPage() {
@@ -110,14 +100,14 @@ export function SaleDetailPage() {
   const sale = useSale(id);
   const products = useProductsList({
     pageSize: 100,
-    sortBy: 'name',
-    sortOrder: 'asc',
+    sortBy: "name",
+    sortOrder: "asc",
   });
   const postMutation = usePostSale();
   const removeMutation = useRemoveSale();
   const cancelMutation = useCancelSale();
   const [cancelOpen, setCancelOpen] = useState(false);
-  const [cancelReason, setCancelReason] = useState('');
+  const [cancelReason, setCancelReason] = useState("");
   const [editOpen, setEditOpen] = useState(false);
   const [postOpen, setPostOpen] = useState(false);
 
@@ -131,7 +121,7 @@ export function SaleDetailPage() {
 
   if (sale.isLoading) {
     return (
-      <div style={{ textAlign: 'center', padding: 48 }}>
+      <div style={{ textAlign: "center", padding: 48 }}>
         <Spin tip={SALES_LABELS.messages.loading} />
       </div>
     );
@@ -141,7 +131,7 @@ export function SaleDetailPage() {
       <Alert
         type="error"
         showIcon
-        icon={phIcon(WarningCircle, { weight: 'fill' })}
+        icon={phIcon(WarningCircle, { weight: "fill" })}
         message={
           sale.error
             ? mapApiError(sale.error).userMessage
@@ -163,7 +153,7 @@ export function SaleDetailPage() {
   const currentDebt = Number.parseFloat(record.partner.currentDebtBalance) || 0;
   const documentTotal = Number.parseFloat(record.totalAmount) || 0;
   const projectedDebt =
-    record.status === 'DRAFT' ? currentDebt + documentTotal : undefined;
+    record.status === "DRAFT" ? currentDebt + documentTotal : undefined;
   const shortages = computeQuantityShortages(
     record.items,
     products.data?.data ?? [],
@@ -171,18 +161,18 @@ export function SaleDetailPage() {
 
   function confirmRemove() {
     Modal.confirm({
-      className: 'app-mobile-modal',
+      className: "app-mobile-modal",
       title: SALES_LABELS.remove.title,
       content: SALES_LABELS.remove.text,
       okText: SALES_LABELS.actions.remove,
       cancelText: SALES_LABELS.actions.back,
       okButtonProps: { danger: true },
-      icon: phIcon(WarningCircle, { size: ICON_SIZE.xl, weight: 'fill' }),
+      icon: phIcon(WarningCircle, { size: ICON_SIZE.xl, weight: "fill" }),
       onOk: async () => {
         try {
           await removeMutation.mutateAsync(record.id);
           message.success(SALES_LABELS.remove.success);
-          navigate('/sales');
+          navigate("/sales");
         } catch (error) {
           message.error(mapApiError(error).userMessage);
           throw error;
@@ -193,8 +183,8 @@ export function SaleDetailPage() {
 
   const itemColumns: ColumnsType<SaleItem> = [
     {
-      title: '#',
-      key: 'index',
+      title: "#",
+      key: "index",
       width: 48,
       render: (_value, _row, index) => (
         <Text type="secondary">{index + 1}</Text>
@@ -202,7 +192,7 @@ export function SaleDetailPage() {
     },
     {
       title: SALES_LABELS.fields.product,
-      key: 'product',
+      key: "product",
       render: (_, item) => (
         <EntityCell
           code={item.productCodeSnapshot}
@@ -213,9 +203,9 @@ export function SaleDetailPage() {
     },
     {
       title: SALES_LABELS.fields.availableQuantity,
-      key: 'availableQuantity',
+      key: "availableQuantity",
       width: 120,
-      align: 'right',
+      align: "right",
       render: (_, item) => {
         const current = productById.get(item.productId)?.currentQuantity;
         return current != null ? formatQuantity(current) : emptyDash(null);
@@ -223,50 +213,50 @@ export function SaleDetailPage() {
     },
     {
       title: SALES_LABELS.fields.quantity,
-      dataIndex: 'quantity',
-      key: 'quantity',
+      dataIndex: "quantity",
+      key: "quantity",
       width: 110,
-      align: 'right',
+      align: "right",
       render: (value: string) => formatQuantity(value),
     },
     {
       title: SALES_LABELS.fields.unitPrice,
-      dataIndex: 'unitPrice',
-      key: 'unitPrice',
+      dataIndex: "unitPrice",
+      key: "unitPrice",
       width: 130,
-      align: 'right',
+      align: "right",
       render: (value: string) => (
         <MoneyCell value={value} format={formatMoney} />
       ),
     },
     {
       title: SALES_LABELS.fields.lineDiscount,
-      dataIndex: 'discountAmount',
-      key: 'discount',
+      dataIndex: "discountAmount",
+      key: "discount",
       width: 120,
-      align: 'right',
+      align: "right",
       render: (value: string) => (
         <MoneyCell value={value} format={formatMoney} />
       ),
     },
     {
       title: SALES_LABELS.fields.lineTotal,
-      dataIndex: 'lineTotal',
-      key: 'lineTotal',
+      dataIndex: "lineTotal",
+      key: "lineTotal",
       width: 130,
-      align: 'right',
+      align: "right",
       render: (value: string) => (
         <MoneyCell value={value} format={formatMoney} emphasize />
       ),
     },
-    ...(record.status === 'POSTED'
+    ...(record.status === "POSTED"
       ? [
           {
             title: SALES_LABELS.fields.costAtPosting,
-            dataIndex: 'costAtPosting',
-            key: 'costAtPosting',
+            dataIndex: "costAtPosting",
+            key: "costAtPosting",
             width: 150,
-            align: 'right' as const,
+            align: "right" as const,
             render: (value: string | null) =>
               value ? (
                 <MoneyCell value={value} format={formatMoney} />
@@ -278,104 +268,59 @@ export function SaleDetailPage() {
       : []),
     {
       title: SALES_LABELS.fields.lineNotes,
-      dataIndex: 'notes',
-      key: 'notes',
+      dataIndex: "notes",
+      key: "notes",
       ellipsis: true,
       render: (value: string | null) => emptyDash(value),
     },
   ];
 
-  const quantityColumns: ColumnsType<SaleQuantityHistory> = [
-    {
-      title: 'Hərəkət',
-      dataIndex: 'kind',
-      key: 'kind',
-      render: (value: string) => (
-        <Tag>{quantityKindLabels[value] ?? 'Digər hərəkət'}</Tag>
-      ),
-    },
-    {
-      title: SALES_LABELS.history.change,
-      dataIndex: 'quantityChange',
-      key: 'change',
-      align: 'right',
-      render: (value: string) => formatQuantity(value),
-    },
-    {
-      title: SALES_LABELS.history.before,
-      dataIndex: 'quantityBefore',
-      key: 'before',
-      align: 'right',
-      render: (value: string) => formatQuantity(value),
-    },
-    {
-      title: SALES_LABELS.history.after,
-      dataIndex: 'quantityAfter',
-      key: 'after',
-      align: 'right',
-      render: (value: string) => formatQuantity(value),
-    },
-    {
-      title: SALES_LABELS.history.reason,
-      dataIndex: 'reason',
-      key: 'reason',
-      render: (value: string | null) => emptyDash(value),
-    },
-    {
-      title: SALES_LABELS.history.date,
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      width: 170,
-      render: (value: string) => formatDateTime(value),
-    },
-  ];
-
   const debtColumns: ColumnsType<SaleDebtMovement> = [
     {
-      title: 'Hərəkət',
-      dataIndex: 'kind',
-      key: 'kind',
+      title: "Hərəkət",
+      dataIndex: "kind",
+      key: "kind",
       render: (value: string) => (
-        <Tag>{debtKindLabels[value] ?? 'Digər hərəkət'}</Tag>
+        <Tag>{debtKindLabels[value] ?? "Digər hərəkət"}</Tag>
       ),
     },
     {
       title: SALES_LABELS.history.signedAmount,
-      dataIndex: 'signedAmount',
-      key: 'signedAmount',
-      align: 'right',
+      dataIndex: "signedAmount",
+      key: "signedAmount",
+      align: "right",
       render: (value: string) => (
         <MoneyCell value={value} format={formatMoney} emphasize />
       ),
     },
     {
       title: SALES_LABELS.history.before,
-      dataIndex: 'balanceBefore',
-      key: 'before',
-      align: 'right',
+      dataIndex: "balanceBefore",
+      key: "before",
+      align: "right",
       render: (value: string) => (
         <MoneyCell value={value} format={formatMoney} />
       ),
     },
     {
       title: SALES_LABELS.history.after,
-      dataIndex: 'balanceAfter',
-      key: 'after',
-      align: 'right',
+      dataIndex: "balanceAfter",
+      key: "after",
+      align: "right",
       render: (value: string) => (
         <MoneyCell value={value} format={formatMoney} />
       ),
     },
     {
       title: SALES_LABELS.history.reason,
-      dataIndex: 'reason',
-      key: 'reason',
+      dataIndex: "reason",
+      key: "reason",
       render: (value: string | null) => emptyDash(value),
     },
     {
       title: SALES_LABELS.history.date,
-      dataIndex: 'createdAt',
-      key: 'createdAt',
+      dataIndex: "createdAt",
+      key: "createdAt",
       width: 170,
       render: (value: string) => formatDateTime(value),
     },
@@ -384,13 +329,13 @@ export function SaleDetailPage() {
   const cashColumns: ColumnsType<SaleLinkedCashTransaction> = [
     {
       title: SALES_LABELS.history.transactionNumber,
-      dataIndex: 'transactionNumber',
-      key: 'transactionNumber',
+      dataIndex: "transactionNumber",
+      key: "transactionNumber",
       render: (value: string) => <CodeText value={value} />,
     },
     {
       title: SALES_LABELS.history.cashAccount,
-      key: 'cashAccount',
+      key: "cashAccount",
       render: (_: unknown, row) => (
         <Link to={`/cash/accounts/${row.cashAccountId}`}>
           {row.cashAccountName} ({row.cashAccountCode})
@@ -398,37 +343,37 @@ export function SaleDetailPage() {
       ),
     },
     {
-      title: 'Növ',
-      dataIndex: 'type',
-      key: 'type',
+      title: "Növ",
+      dataIndex: "type",
+      key: "type",
       render: (value: string) => (
         <Tag>
           {CASH_LABELS.types[value as keyof typeof CASH_LABELS.types] ??
-            'Digər'}
+            "Digər"}
         </Tag>
       ),
     },
     {
       title: SALES_LABELS.history.amount,
-      dataIndex: 'amount',
-      key: 'amount',
-      align: 'right',
+      dataIndex: "amount",
+      key: "amount",
+      align: "right",
       render: (value: string) => (
         <MoneyCell value={value} format={formatMoney} emphasize />
       ),
     },
     {
       title: SALES_LABELS.columns.status,
-      dataIndex: 'status',
-      key: 'status',
+      dataIndex: "status",
+      key: "status",
       render: (value: string) => (
         <Tag
           color={
-            value === 'POSTED'
-              ? 'success'
-              : value === 'CANCELLED'
-                ? 'error'
-                : 'default'
+            value === "POSTED"
+              ? "success"
+              : value === "CANCELLED"
+                ? "error"
+                : "default"
           }
         >
           {CASH_LABELS.statuses[value as keyof typeof CASH_LABELS.statuses] ??
@@ -438,8 +383,8 @@ export function SaleDetailPage() {
     },
     {
       title: SALES_LABELS.history.date,
-      dataIndex: 'transactionDate',
-      key: 'transactionDate',
+      dataIndex: "transactionDate",
+      key: "transactionDate",
       width: 140,
       render: (value: string) => formatDateTime(value),
     },
@@ -447,7 +392,7 @@ export function SaleDetailPage() {
 
   const auditItems = [
     {
-      key: 'status',
+      key: "status",
       label: SALES_LABELS.columns.status,
       children: (
         <Tag color={statusColor(record.status)}>
@@ -456,24 +401,24 @@ export function SaleDetailPage() {
       ),
     },
     {
-      key: 'document',
+      key: "document",
       label: SALES_LABELS.columns.documentNumber,
       children: <CodeText value={record.documentNumber} strong />,
     },
     {
-      key: 'date',
+      key: "date",
       label: SALES_LABELS.columns.businessDate,
       children: formatDateTime(record.businessDate),
     },
     {
-      key: 'partner',
+      key: "partner",
       label: SALES_LABELS.columns.partner,
       children: (
         <EntityCell code={record.partner.code} name={record.partner.name} />
       ),
     },
     {
-      key: 'debt',
+      key: "debt",
       label: SALES_LABELS.fields.partnerDebt,
       children: (
         <Space direction="vertical" size={0}>
@@ -485,19 +430,19 @@ export function SaleDetailPage() {
       ),
     },
     {
-      key: 'itemCount',
+      key: "itemCount",
       label: SALES_LABELS.fields.itemCount,
       children: record.items.length,
     },
     {
-      key: 'totalQuantity',
+      key: "totalQuantity",
       label: SALES_LABELS.fields.totalQuantity,
       children: formatQuantity(totalLineQuantity),
     },
     ...(projectedDebt != null
       ? [
           {
-            key: 'projectedDebt',
+            key: "projectedDebt",
             label: SALES_LABELS.fields.projectedDebt,
             children: (
               <Space direction="vertical" size={0}>
@@ -511,7 +456,7 @@ export function SaleDetailPage() {
         ]
       : []),
     {
-      key: 'notes',
+      key: "notes",
       label: SALES_LABELS.fields.notes,
       children: emptyDash(record.notes),
       span: 2,
@@ -520,37 +465,37 @@ export function SaleDetailPage() {
 
   const auditTrailItems = [
     {
-      key: 'createdBy',
+      key: "createdBy",
       label: SALES_LABELS.audit.createdBy,
       children: record.createdBy.fullName,
     },
     {
-      key: 'createdAt',
+      key: "createdAt",
       label: SALES_LABELS.columns.createdAt,
       children: formatDateTime(record.createdAt),
     },
     {
-      key: 'postedBy',
+      key: "postedBy",
       label: SALES_LABELS.audit.postedBy,
       children: emptyDash(record.postedBy?.fullName),
     },
     {
-      key: 'postedAt',
+      key: "postedAt",
       label: SALES_LABELS.audit.postedAt,
       children: formatDateTime(record.postedAt),
     },
     {
-      key: 'cancelledBy',
+      key: "cancelledBy",
       label: SALES_LABELS.audit.cancelledBy,
       children: emptyDash(record.cancelledBy?.fullName),
     },
     {
-      key: 'cancelledAt',
+      key: "cancelledAt",
       label: SALES_LABELS.audit.cancelledAt,
       children: formatDateTime(record.cancelledAt),
     },
     {
-      key: 'cancelReason',
+      key: "cancelReason",
       label: SALES_LABELS.audit.cancelReason,
       children: emptyDash(record.cancelReason),
       span: 2,
@@ -558,7 +503,7 @@ export function SaleDetailPage() {
     ...(record.negativeQuantityOverrideReason
       ? [
           {
-            key: 'negativeQuantityOverrideReason',
+            key: "negativeQuantityOverrideReason",
             label: SALES_LABELS.audit.negativeQuantityOverrideReason,
             children: record.negativeQuantityOverrideReason,
             span: 2 as const,
@@ -572,12 +517,12 @@ export function SaleDetailPage() {
       <PageHeader
         title={record.documentNumber}
         description={SALES_LABELS.detail}
-        icon={phIcon(ShoppingBag, { size: ICON_SIZE.xl, weight: 'duotone' })}
+        icon={phIcon(ShoppingBag, { size: ICON_SIZE.xl, weight: "duotone" })}
         extra={
           <Space wrap>
             <Button
               icon={phIcon(ArrowLeft, { size: ICON_SIZE.md })}
-              onClick={() => navigate('/sales')}
+              onClick={() => navigate("/sales")}
             >
               {SALES_LABELS.actions.back}
             </Button>
@@ -586,7 +531,7 @@ export function SaleDetailPage() {
               icon={phIcon(Printer, { size: ICON_SIZE.md })}
               onClick={() => {
                 const opened = printCommercialDocument(
-                  'sale-print-document',
+                  "sale-print-document",
                   `${SALES_LABELS.printTitle} — ${record.documentNumber}`,
                 );
                 if (!opened)
@@ -595,7 +540,7 @@ export function SaleDetailPage() {
             >
               {SALES_LABELS.actions.print}
             </Button>
-            {record.status === 'DRAFT' ? (
+            {record.status === "DRAFT" ? (
               <>
                 <Button
                   icon={phIcon(PencilSimple, { size: ICON_SIZE.md })}
@@ -619,7 +564,7 @@ export function SaleDetailPage() {
                 </Button>
               </>
             ) : null}
-            {record.status === 'POSTED' ? (
+            {record.status === "POSTED" ? (
               <Button
                 danger
                 icon={phIcon(XCircle, { size: ICON_SIZE.md })}
@@ -661,23 +606,59 @@ export function SaleDetailPage() {
               {phIcon(FileText, { size: ICON_SIZE.md })}
               <span>Sənəd məlumatları</span>
             </Space>
-            <Descriptions
-              size="small"
-              column={{ xs: 1, sm: 2, lg: 3 }}
-              items={auditItems}
-            />
+            {isDesktop ? (
+              <Descriptions size="small" column={3} items={auditItems} />
+            ) : (
+              <div className="commercial-mobile-invoice-summary">
+                <div className="commercial-mobile-invoice-primary">
+                  <EntityCell
+                    code={record.partner.code}
+                    name={record.partner.name}
+                  />
+                  <Tag color={statusColor(record.status)}>
+                    {saleStatusLabel(record.status)}
+                  </Tag>
+                </div>
+                <div className="commercial-mobile-invoice-meta">
+                  <span>
+                    {phIcon(CalendarBlank, { size: ICON_SIZE.sm })}
+                    {formatDateTime(record.businessDate)}
+                  </span>
+                  <span>
+                    {phIcon(Package, { size: ICON_SIZE.sm })}
+                    {record.items.length} sətir ·{" "}
+                    {formatQuantity(totalLineQuantity)}
+                  </span>
+                </div>
+                <div className="commercial-mobile-balance">
+                  <Text type="secondary">
+                    {SALES_LABELS.fields.partnerDebt}
+                  </Text>
+                  <Text strong>
+                    {formatMoney(record.partner.currentDebtBalance)}
+                  </Text>
+                </div>
+                {record.notes ? (
+                  <Text className="commercial-mobile-invoice-note">
+                    {record.notes}
+                  </Text>
+                ) : null}
+              </div>
+            )}
           </section>
 
           <section className="commercial-audit-card">
-            <Space className="commercial-panel-heading" size={8}>
-              {phIcon(NoteBlank, { size: ICON_SIZE.md })}
-              <span>{SALES_LABELS.audit.title}</span>
-            </Space>
-            <Descriptions
-              size="small"
-              column={{ xs: 1, sm: 2, lg: 2 }}
-              items={auditTrailItems}
-            />
+            <details className="commercial-audit-disclosure">
+              <summary className="commercial-panel-heading">
+                {phIcon(NoteBlank, { size: ICON_SIZE.md })}
+                <span>{SALES_LABELS.audit.title}</span>
+              </summary>
+              <Descriptions
+                size="small"
+                column={{ xs: 2, sm: 2, lg: 2 }}
+                items={auditTrailItems}
+              />
+            </details>
           </section>
         </div>
 
@@ -695,11 +676,11 @@ export function SaleDetailPage() {
               columns={itemColumns}
               dataSource={record.items}
               pagination={false}
-              scroll={{ x: record.status === 'POSTED' ? 1140 : 1040 }}
+              scroll={{ x: record.status === "POSTED" ? 1140 : 1040 }}
             />
           ) : (
             <div className="commercial-record-list">
-              {record.items.map((item, index) => (
+              {record.items.map((item) => (
                 <article className="commercial-record-card" key={item.id}>
                   <div className="commercial-record-card-head">
                     <EntityCell
@@ -709,54 +690,23 @@ export function SaleDetailPage() {
                     />
                     <Text strong>{formatMoney(item.lineTotal)}</Text>
                   </div>
-                  <div className="commercial-record-values">
-                    <div>
-                      <Text type="secondary">
-                        {SALES_LABELS.fields.availableQuantity}
-                      </Text>
-                      <strong>
-                        {productById.get(item.productId)?.currentQuantity !=
-                        null
-                          ? formatQuantity(
-                              productById.get(item.productId)!.currentQuantity,
-                            )
-                          : emptyDash(null)}
-                      </strong>
-                    </div>
-                    <div>
-                      <Text type="secondary">
-                        {SALES_LABELS.fields.quantity}
-                      </Text>
-                      <strong>{formatQuantity(item.quantity)}</strong>
-                    </div>
-                    <div>
-                      <Text type="secondary">
-                        {SALES_LABELS.fields.unitPrice}
-                      </Text>
-                      <strong>{formatMoney(item.unitPrice)}</strong>
-                    </div>
-                    <div>
-                      <Text type="secondary">
-                        {SALES_LABELS.fields.lineDiscount}
-                      </Text>
-                      <strong>{formatMoney(item.discountAmount)}</strong>
-                    </div>
-                    {record.status === 'POSTED' ? (
-                      <div>
-                        <Text type="secondary">
-                          {SALES_LABELS.fields.costAtPosting}
-                        </Text>
-                        <strong>
-                          {item.costAtPosting
-                            ? formatMoney(item.costAtPosting)
-                            : '—'}
-                        </strong>
-                      </div>
+                  <div className="commercial-mobile-line-math">
+                    <strong>
+                      {formatQuantity(item.quantity)} {item.unitNameSnapshot}
+                    </strong>
+                    <span>×</span>
+                    <strong>{formatMoney(item.unitPrice)}</strong>
+                    {Number(item.discountAmount) > 0 ? (
+                      <Tag color="gold">
+                        − {formatMoney(item.discountAmount)}
+                      </Tag>
                     ) : null}
                   </div>
-                  <Text className="commercial-record-note" type="secondary">
-                    {index + 1}. {emptyDash(item.notes)}
-                  </Text>
+                  {item.notes ? (
+                    <Text className="commercial-record-note" type="secondary">
+                      {item.notes}
+                    </Text>
+                  ) : null}
                 </article>
               ))}
             </div>
@@ -764,11 +714,11 @@ export function SaleDetailPage() {
           <div className="ui-document-totals commercial-totals-card">
             <Space size="large" wrap>
               <Text type="secondary">
-                {SALES_LABELS.columns.subtotal}:{' '}
+                {SALES_LABELS.columns.subtotal}:{" "}
                 {formatMoney(record.subtotalAmount)}
               </Text>
               <Text type="secondary">
-                {SALES_LABELS.columns.discount}:{' '}
+                {SALES_LABELS.columns.discount}:{" "}
                 {formatMoney(record.discountAmount ?? 0)}
               </Text>
               <Text strong>
@@ -779,65 +729,6 @@ export function SaleDetailPage() {
         </section>
 
         <div className="commercial-history-grid">
-          <section className="commercial-detail-section">
-            <Space className="commercial-section-heading" align="center">
-              {phIcon(Scales, { size: ICON_SIZE.md })}
-              <Title level={5}>{SALES_LABELS.history.quantity}</Title>
-              <Tag>{record.productQuantityHistory.length}</Tag>
-            </Space>
-            {isDesktop ? (
-              <Table
-                className="commercial-detail-table commercial-history-table"
-                rowKey="id"
-                size="small"
-                columns={quantityColumns}
-                dataSource={record.productQuantityHistory}
-                pagination={false}
-                locale={{ emptyText: 'Miqdar hərəkəti yoxdur.' }}
-                scroll={{ x: 640 }}
-              />
-            ) : (
-              <div className="commercial-record-list commercial-history-list">
-                {record.productQuantityHistory.map((row) => (
-                  <article className="commercial-record-card" key={row.id}>
-                    <div className="commercial-record-card-head">
-                      <Tag>
-                        {quantityKindLabels[row.kind] ?? 'Digər hərəkət'}
-                      </Tag>
-                      <Text>{formatDateTime(row.createdAt)}</Text>
-                    </div>
-                    <div className="commercial-record-values">
-                      <div>
-                        <Text type="secondary">
-                          {SALES_LABELS.history.change}
-                        </Text>
-                        <strong>{formatQuantity(row.quantityChange)}</strong>
-                      </div>
-                      <div>
-                        <Text type="secondary">
-                          {SALES_LABELS.history.before}
-                        </Text>
-                        <strong>{formatQuantity(row.quantityBefore)}</strong>
-                      </div>
-                      <div>
-                        <Text type="secondary">
-                          {SALES_LABELS.history.after}
-                        </Text>
-                        <strong>{formatQuantity(row.quantityAfter)}</strong>
-                      </div>
-                    </div>
-                    <Text className="commercial-record-note" type="secondary">
-                      {SALES_LABELS.history.reason}: {emptyDash(row.reason)}
-                    </Text>
-                  </article>
-                ))}
-                {!record.productQuantityHistory.length ? (
-                  <Text type="secondary">Miqdar hərəkəti yoxdur.</Text>
-                ) : null}
-              </div>
-            )}
-          </section>
-
           <section className="commercial-detail-section">
             <Space className="commercial-section-heading" align="center">
               {phIcon(NoteBlank, { size: ICON_SIZE.md })}
@@ -852,7 +743,7 @@ export function SaleDetailPage() {
                 columns={debtColumns}
                 dataSource={record.partnerDebtMovements}
                 pagination={false}
-                locale={{ emptyText: 'Borc hərəkəti yoxdur.' }}
+                locale={{ emptyText: "Borc hərəkəti yoxdur." }}
                 scroll={{ x: 700 }}
               />
             ) : (
@@ -860,7 +751,7 @@ export function SaleDetailPage() {
                 {record.partnerDebtMovements.map((row) => (
                   <article className="commercial-record-card" key={row.id}>
                     <div className="commercial-record-card-head">
-                      <Tag>{debtKindLabels[row.kind] ?? 'Digər hərəkət'}</Tag>
+                      <Tag>{debtKindLabels[row.kind] ?? "Digər hərəkət"}</Tag>
                       <Text strong>{formatMoney(row.signedAmount)}</Text>
                     </div>
                     <div className="commercial-record-values">
@@ -915,7 +806,7 @@ export function SaleDetailPage() {
               columns={cashColumns}
               dataSource={record.cashTransactions ?? []}
               pagination={false}
-              locale={{ emptyText: 'Əlaqəli kassa əməliyyatı yoxdur.' }}
+              locale={{ emptyText: "Əlaqəli kassa əməliyyatı yoxdur." }}
               scroll={{ x: 800 }}
             />
           ) : (
@@ -935,7 +826,7 @@ export function SaleDetailPage() {
                       <strong>
                         {CASH_LABELS.types[
                           row.type as keyof typeof CASH_LABELS.types
-                        ] ?? 'Digər'}
+                        ] ?? "Digər"}
                       </strong>
                     </div>
                     <div>
@@ -970,7 +861,7 @@ export function SaleDetailPage() {
         open={cancelOpen}
         title={
           <Space>
-            {phIcon(XCircle, { weight: 'fill', size: ICON_SIZE.lg })}
+            {phIcon(XCircle, { weight: "fill", size: ICON_SIZE.lg })}
             {SALES_LABELS.cancel.title}
           </Space>
         }
@@ -980,7 +871,7 @@ export function SaleDetailPage() {
         confirmLoading={cancelMutation.isPending}
         onCancel={() => {
           setCancelOpen(false);
-          setCancelReason('');
+          setCancelReason("");
         }}
         onOk={async () => {
           if (!cancelReason.trim()) return;
@@ -991,17 +882,17 @@ export function SaleDetailPage() {
             });
             message.success(SALES_LABELS.cancel.success);
             setCancelOpen(false);
-            setCancelReason('');
+            setCancelReason("");
           } catch (error) {
             message.error(mapApiError(error).userMessage);
           }
         }}
       >
-        <Space direction="vertical" size={12} style={{ width: '100%' }}>
+        <Space direction="vertical" size={12} style={{ width: "100%" }}>
           <Text>{SALES_LABELS.cancel.text}</Text>
           <div>
             <Text strong>{SALES_LABELS.cancel.effectsTitle}</Text>
-            <ul style={{ margin: '8px 0 0', paddingLeft: 20 }}>
+            <ul style={{ margin: "8px 0 0", paddingLeft: 20 }}>
               {SALES_LABELS.cancel.effects.map((effect) => (
                 <li key={effect}>
                   <Text type="secondary">{effect}</Text>

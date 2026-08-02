@@ -29,6 +29,7 @@ import {
   UsersThree,
   Wallet,
   Receipt,
+  ArrowsDownUp,
 } from '@phosphor-icons/react';
 import { MASTER_DATA_LABELS } from '../features/master-data/ui/labels';
 import { AUTH_LABELS } from '../features/auth/ui/labels';
@@ -68,6 +69,60 @@ const NAV_ITEMS: MenuItem[] = [
     ],
   },
   {
+    key: 'group-cash',
+    type: 'group',
+    label: CASH_LABELS.nav,
+    children: [
+      {
+        key: '/cash/accounts',
+        icon: phIcon(Wallet, { size: ICON_SIZE.md }),
+        label: navLabel(CASH_LABELS.navAccounts, '/cash/accounts'),
+      },
+      {
+        key: '/cash/transactions',
+        icon: phIcon(ArrowsDownUp, { size: ICON_SIZE.md }),
+        label: navLabel(CASH_LABELS.navTransactions, '/cash/transactions'),
+      },
+      {
+        key: '/cash/reports',
+        icon: phIcon(ChartLine, { size: ICON_SIZE.md }),
+        label: navLabel(CASH_LABELS.navReports, '/cash/reports'),
+      },
+      {
+        key: '/cash/expense-categories',
+        icon: phIcon(Receipt, { size: ICON_SIZE.md }),
+        label: navLabel(
+          CASH_LABELS.expenseCategories,
+          '/cash/expense-categories',
+        ),
+      },
+    ],
+  },
+  {
+    key: 'group-purchases',
+    type: 'group',
+    label: PURCHASE_LABELS.nav,
+    children: [
+      {
+        key: '/purchases',
+        icon: phIcon(ShoppingCart, { size: ICON_SIZE.md }),
+        label: navLabel(PURCHASE_LABELS.nav, '/purchases'),
+      },
+    ],
+  },
+  {
+    key: 'group-sales',
+    type: 'group',
+    label: SALES_LABELS.nav,
+    children: [
+      {
+        key: '/sales',
+        icon: phIcon(ShoppingBag, { size: ICON_SIZE.md }),
+        label: navLabel(SALES_LABELS.nav, '/sales'),
+      },
+    ],
+  },
+  {
     key: 'group-products',
     type: 'group',
     label: 'Məhsullar',
@@ -101,55 +156,6 @@ const NAV_ITEMS: MenuItem[] = [
         key: '/business-partners',
         icon: phIcon(UsersThree, { size: ICON_SIZE.md }),
         label: navLabel(MASTER_DATA_LABELS.partners.nav, '/business-partners'),
-      },
-    ],
-  },
-  {
-    key: 'group-purchases',
-    type: 'group',
-    label: PURCHASE_LABELS.nav,
-    children: [
-      {
-        key: '/purchases',
-        icon: phIcon(ShoppingCart, { size: ICON_SIZE.md }),
-        label: navLabel(PURCHASE_LABELS.nav, '/purchases'),
-      },
-    ],
-  },
-  {
-    key: 'group-sales',
-    type: 'group',
-    label: SALES_LABELS.nav,
-    children: [
-      {
-        key: '/sales',
-        icon: phIcon(ShoppingBag, { size: ICON_SIZE.md }),
-        label: navLabel(SALES_LABELS.nav, '/sales'),
-      },
-    ],
-  },
-  {
-    key: 'group-cash',
-    type: 'group',
-    label: CASH_LABELS.nav,
-    children: [
-      {
-        key: '/cash/accounts',
-        icon: phIcon(Wallet, { size: ICON_SIZE.md }),
-        label: navLabel(CASH_LABELS.navAccounts, '/cash/accounts'),
-      },
-      {
-        key: '/cash/reports',
-        icon: phIcon(ChartLine, { size: ICON_SIZE.md }),
-        label: navLabel(CASH_LABELS.navReports, '/cash/reports'),
-      },
-      {
-        key: '/cash/expense-categories',
-        icon: phIcon(Receipt, { size: ICON_SIZE.md }),
-        label: navLabel(
-          CASH_LABELS.expenseCategories,
-          '/cash/expense-categories',
-        ),
       },
     ],
   },
@@ -200,6 +206,8 @@ export function AppShellLayout() {
           ? '/sales'
           : location.pathname.startsWith('/cash/expense-categories')
             ? '/cash/expense-categories'
+            : location.pathname.startsWith('/cash/transactions')
+              ? '/cash/transactions'
             : location.pathname.startsWith('/cash/reports')
               ? '/cash/reports'
               : location.pathname.startsWith('/cash')

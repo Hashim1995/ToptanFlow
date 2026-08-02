@@ -16,8 +16,8 @@ export type CashAccount = {
   code: string;
   currentBalance: string;
   notes: string | null;
-  responsibleUserId: string | null;
-  responsibleUserName: string | null;
+  responsibleUserId: string;
+  responsibleUserName: string;
   isActive: boolean;
   deactivatedAt: string | null;
   deactivationReason: string | null;
@@ -39,14 +39,14 @@ export type CashAccountListQuery = {
 export type CreateCashAccountInput = {
   name: string;
   notes?: string;
-  responsibleUserId?: string;
+  responsibleUserId: string;
   openingBalance?: string;
 };
 
 export type UpdateCashAccountInput = {
   name?: string;
   notes?: string | null;
-  responsibleUserId?: string | null;
+  responsibleUserId?: string;
 };
 
 export type TotalCompanyCash = {

@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -19,6 +20,7 @@ import {
 } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/jwt.strategy';
+import { SuperAdminGuard } from '../auth/super-admin.guard';
 import { CashAccountsService } from './cash-accounts.service';
 import { CashReportsService } from './cash-reports.service';
 import { CreateCashAccountDto } from './dto/create-cash-account.dto';
@@ -81,6 +83,7 @@ export class CashAccountsController {
   }
 
   @Post()
+  @UseGuards(SuperAdminGuard)
   @ApiOperation({ summary: 'Create Cash Account' })
   @ApiCreatedResponse({ type: CashAccountResponseDto })
   @ApiConflictResponse()
@@ -132,8 +135,9 @@ export class CashAccountsController {
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateCashAccountDto,
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<CashAccountResponseDto> {
-    return this.cashAccountsService.update(id, dto);
+    return this.cashAccountsService.update(id, dto, user.isSuperAdmin);
   }
 
   @Post(':id/deactivate')

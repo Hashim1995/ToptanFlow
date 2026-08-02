@@ -36,12 +36,16 @@ describe('UsersService', () => {
       findFirst: jest.fn(),
       update: jest.fn(),
     },
+    cashAccount: {
+      findUnique: jest.fn(),
+    },
   };
 
   let service: UsersService;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    prisma.cashAccount.findUnique.mockResolvedValue(null);
     service = new UsersService(prisma as unknown as PrismaService);
   });
 
@@ -211,6 +215,21 @@ describe('UsersService', () => {
       await expect(service.deactivate(userId)).rejects.toMatchObject({
         response: expect.objectContaining({
           code: 'SUPERADMIN_IMMUTABLE',
+        }),
+      });
+      expect(prisma.user.update).not.toHaveBeenCalled();
+    });
+
+    it('requires Cash Account reassignment before deactivation', async () => {
+      prisma.user.findUnique.mockResolvedValue(baseUser);
+      prisma.cashAccount.findUnique.mockResolvedValue({
+        id: '33333333-3333-4333-8333-333333333333',
+        name: 'Ofis kassası',
+      });
+
+      await expect(service.deactivate(userId)).rejects.toMatchObject({
+        response: expect.objectContaining({
+          code: 'USER_RESPONSIBLE_FOR_CASH_ACCOUNT',
         }),
       });
       expect(prisma.user.update).not.toHaveBeenCalled();

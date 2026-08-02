@@ -38,9 +38,10 @@ Deferred). Other business modules stay flat-equal under ADR-025.
    not writable via update DTO.
 6. **Auth payload:** login/refresh `user` object includes `isSuperAdmin` so the
    frontend can hide the Users nav (UX only; backend remains authoritative).
-7. **Scope limit:** Super Admin gate applies **only** to user administration.
-   Sales, purchases, cash, and master data remain available to every active
-   authenticated user (ADR-025 unchanged for those domains).
+7. **Scope limit (amended by ADR-040):** Super Admin gates user administration,
+   Cash Account creation, and responsible-user assignment/change only. Sales,
+   purchases, Cash operations, and other master data remain available to every
+   active authenticated user (ADR-025 unchanged for those actions).
 
 ## Consequences
 
@@ -49,6 +50,8 @@ Deferred). Other business modules stay flat-equal under ADR-025.
 - Does **not** supersede ADR-025 JWT/Argon2id/TTL/single-company rules, nor
   flat equality for non-user-admin actions.
 - US-050 remains Deferred until a future decision introduces capability keys.
+- ADR-040 adds only the Cash Account creation/ownership administrative boundary;
+  it does not restrict who may operate an active Cash Account.
 
 ## Alternatives Considered
 

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState } from "react";
 import {
   Alert,
   Button,
@@ -17,9 +17,9 @@ import {
   Tooltip,
   Typography,
   message,
-} from 'antd';
-import type { ColumnsType } from 'antd/es/table';
-import type { MenuProps } from 'antd';
+} from "antd";
+import type { ColumnsType } from "antd/es/table";
+import type { MenuProps } from "antd";
 import {
   Barcode,
   DotsThreeVertical,
@@ -29,42 +29,42 @@ import {
   Plus,
   Power,
   Prohibit,
-} from '@phosphor-icons/react';
-import { mapApiError } from '../../../api/map-api-error';
-import { formatMoney } from '../../../shared/money/format-money';
-import { formatQuantity } from '../../../shared/ui/format';
-import { ICON_SIZE, phIcon } from '../../../shared/ui/ph-icon';
+} from "@phosphor-icons/react";
+import { mapApiError } from "../../../api/map-api-error";
+import { formatMoney } from "../../../shared/money/format-money";
+import { formatQuantity } from "../../../shared/ui/format";
+import { ICON_SIZE, phIcon } from "../../../shared/ui/ph-icon";
 import {
   CodeText,
   EntityCell,
   MoneyCell,
-} from '../../../shared/ui/table-cells';
-import type { Product, ProductType } from '../api/products.api';
+} from "../../../shared/ui/table-cells";
+import type { Product, ProductType } from "../api/products.api";
 import {
   useCreateProduct,
   useDeactivateProduct,
   useProductsList,
   useUpdateProduct,
-} from '../api/products.hooks';
-import { useProductCategoriesList } from '../api/product-categories.hooks';
-import type { ProductFormValues } from '../forms/product.schemas';
-import { ActiveStatusTag } from '../ui/active-status-tag';
+} from "../api/products.hooks";
+import { useProductCategoriesList } from "../api/product-categories.hooks";
+import type { ProductFormValues } from "../forms/product.schemas";
+import { ActiveStatusTag } from "../ui/active-status-tag";
 import {
   activeFilterToIsActive,
   type ActiveFilterValue,
-} from '../ui/active-filter';
-import { MASTER_DATA_LABELS, productTypeLabel } from '../ui/labels';
-import { ActiveStatusFilter, FilterBar, FilterField } from '../ui/list-toolbar';
-import { PageHeader } from '../ui/page-header';
-import { ProductFormModal } from '../ui/product-form-modal';
-import './products-page.css';
+} from "../ui/active-filter";
+import { MASTER_DATA_LABELS, productTypeLabel } from "../ui/labels";
+import { ActiveStatusFilter, FilterBar, FilterField } from "../ui/list-toolbar";
+import { PageHeader } from "../ui/page-header";
+import { ProductFormModal } from "../ui/product-form-modal";
+import "./products-page.css";
 
 const { Text } = Typography;
 
 type FormMode =
-  { kind: 'closed' } | { kind: 'create' } | { kind: 'edit'; product: Product };
+  { kind: "closed" } | { kind: "create" } | { kind: "edit"; product: Product };
 
-type TypeFilterValue = 'all' | ProductType;
+type TypeFilterValue = "all" | ProductType;
 
 function emptyToNull(value: string): string | null {
   const trimmed = value.trim();
@@ -82,14 +82,14 @@ export function ProductsPage() {
   const screens = Grid.useBreakpoint();
   const isDesktop = Boolean(screens.md);
 
-  const [searchInput, setSearchInput] = useState('');
-  const [search, setSearch] = useState('');
-  const [activeFilter, setActiveFilter] = useState<ActiveFilterValue>('all');
-  const [typeFilter, setTypeFilter] = useState<TypeFilterValue>('all');
-  const [categoryFilter, setCategoryFilter] = useState<string | 'all'>('all');
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [activeFilter, setActiveFilter] = useState<ActiveFilterValue>("all");
+  const [typeFilter, setTypeFilter] = useState<TypeFilterValue>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string | "all">("all");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [formMode, setFormMode] = useState<FormMode>({ kind: 'closed' });
+  const [formMode, setFormMode] = useState<FormMode>({ kind: "closed" });
   const [formError, setFormError] = useState<string | undefined>();
 
   const listQuery = useMemo(
@@ -98,10 +98,10 @@ export function ProductsPage() {
       pageSize,
       search: search || undefined,
       isActive: activeFilterToIsActive(activeFilter),
-      type: typeFilter === 'all' ? undefined : typeFilter,
-      categoryId: categoryFilter === 'all' ? undefined : categoryFilter,
-      sortBy: 'code',
-      sortOrder: 'asc' as const,
+      type: typeFilter === "all" ? undefined : typeFilter,
+      categoryId: categoryFilter === "all" ? undefined : categoryFilter,
+      sortBy: "code",
+      sortOrder: "asc" as const,
     }),
     [page, pageSize, search, activeFilter, typeFilter, categoryFilter],
   );
@@ -109,8 +109,8 @@ export function ProductsPage() {
   const list = useProductsList(listQuery);
   const categoriesForFilter = useProductCategoriesList({
     pageSize: 100,
-    sortBy: 'name',
-    sortOrder: 'asc',
+    sortBy: "name",
+    sortOrder: "asc",
   });
   const createMutation = useCreateProduct();
   const updateMutation = useUpdateProduct();
@@ -120,23 +120,23 @@ export function ProductsPage() {
   const columns: ColumnsType<Product> = [
     {
       title: common.status,
-      dataIndex: 'isActive',
-      key: 'isActive',
+      dataIndex: "isActive",
+      key: "isActive",
       width: 110,
       render: (isActive: boolean) => <ActiveStatusTag isActive={isActive} />,
     },
     {
       title: labels.productCode,
-      dataIndex: 'code',
-      key: 'code',
+      dataIndex: "code",
+      key: "code",
       width: 110,
       sorter: true,
       render: (value: string) => <CodeText value={value} />,
     },
     {
       title: labels.productName,
-      dataIndex: 'name',
-      key: 'name',
+      dataIndex: "name",
+      key: "name",
       sorter: true,
       ellipsis: true,
       render: (value: string, record) => (
@@ -148,8 +148,8 @@ export function ProductsPage() {
     },
     {
       title: labels.type,
-      dataIndex: 'type',
-      key: 'type',
+      dataIndex: "type",
+      key: "type",
       width: 140,
       render: (type: ProductType) => (
         <Tag style={{ marginInlineEnd: 0 }}>{productTypeLabel(type)}</Tag>
@@ -157,7 +157,7 @@ export function ProductsPage() {
     },
     {
       title: labels.unit,
-      key: 'unit',
+      key: "unit",
       width: 130,
       render: (_, record) => (
         <Text type="secondary">
@@ -167,69 +167,68 @@ export function ProductsPage() {
     },
     {
       title: labels.currentQuantity,
-      dataIndex: 'currentQuantity',
-      key: 'currentQuantity',
+      dataIndex: "currentQuantity",
+      key: "currentQuantity",
       width: 120,
-      align: 'right',
+      align: "right",
       render: (value: string) => (
-        <Text strong style={{ fontVariantNumeric: 'tabular-nums' }}>
+        <Text strong style={{ fontVariantNumeric: "tabular-nums" }}>
           {formatQuantity(value)}
         </Text>
       ),
     },
     {
       title: labels.standardSalePrice,
-      dataIndex: 'standardSalePrice',
-      key: 'standardSalePrice',
+      dataIndex: "standardSalePrice",
+      key: "standardSalePrice",
       width: 130,
-      align: 'right',
+      align: "right",
       render: (value: string | null) => (
         <MoneyCell value={value} format={formatMoney} />
       ),
     },
     {
       title: labels.latestPurchasePrice,
-      dataIndex: 'latestPurchasePrice',
-      key: 'latestPurchasePrice',
+      dataIndex: "latestPurchasePrice",
+      key: "latestPurchasePrice",
       width: 130,
-      align: 'right',
+      align: "right",
       render: (value: string | null) => (
         <MoneyCell value={value} format={formatMoney} />
       ),
     },
     {
       title: labels.criticalStockThreshold,
-      dataIndex: 'criticalStockThreshold',
-      key: 'criticalStockThreshold',
+      dataIndex: "criticalStockThreshold",
+      key: "criticalStockThreshold",
       width: 135,
-      align: 'right',
-      render: (value: string | null) =>
-        value ? formatQuantity(value) : '—',
+      align: "right",
+      render: (value: string | null) => (value ? formatQuantity(value) : "—"),
     },
     {
       title: common.actions,
-      key: 'actions',
-      fixed: 'right',
+      key: "actions",
+      fixed: "right",
       width: 120,
       render: (_, record) => {
-        const menuItems: MenuProps['items'] = [
+        const menuItems: MenuProps["items"] = [
           {
-            key: 'edit',
+            key: "edit",
             icon: phIcon(PencilSimple, { size: ICON_SIZE.sm }),
             label: common.edit,
             onClick: () => openEdit(record),
           },
-          { type: 'divider' },
+          { type: "divider" },
           record.isActive
             ? {
-                key: 'deactivate',
+                key: "deactivate",
                 danger: true,
                 icon: phIcon(Prohibit, { size: ICON_SIZE.sm }),
                 label: common.deactivate,
                 onClick: () => confirmDeactivate(record),
               }
             : {
-                key: 'activate',
+                key: "activate",
                 icon: phIcon(Power, { size: ICON_SIZE.sm }),
                 label: common.activate,
                 onClick: () => confirmActivate(record),
@@ -246,14 +245,14 @@ export function ProductsPage() {
                 onClick={() => openEdit(record)}
               />
             </Tooltip>
-            <Dropdown menu={{ items: menuItems }} trigger={['click']}>
+            <Dropdown menu={{ items: menuItems }} trigger={["click"]}>
               <Button
                 className="products-row-menu"
                 type="text"
                 size="small"
                 icon={phIcon(DotsThreeVertical, {
                   size: ICON_SIZE.md,
-                  weight: 'bold',
+                  weight: "bold",
                 })}
                 aria-label={common.actions}
               />
@@ -266,25 +265,25 @@ export function ProductsPage() {
 
   function openCreate() {
     setFormError(undefined);
-    setFormMode({ kind: 'create' });
+    setFormMode({ kind: "create" });
   }
 
   function openEdit(product: Product) {
     setFormError(undefined);
-    setFormMode({ kind: 'edit', product });
+    setFormMode({ kind: "edit", product });
   }
 
   function closeForm() {
-    setFormMode({ kind: 'closed' });
+    setFormMode({ kind: "closed" });
     setFormError(undefined);
   }
 
   async function handleSubmit(values: ProductFormValues) {
     setFormError(undefined);
-    const categoryId = emptyToNull(values.categoryId ?? '');
+    const categoryId = emptyToNull(values.categoryId ?? "");
 
     try {
-      if (formMode.kind === 'create') {
+      if (formMode.kind === "create") {
         await createMutation.mutateAsync({
           name: values.name.trim(),
           type: values.type,
@@ -299,7 +298,7 @@ export function ProductsPage() {
           notes: emptyToUndefined(values.notes),
         });
         message.success(common.createSuccess);
-      } else if (formMode.kind === 'edit') {
+      } else if (formMode.kind === "edit") {
         await updateMutation.mutateAsync({
           id: formMode.product.id,
           input: {
@@ -324,7 +323,7 @@ export function ProductsPage() {
 
   function confirmDeactivate(product: Product) {
     Modal.confirm({
-      className: 'app-mobile-modal products-confirm-modal',
+      className: "app-mobile-modal products-confirm-modal",
       centered: true,
       title: labels.deactivateConfirm,
       content: (
@@ -350,7 +349,7 @@ export function ProductsPage() {
 
   function confirmActivate(product: Product) {
     Modal.confirm({
-      className: 'app-mobile-modal products-confirm-modal',
+      className: "app-mobile-modal products-confirm-modal",
       centered: true,
       title: labels.activateConfirm,
       content: (
@@ -377,22 +376,22 @@ export function ProductsPage() {
   }
 
   const editInitialValues: ProductFormValues | undefined =
-    formMode.kind === 'edit'
+    formMode.kind === "edit"
       ? {
           name: formMode.product.name,
           type: formMode.product.type,
-          categoryId: formMode.product.categoryId ?? '',
+          categoryId: formMode.product.categoryId ?? "",
           unitId: formMode.product.unitId,
-          standardSalePrice: formMode.product.standardSalePrice ?? '',
-          latestPurchasePrice: formMode.product.latestPurchasePrice ?? '',
-          criticalStockThreshold: formMode.product.criticalStockThreshold ?? '',
-          barcode: formMode.product.barcode ?? '',
-          notes: formMode.product.notes ?? '',
+          standardSalePrice: formMode.product.standardSalePrice ?? "",
+          latestPurchasePrice: formMode.product.latestPurchasePrice ?? "",
+          criticalStockThreshold: formMode.product.criticalStockThreshold ?? "",
+          barcode: formMode.product.barcode ?? "",
+          notes: formMode.product.notes ?? "",
         }
       : undefined;
 
   const fallbackUnitOption =
-    formMode.kind === 'edit'
+    formMode.kind === "edit"
       ? {
           value: formMode.product.unitId,
           label: `${formMode.product.unit.code} — ${formMode.product.unit.name}`,
@@ -400,7 +399,7 @@ export function ProductsPage() {
       : undefined;
 
   const fallbackCategoryOption =
-    formMode.kind === 'edit' && formMode.product.category
+    formMode.kind === "edit" && formMode.product.category
       ? {
           value: formMode.product.category.id,
           label: formMode.product.category.name,
@@ -408,7 +407,7 @@ export function ProductsPage() {
       : undefined;
 
   const typeFilterOptions = [
-    { value: 'all' as const, label: common.all },
+    { value: "all" as const, label: common.all },
     ...(Object.keys(labels.types) as ProductType[]).map((type) => ({
       value: type,
       label: productTypeLabel(type),
@@ -416,7 +415,7 @@ export function ProductsPage() {
   ];
 
   const categoryFilterOptions = [
-    { value: 'all', label: common.all },
+    { value: "all", label: common.all },
     ...(categoriesForFilter.data?.data ?? []).map((category) => ({
       value: category.id,
       label: category.name,
@@ -430,11 +429,11 @@ export function ProductsPage() {
       <PageHeader
         title={labels.title}
         description={labels.description}
-        icon={phIcon(Package, { size: ICON_SIZE.xl, weight: 'duotone' })}
+        icon={phIcon(Package, { size: ICON_SIZE.xl, weight: "duotone" })}
         extra={
           <Button
             type="primary"
-            icon={phIcon(Plus, { size: ICON_SIZE.md, weight: 'bold' })}
+            icon={phIcon(Plus, { size: ICON_SIZE.md, weight: "bold" })}
             onClick={openCreate}
           >
             {labels.create}
@@ -446,21 +445,34 @@ export function ProductsPage() {
         <div className="products-filter-heading">
           <div>
             <span className="products-filter-icon">
-              {phIcon(FunnelSimple, { size: ICON_SIZE.sm, weight: 'bold' })}
+              {phIcon(FunnelSimple, { size: ICON_SIZE.sm, weight: "bold" })}
             </span>
             <Text strong>{common.search}</Text>
           </div>
           <Tag color="blue">{productTotal}</Tag>
         </div>
-        <FilterBar>
+        <FilterBar
+          onSearch={() => {
+            setSearch(searchInput.trim());
+            setPage(1);
+          }}
+          onReset={() => {
+            setSearchInput("");
+            setSearch("");
+            setActiveFilter("all");
+            setTypeFilter("all");
+            setCategoryFilter("all");
+            setPage(1);
+          }}
+        >
           <FilterField label={common.search}>
-            <Input.Search
+            <Input
               allowClear
               placeholder={common.searchPlaceholder}
               value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
-              onSearch={(value) => {
-                setSearch(value.trim());
+              onPressEnter={() => {
+                setSearch(searchInput.trim());
                 setPage(1);
               }}
             />
@@ -541,7 +553,7 @@ export function ProductsPage() {
           {products.map((product) => (
             <Card
               className={`product-mobile-card${
-                product.isActive ? '' : ' is-inactive'
+                product.isActive ? "" : " is-inactive"
               }`}
               key={product.id}
               size="small"
@@ -549,17 +561,39 @@ export function ProductsPage() {
               <div className="product-mobile-topline">
                 <div className="product-mobile-identity">
                   <div className="product-mobile-identity-field">
-                    <Text type="secondary">{labels.productCode}</Text>
                     <CodeText value={product.code} />
                   </div>
                   <div className="product-mobile-identity-field">
-                    <Text type="secondary">{labels.productName}</Text>
                     <Text strong className="product-mobile-name">
                       {product.name}
                     </Text>
                   </div>
                 </div>
-                <ActiveStatusTag isActive={product.isActive} />
+                <div className="product-mobile-head-actions">
+                  <ActiveStatusTag isActive={product.isActive} />
+                  <Button
+                    type="text"
+                    icon={phIcon(PencilSimple, { size: ICON_SIZE.sm })}
+                    aria-label={common.edit}
+                    onClick={() => openEdit(product)}
+                  />
+                  {product.isActive ? (
+                    <Button
+                      type="text"
+                      danger
+                      icon={phIcon(Prohibit, { size: ICON_SIZE.sm })}
+                      aria-label={common.deactivate}
+                      onClick={() => confirmDeactivate(product)}
+                    />
+                  ) : (
+                    <Button
+                      type="text"
+                      icon={phIcon(Power, { size: ICON_SIZE.sm })}
+                      aria-label={common.activate}
+                      onClick={() => confirmActivate(product)}
+                    />
+                  )}
+                </div>
               </div>
 
               <div className="product-mobile-tags">
@@ -594,7 +628,7 @@ export function ProductsPage() {
                   <strong>
                     {product.criticalStockThreshold
                       ? formatQuantity(product.criticalStockThreshold)
-                      : '—'}
+                      : "—"}
                   </strong>
                 </div>
                 {product.barcode ? (
@@ -606,31 +640,6 @@ export function ProductsPage() {
                     </strong>
                   </div>
                 ) : null}
-              </div>
-
-              <div className="product-mobile-actions">
-                <Button
-                  icon={phIcon(PencilSimple, { size: ICON_SIZE.sm })}
-                  onClick={() => openEdit(product)}
-                >
-                  {common.edit}
-                </Button>
-                {product.isActive ? (
-                  <Button
-                    danger
-                    icon={phIcon(Prohibit, { size: ICON_SIZE.sm })}
-                    onClick={() => confirmDeactivate(product)}
-                  >
-                    {common.deactivate}
-                  </Button>
-                ) : (
-                  <Button
-                    icon={phIcon(Power, { size: ICON_SIZE.sm })}
-                    onClick={() => confirmActivate(product)}
-                  >
-                    {common.activate}
-                  </Button>
-                )}
               </div>
             </Card>
           ))}
@@ -654,11 +663,11 @@ export function ProductsPage() {
       ) : null}
 
       <ProductFormModal
-        open={formMode.kind !== 'closed'}
-        title={formMode.kind === 'edit' ? labels.edit : labels.create}
-        mode={formMode.kind === 'edit' ? 'edit' : 'create'}
+        open={formMode.kind !== "closed"}
+        title={formMode.kind === "edit" ? labels.edit : labels.create}
+        mode={formMode.kind === "edit" ? "edit" : "create"}
         readOnlyCode={
-          formMode.kind === 'edit' ? formMode.product.code : undefined
+          formMode.kind === "edit" ? formMode.product.code : undefined
         }
         fallbackUnitOption={fallbackUnitOption}
         fallbackCategoryOption={fallbackCategoryOption}

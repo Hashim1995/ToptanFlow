@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState } from "react";
 import {
   Alert,
   Badge,
@@ -10,7 +10,6 @@ import {
   Input,
   Modal,
   Pagination,
-  Popover,
   Select,
   Space,
   Table,
@@ -18,15 +17,15 @@ import {
   Tooltip,
   Typography,
   message,
-} from 'antd';
-import type { MenuProps, TableProps } from 'antd';
-import type { ColumnsType } from 'antd/es/table';
-import type { Dayjs } from 'dayjs';
+} from "antd";
+import type { MenuProps, TableProps } from "antd";
+import type { ColumnsType } from "antd/es/table";
+import dayjs, { type Dayjs } from "dayjs";
 import {
   DATE_DISPLAY_FORMAT,
   dateOnlyPickerToApi,
-} from '../../../shared/datetime';
-import { useNavigate } from 'react-router-dom';
+} from "../../../shared/datetime";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowCounterClockwise,
   CalendarBlank,
@@ -42,55 +41,55 @@ import {
   User,
   WarningCircle,
   XCircle,
-} from '@phosphor-icons/react';
-import { mapApiError } from '../../../api/map-api-error';
-import { formatMoney } from '../../../shared/money/format-money';
-import { formatDateTime } from '../../../shared/ui/format';
-import { phIcon, ICON_SIZE } from '../../../shared/ui/ph-icon';
+} from "@phosphor-icons/react";
+import { mapApiError } from "../../../api/map-api-error";
+import { formatMoney } from "../../../shared/money/format-money";
+import { formatDateTime } from "../../../shared/ui/format";
+import { phIcon, ICON_SIZE } from "../../../shared/ui/ph-icon";
 import {
   CodeText,
   EntityCell,
   MoneyCell,
-} from '../../../shared/ui/table-cells';
-import { useBusinessPartnersList } from '../../master-data/api/business-partners.hooks';
-import { useProductsList } from '../../master-data/api/products.hooks';
-import { DecimalInput } from '../../master-data/ui/decimal-input';
-import { FilterBar, FilterField } from '../../master-data/ui/list-toolbar';
-import { PageHeader } from '../../master-data/ui/page-header';
-import type { SaleListItem, SaleSortBy, SaleStatus } from '../api/sales.api';
+} from "../../../shared/ui/table-cells";
+import { useBusinessPartnersList } from "../../master-data/api/business-partners.hooks";
+import { useProductsList } from "../../master-data/api/products.hooks";
+import { DecimalInput } from "../../master-data/ui/decimal-input";
+import { FilterBar, FilterField } from "../../master-data/ui/list-toolbar";
+import { PageHeader } from "../../master-data/ui/page-header";
+import type { SaleListItem, SaleSortBy, SaleStatus } from "../api/sales.api";
 import {
   useCancelSale,
   usePostSale,
   useRemoveSale,
   useSale,
   useSalesList,
-} from '../api/sales.hooks';
-import { SaleFormModal } from '../ui/sale-form-modal';
-import { SALES_LABELS, saleStatusLabel } from '../ui/labels';
-import { computeQuantityShortages } from '../ui/quantity-shortage';
-import { SalePostConfirmModal } from '../ui/sale-post-confirm-modal';
-import '../../../shared/ui/commercial-documents.css';
+} from "../api/sales.hooks";
+import { SaleFormModal } from "../ui/sale-form-modal";
+import { SALES_LABELS, saleStatusLabel } from "../ui/labels";
+import { computeQuantityShortages } from "../ui/quantity-shortage";
+import { SalePostConfirmModal } from "../ui/sale-post-confirm-modal";
+import "../../../shared/ui/commercial-documents.css";
 
 const { Text } = Typography;
 
 function partnerName(record: SaleListItem) {
-  return record.partnerName ?? record.partner?.name ?? '—';
+  return record.partnerName ?? record.partner?.name ?? "—";
 }
 
 function partnerCode(record: SaleListItem) {
-  return record.partnerCode ?? record.partner?.code ?? '';
+  return record.partnerCode ?? record.partner?.code ?? "";
 }
 
 function createdByName(record: SaleListItem) {
-  return record.createdByName ?? record.createdBy?.fullName ?? '—';
+  return record.createdByName ?? record.createdBy?.fullName ?? "—";
 }
 
 function statusColor(status: SaleStatus) {
-  return status === 'POSTED'
-    ? 'success'
-    : status === 'CANCELLED'
-      ? 'error'
-      : 'warning';
+  return status === "POSTED"
+    ? "success"
+    : status === "CANCELLED"
+      ? "error"
+      : "warning";
 }
 
 function StatusBadge({ status }: { status: SaleStatus }) {
@@ -103,26 +102,31 @@ function StatusBadge({ status }: { status: SaleStatus }) {
 
 export function SalesPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const screens = Grid.useBreakpoint();
   const isDesktop = Boolean(screens.md);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [documentInput, setDocumentInput] = useState('');
-  const [documentNumber, setDocumentNumber] = useState('');
+  const [documentInput, setDocumentInput] = useState("");
+  const [documentNumber, setDocumentNumber] = useState("");
   const [partnerId, setPartnerId] = useState<string>();
   const [status, setStatus] = useState<SaleStatus>();
   const [dateRange, setDateRange] = useState<[string, string]>();
   const [productId, setProductId] = useState<string>();
-  const [minTotal, setMinTotal] = useState('');
-  const [maxTotal, setMaxTotal] = useState('');
-  const [sortBy, setSortBy] = useState<SaleSortBy>('createdAt');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [minTotal, setMinTotal] = useState("");
+  const [maxTotal, setMaxTotal] = useState("");
+  const [sortBy, setSortBy] = useState<SaleSortBy>("createdAt");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [cancelTarget, setCancelTarget] = useState<SaleListItem>();
-  const [cancelReason, setCancelReason] = useState('');
+  const [cancelReason, setCancelReason] = useState("");
   const [postTarget, setPostTarget] = useState<SaleListItem>();
   const [formMode, setFormMode] = useState<
-    { kind: 'closed' } | { kind: 'create' } | { kind: 'edit'; saleId: string }
-  >({ kind: 'closed' });
+    { kind: "closed" } | { kind: "create" } | { kind: "edit"; saleId: string }
+  >(() =>
+    searchParams.get("action") === "create"
+      ? { kind: "create" }
+      : { kind: "closed" },
+  );
 
   const query = useMemo(
     () => ({
@@ -157,14 +161,14 @@ export function SalesPage() {
   const partners = useBusinessPartnersList({
     pageSize: 100,
     isCustomer: true,
-    sortBy: 'name',
-    sortOrder: 'asc',
+    sortBy: "name",
+    sortOrder: "asc",
   });
   const products = useProductsList({
     pageSize: 100,
     isActive: true,
-    sortBy: 'name',
-    sortOrder: 'asc',
+    sortBy: "name",
+    sortOrder: "asc",
   });
   const postMutation = usePostSale();
   const removeMutation = useRemoveSale();
@@ -204,13 +208,13 @@ export function SalesPage() {
 
   function confirmRemove(record: SaleListItem) {
     Modal.confirm({
-      className: 'app-mobile-modal',
+      className: "app-mobile-modal",
       title: SALES_LABELS.remove.title,
       content: SALES_LABELS.remove.text,
       okText: SALES_LABELS.actions.remove,
       cancelText: SALES_LABELS.actions.back,
       okButtonProps: { danger: true },
-      icon: phIcon(WarningCircle, { size: ICON_SIZE.xl, weight: 'fill' }),
+      icon: phIcon(WarningCircle, { size: ICON_SIZE.xl, weight: "fill" }),
       onOk: async () => {
         try {
           await removeMutation.mutateAsync(record.id);
@@ -223,32 +227,32 @@ export function SalesPage() {
     });
   }
 
-  function actionMenu(record: SaleListItem): MenuProps['items'] {
-    const items: MenuProps['items'] = [
+  function actionMenu(record: SaleListItem): MenuProps["items"] {
+    const items: MenuProps["items"] = [
       {
-        key: 'view',
+        key: "view",
         icon: phIcon(Eye, { size: ICON_SIZE.sm }),
         label: SALES_LABELS.actions.view,
         onClick: () => navigate(`/sales/${record.id}`),
       },
     ];
-    if (record.status === 'DRAFT') {
+    if (record.status === "DRAFT") {
       items.push(
         {
-          key: 'edit',
+          key: "edit",
           icon: phIcon(PencilSimple, { size: ICON_SIZE.sm }),
           label: SALES_LABELS.actions.edit,
-          onClick: () => setFormMode({ kind: 'edit', saleId: record.id }),
+          onClick: () => setFormMode({ kind: "edit", saleId: record.id }),
         },
         {
-          key: 'post',
+          key: "post",
           icon: phIcon(CheckCircle, { size: ICON_SIZE.sm }),
           label: SALES_LABELS.actions.post,
           onClick: () => setPostTarget(record),
         },
-        { type: 'divider' },
+        { type: "divider" },
         {
-          key: 'remove',
+          key: "remove",
           danger: true,
           icon: phIcon(Trash, { size: ICON_SIZE.sm }),
           label: SALES_LABELS.actions.remove,
@@ -256,9 +260,9 @@ export function SalesPage() {
         },
       );
     }
-    if (record.status === 'POSTED') {
+    if (record.status === "POSTED") {
       items.push({
-        key: 'cancel',
+        key: "cancel",
         danger: true,
         icon: phIcon(XCircle, { size: ICON_SIZE.sm }),
         label: SALES_LABELS.actions.cancel,
@@ -280,7 +284,7 @@ export function SalesPage() {
             onClick={() => navigate(`/sales/${record.id}`)}
           />
         </Tooltip>
-        {record.status === 'DRAFT' ? (
+        {record.status === "DRAFT" ? (
           <>
             <Tooltip title={SALES_LABELS.actions.edit}>
               <Button
@@ -288,7 +292,7 @@ export function SalesPage() {
                 size="small"
                 icon={phIcon(PencilSimple, { size: ICON_SIZE.sm })}
                 aria-label={SALES_LABELS.actions.edit}
-                onClick={() => setFormMode({ kind: 'edit', saleId: record.id })}
+                onClick={() => setFormMode({ kind: "edit", saleId: record.id })}
               />
             </Tooltip>
             <Tooltip title={SALES_LABELS.actions.post}>
@@ -303,14 +307,14 @@ export function SalesPage() {
             </Tooltip>
           </>
         ) : null}
-        <Dropdown menu={{ items: actionMenu(record) }} trigger={['click']}>
+        <Dropdown menu={{ items: actionMenu(record) }} trigger={["click"]}>
           <Button
             className="commercial-row-menu"
             type="text"
             size="small"
             icon={phIcon(DotsThreeVertical, {
               size: ICON_SIZE.md,
-              weight: 'bold',
+              weight: "bold",
             })}
             aria-label={SALES_LABELS.columns.actions}
           />
@@ -319,26 +323,85 @@ export function SalesPage() {
     );
   }
 
+  function mobileActions(record: SaleListItem) {
+    if (record.status !== "DRAFT") return null;
+    return (
+      <div className="commercial-mobile-actions">
+        <Button
+          type="text"
+          icon={phIcon(Eye, { size: ICON_SIZE.md })}
+          aria-label={SALES_LABELS.actions.view}
+          onClick={() => navigate(`/sales/${record.id}`)}
+        />
+        <>
+          <Button
+            type="text"
+            icon={phIcon(PencilSimple, { size: ICON_SIZE.md })}
+            aria-label={SALES_LABELS.actions.edit}
+            onClick={() => setFormMode({ kind: "edit", saleId: record.id })}
+          />
+          <Button
+            type="text"
+            className="is-confirm"
+            icon={phIcon(CheckCircle, { size: ICON_SIZE.md })}
+            aria-label={SALES_LABELS.actions.post}
+            onClick={() => setPostTarget(record)}
+          />
+          <Button
+            type="text"
+            danger
+            icon={phIcon(Trash, { size: ICON_SIZE.md })}
+            aria-label={SALES_LABELS.actions.remove}
+            onClick={() => confirmRemove(record)}
+          />
+        </>
+      </div>
+    );
+  }
+
+  function mobileHeaderActions(record: SaleListItem) {
+    if (record.status === "DRAFT") return undefined;
+    return (
+      <div className="commercial-mobile-header-actions">
+        <Button
+          type="text"
+          icon={phIcon(Eye, { size: ICON_SIZE.sm })}
+          aria-label={SALES_LABELS.actions.view}
+          onClick={() => navigate(`/sales/${record.id}`)}
+        />
+        {record.status === "POSTED" ? (
+          <Button
+            type="text"
+            danger
+            icon={phIcon(XCircle, { size: ICON_SIZE.sm })}
+            aria-label={SALES_LABELS.actions.cancel}
+            onClick={() => setCancelTarget(record)}
+          />
+        ) : null}
+      </div>
+    );
+  }
+
   const columns: ColumnsType<SaleListItem> = [
     {
       title: SALES_LABELS.columns.status,
-      dataIndex: 'status',
-      key: 'status',
+      dataIndex: "status",
+      key: "status",
       width: 120,
       render: (value: SaleStatus) => <StatusBadge status={value} />,
     },
     {
       title: SALES_LABELS.columns.documentNumber,
-      dataIndex: 'documentNumber',
-      key: 'documentNumber',
+      dataIndex: "documentNumber",
+      key: "documentNumber",
       width: 140,
       sorter: true,
       render: (value: string) => <CodeText value={value} strong />,
     },
     {
       title: SALES_LABELS.columns.businessDate,
-      dataIndex: 'businessDate',
-      key: 'businessDate',
+      dataIndex: "businessDate",
+      key: "businessDate",
       width: 130,
       sorter: true,
       render: (value: string) => (
@@ -350,7 +413,7 @@ export function SalesPage() {
     },
     {
       title: SALES_LABELS.columns.partner,
-      key: 'partner',
+      key: "partner",
       ellipsis: true,
       render: (_, record) => (
         <EntityCell code={partnerCode(record)} name={partnerName(record)} />
@@ -358,34 +421,34 @@ export function SalesPage() {
     },
     {
       title: SALES_LABELS.columns.itemCount,
-      dataIndex: 'itemCount',
-      key: 'itemCount',
+      dataIndex: "itemCount",
+      key: "itemCount",
       width: 100,
-      align: 'center',
+      align: "center",
       render: (value: number) => (
         <Badge
           count={value}
           showZero
           color="#1677ff"
           overflowCount={999}
-          style={{ backgroundColor: '#1677ff' }}
+          style={{ backgroundColor: "#1677ff" }}
         />
       ),
     },
     {
       title: SALES_LABELS.columns.total,
-      dataIndex: 'totalAmount',
-      key: 'totalAmount',
+      dataIndex: "totalAmount",
+      key: "totalAmount",
       width: 140,
       sorter: true,
-      align: 'right',
+      align: "right",
       render: (value: string) => (
         <MoneyCell value={value} format={formatMoney} emphasize />
       ),
     },
     {
       title: SALES_LABELS.columns.createdBy,
-      key: 'createdBy',
+      key: "createdBy",
       width: 140,
       ellipsis: true,
       render: (_, record) => (
@@ -399,25 +462,25 @@ export function SalesPage() {
     },
     {
       title: SALES_LABELS.columns.actions,
-      key: 'actions',
-      fixed: 'right',
+      key: "actions",
+      fixed: "right",
       width: 140,
       render: (_, record) => actions(record),
     },
   ];
 
-  const handleTableChange: TableProps<SaleListItem>['onChange'] = (
+  const handleTableChange: TableProps<SaleListItem>["onChange"] = (
     _pagination,
     _filters,
     sorter,
   ) => {
     if (
       !Array.isArray(sorter) &&
-      typeof sorter.field === 'string' &&
+      typeof sorter.field === "string" &&
       sorter.order
     ) {
       setSortBy(sorter.field as SaleSortBy);
-      setSortOrder(sorter.order === 'ascend' ? 'asc' : 'desc');
+      setSortOrder(sorter.order === "ascend" ? "asc" : "desc");
       setPage(1);
     }
   };
@@ -427,12 +490,12 @@ export function SalesPage() {
       <PageHeader
         title={SALES_LABELS.title}
         description={SALES_LABELS.description}
-        icon={phIcon(ShoppingBag, { size: ICON_SIZE.xl, weight: 'duotone' })}
+        icon={phIcon(ShoppingBag, { size: ICON_SIZE.xl, weight: "duotone" })}
         extra={
           <Button
             type="primary"
-            icon={phIcon(Plus, { size: ICON_SIZE.md, weight: 'bold' })}
-            onClick={() => setFormMode({ kind: 'create' })}
+            icon={phIcon(Plus, { size: ICON_SIZE.md, weight: "bold" })}
+            onClick={() => setFormMode({ kind: "create" })}
           >
             {SALES_LABELS.create}
           </Button>
@@ -453,15 +516,31 @@ export function SalesPage() {
           </Space>
         }
       >
-        <FilterBar>
+        <FilterBar
+          onSearch={() => {
+            setDocumentNumber(documentInput.trim());
+            setPage(1);
+          }}
+          onReset={() => {
+            setDocumentInput("");
+            setDocumentNumber("");
+            setPartnerId(undefined);
+            setStatus(undefined);
+            setDateRange(undefined);
+            setProductId(undefined);
+            setMinTotal("");
+            setMaxTotal("");
+            setPage(1);
+          }}
+        >
           <FilterField label={SALES_LABELS.filters.documentNumber}>
-            <Input.Search
+            <Input
               allowClear
               value={documentInput}
               placeholder={SALES_LABELS.filters.documentNumberPlaceholder}
               onChange={(event) => setDocumentInput(event.target.value)}
-              onSearch={(value) => {
-                setDocumentNumber(value.trim());
+              onPressEnter={() => {
+                setDocumentNumber(documentInput.trim());
                 setPage(1);
               }}
               style={{ width: 220 }}
@@ -503,6 +582,9 @@ export function SalesPage() {
           <FilterField label={SALES_LABELS.filters.dateRange}>
             <DatePicker.RangePicker
               format={DATE_DISPLAY_FORMAT}
+              value={
+                dateRange ? [dayjs(dateRange[0]), dayjs(dateRange[1])] : null
+              }
               onChange={(values: null | [Dayjs | null, Dayjs | null]) => {
                 setDateRange(
                   values?.[0] && values[1]
@@ -556,7 +638,7 @@ export function SalesPage() {
         <Alert
           type="error"
           showIcon
-          icon={phIcon(WarningCircle, { weight: 'fill' })}
+          icon={phIcon(WarningCircle, { weight: "fill" })}
           message={mapApiError(list.error).userMessage}
           action={
             <Button
@@ -607,34 +689,34 @@ export function SalesPage() {
                   <StatusBadge status={record.status} />
                 </Space>
               }
-              extra={actions(record)}
+              extra={mobileHeaderActions(record)}
             >
-              <Space direction="vertical" size={8} style={{ width: '100%' }}>
-                <EntityCell
-                  code={partnerCode(record)}
-                  name={partnerName(record)}
-                />
-                <Space wrap size={[12, 4]}>
-                  <Text type="secondary">
-                    {phIcon(CalendarBlank, { size: 12 })}{' '}
-                    {formatDateTime(record.businessDate)}
+              <div className="commercial-mobile-document-body">
+                <div className="commercial-mobile-partner">
+                  <EntityCell
+                    code={partnerCode(record)}
+                    name={partnerName(record)}
+                  />
+                  <Text className="commercial-mobile-total" strong>
+                    {formatMoney(record.totalAmount)}
                   </Text>
-                  <Popover content={`${record.itemCount} sətir`}>
-                    <Space size={4}>
-                      {phIcon(Package, { size: 12 })}
-                      <Badge
-                        count={record.itemCount}
-                        showZero
-                        color="#1677ff"
-                      />
-                    </Space>
-                  </Popover>
-                </Space>
-                <Text strong>{formatMoney(record.totalAmount)}</Text>
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  {SALES_LABELS.columns.createdBy}: {createdByName(record)}
-                </Text>
-              </Space>
+                </div>
+                <div className="commercial-mobile-meta">
+                  <span>
+                    {phIcon(CalendarBlank, { size: 13 })}
+                    {formatDateTime(record.businessDate)}
+                  </span>
+                  <span>
+                    {phIcon(Package, { size: 13 })}
+                    {record.itemCount} sətir
+                  </span>
+                  <span>
+                    {phIcon(User, { size: 13 })}
+                    {createdByName(record)}
+                  </span>
+                </div>
+                {mobileActions(record)}
+              </div>
             </Card>
           ))}
         </Space>
@@ -660,7 +742,7 @@ export function SalesPage() {
         open={Boolean(cancelTarget)}
         title={
           <Space>
-            {phIcon(XCircle, { weight: 'fill', size: ICON_SIZE.lg })}
+            {phIcon(XCircle, { weight: "fill", size: ICON_SIZE.lg })}
             {SALES_LABELS.cancel.title}
           </Space>
         }
@@ -670,7 +752,7 @@ export function SalesPage() {
         confirmLoading={cancelMutation.isPending}
         onCancel={() => {
           setCancelTarget(undefined);
-          setCancelReason('');
+          setCancelReason("");
         }}
         onOk={async () => {
           if (!cancelTarget || !cancelReason.trim()) return;
@@ -681,17 +763,17 @@ export function SalesPage() {
             });
             message.success(SALES_LABELS.cancel.success);
             setCancelTarget(undefined);
-            setCancelReason('');
+            setCancelReason("");
           } catch (error) {
             message.error(mapApiError(error).userMessage);
           }
         }}
       >
-        <Space direction="vertical" size={12} style={{ width: '100%' }}>
+        <Space direction="vertical" size={12} style={{ width: "100%" }}>
           <Text>{SALES_LABELS.cancel.text}</Text>
           <div>
             <Text strong>{SALES_LABELS.cancel.effectsTitle}</Text>
-            <ul style={{ margin: '8px 0 0', paddingLeft: 20 }}>
+            <ul style={{ margin: "8px 0 0", paddingLeft: 20 }}>
               {SALES_LABELS.cancel.effects.map((effect) => (
                 <li key={effect}>
                   <Text type="secondary">{effect}</Text>
@@ -747,12 +829,12 @@ export function SalesPage() {
 
       <SaleFormModal
         key={
-          formMode.kind === 'edit' ? `edit-${formMode.saleId}` : formMode.kind
+          formMode.kind === "edit" ? `edit-${formMode.saleId}` : formMode.kind
         }
-        open={formMode.kind !== 'closed'}
-        saleId={formMode.kind === 'edit' ? formMode.saleId : undefined}
-        onCancel={() => setFormMode({ kind: 'closed' })}
-        onSaved={() => setFormMode({ kind: 'closed' })}
+        open={formMode.kind !== "closed"}
+        saleId={formMode.kind === "edit" ? formMode.saleId : undefined}
+        onCancel={() => setFormMode({ kind: "closed" })}
+        onSaved={() => setFormMode({ kind: "closed" })}
       />
     </div>
   );

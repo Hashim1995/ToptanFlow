@@ -21,6 +21,14 @@
 > currency selection remain **historical BRD/SRS analysis** and must not be
 > implemented as written. Prefer `docs/business/invariants.md` (post ADR-030 /
 > ADR-031) for current business rules.
+>
+> **Active product override (2026-08-03):** Approved Human Decision
+> [ADR-040](../decisions/ADR-040-cash-account-ownership-and-user-default.md) /
+> [CHANGE-019](../tasks/unplanned/CHANGE-019-cash-account-ownership-defaults.md)
+> makes Cash Account responsibility required and one-to-one. Only a Super Admin
+> creates Cash Accounts or changes ownership. Responsibility supplies the
+> logged-in user's editable Cash-operation default; it does not restrict account
+> selection or replace authenticated-operator attribution.
 
 **Analyzed sources**
 

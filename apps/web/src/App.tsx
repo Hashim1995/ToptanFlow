@@ -6,6 +6,7 @@ import { LoginPage } from './features/auth/pages/login-page';
 import { CashAccountDetailPage } from './features/cash/pages/cash-account-detail-page';
 import { CashAccountsPage } from './features/cash/pages/cash-accounts-page';
 import { CashReportsPage } from './features/cash/pages/cash-reports-page';
+import { CashTransactionsPage } from './features/cash/pages/cash-transactions-page';
 import { ExpenseCategoriesPage } from './features/cash/pages/expense-categories-page';
 import { BusinessPartnersPage } from './features/master-data/pages/business-partners-page';
 import { ProductCategoriesPage } from './features/master-data/pages/product-categories-page';
@@ -50,6 +51,7 @@ function App() {
               element={<CashAccountDetailPage />}
             />
             <Route path="cash/reports" element={<CashReportsPage />} />
+            <Route path="cash/transactions" element={<CashTransactionsPage />} />
             <Route
               path="cash/expense-categories"
               element={<ExpenseCategoriesPage />}

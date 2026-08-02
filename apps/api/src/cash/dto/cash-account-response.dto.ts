@@ -29,11 +29,11 @@ export class CashAccountResponseDto {
   @ApiPropertyOptional({ nullable: true, type: String })
   notes!: string | null;
 
-  @ApiPropertyOptional({ nullable: true, type: String })
-  responsibleUserId!: string | null;
+  @ApiProperty()
+  responsibleUserId!: string;
 
-  @ApiPropertyOptional({ nullable: true })
-  responsibleUserName!: string | null;
+  @ApiProperty()
+  responsibleUserName!: string;
 
   @ApiProperty()
   isActive!: boolean;

@@ -438,7 +438,10 @@
 }
 
 .cash-confirm-modal .ant-modal-confirm-body {
-  flex: 1 1 0;
+  /* Confirmation dialogs have auto height on larger screens. A zero flex
+     basis collapses the title and content when the parent has no fixed
+     height, leaving only the action buttons visible. */
+  flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
