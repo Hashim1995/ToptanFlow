@@ -1,0 +1,37 @@
+# CHANGE-017: Sales and Purchases printable documents
+
+- **ID:** CHANGE-017
+- **Type:** CHANGE
+- **Title:** Sales and Purchases printable documents
+- **Status:** Done
+- **Trigger:** Owner requested a billing-style print action for individual Sale and Purchase records, followed by a correction for an unattractive narrow layout and empty trailing print pages.
+- **Urgency:** High
+- **Affected epics / stories / tasks:** US-022 / TASK-022-02 and US-023 / TASK-023-02 presentation only; follow-up to CHANGE-016.
+- **Why not in the original plan:** Printable commercial-document output was not part of the original responsive detail-page implementation.
+- **Scope:** Frontend-only print buttons on Sale and Purchase detail pages, one reusable Azerbaijani A4 document template, and a document-only print window that excludes the application shell from pagination.
+- **Out of scope:** Backend files; APIs; PDF generation or persistence; fiscal receipt behavior; company legal/tax/address data; calculations; payment confirmation; Cash mutations; document lifecycle changes.
+- **Risks:** Printing the surrounding application shell and producing empty pages; clipping long item lists; presenting a Sale/Purchase as proof of payment; inventing missing company identity data.
+- **Acceptance criteria:**
+  - Sale and Purchase detail pages expose a clear `Çap et` action.
+  - The output uses a professional A4 layout and existing record data only.
+  - The application shell is excluded from print pagination, preventing shell-generated empty trailing pages.
+  - Long item lists paginate naturally and individual rows avoid splitting where the browser supports it.
+  - Discount fields and payment-receipt explanatory text are omitted from the owner-approved print presentation without changing their underlying calculations or Cash behavior.
+  - User-facing print content and errors are Azerbaijani.
+  - No backend, API, calculation, mutation, validation, permission, or lifecycle behavior changes.
+- **Impact on current work:** Standalone owner-directed presentation improvement; US-022 and US-023 remain in Review.
+- **Roadmap impact:** None; presentation hardening of delivered Sale/Purchase details.
+- **Result:** Added `Çap et` actions to both detail pages and a reusable Azerbaijani commercial-document template. Printing now occurs in a standalone A4 window containing only the selected document, so dashboard/sidebar height cannot create empty trailing pages. The layout uses the full printable width with a structured header, metadata, readable item table, totals, and optional notes. Per the owner's follow-up, discount presentation and the payment-receipt explanatory sentence are omitted from print only. Long rows retain browser-native pagination with row-splitting avoidance where supported. Existing calculations, lifecycle, Cash behavior, and backend code remain unchanged.
+- **Follow-up actions:** Owner visual acceptance in the browser print preview.
+- **Evidence:**
+  - `apps/web/src/features/sales/pages/sale-detail-page.tsx`
+  - `apps/web/src/features/purchases/pages/purchase-detail-page.tsx`
+  - `apps/web/src/shared/ui/printable-commercial-document.tsx`
+  - `apps/web/src/shared/ui/print-commercial-document.ts`
+  - `apps/web/src/shared/ui/printable-commercial-document.test.tsx`
+  - `apps/web/src/shared/ui/print-commercial-document.test.tsx`
+  - `yarn tsc --noEmit` — passed.
+  - Focused ESLint — passed with the same pre-existing page-level React hook rules excluded as CHANGE-016.
+  - `yarn vite build` — passed (existing bundle-size warning only).
+  - `yarn test --run` — 19 files / 54 tests passed.
+  - Scope audit — no backend, API, form schema, calculation, mutation, lifecycle, permission, or route files changed for CHANGE-017.

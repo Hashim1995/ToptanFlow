@@ -31,6 +31,7 @@ import {
   ArrowCounterClockwise,
   CalendarBlank,
   CheckCircle,
+  DotsThreeVertical,
   Eye,
   Funnel,
   Package,
@@ -54,10 +55,7 @@ import {
 import { useBusinessPartnersList } from '../../master-data/api/business-partners.hooks';
 import { useProductsList } from '../../master-data/api/products.hooks';
 import { DecimalInput } from '../../master-data/ui/decimal-input';
-import {
-  FilterBar,
-  FilterField,
-} from '../../master-data/ui/list-toolbar';
+import { FilterBar, FilterField } from '../../master-data/ui/list-toolbar';
 import { PageHeader } from '../../master-data/ui/page-header';
 import type {
   PurchaseListItem,
@@ -74,6 +72,7 @@ import {
 import { PURCHASE_LABELS, purchaseStatusLabel } from '../ui/labels';
 import { PurchaseFormModal } from '../ui/purchase-form-modal';
 import { PurchasePostConfirmModal } from '../ui/purchase-post-confirm-modal';
+import '../../../shared/ui/commercial-documents.css';
 
 const { Text } = Typography;
 
@@ -90,7 +89,11 @@ function createdByName(record: PurchaseListItem) {
 }
 
 function statusColor(status: PurchaseStatus) {
-  return status === 'POSTED' ? 'success' : status === 'CANCELLED' ? 'error' : 'warning';
+  return status === 'POSTED'
+    ? 'success'
+    : status === 'CANCELLED'
+      ? 'error'
+      : 'warning';
 }
 
 function StatusBadge({ status }: { status: PurchaseStatus }) {
@@ -121,7 +124,9 @@ export function PurchasesPage() {
   const [cancelReason, setCancelReason] = useState('');
   const [postTarget, setPostTarget] = useState<PurchaseListItem>();
   const [formMode, setFormMode] = useState<
-    { kind: 'closed' } | { kind: 'create' } | { kind: 'edit'; purchaseId: string }
+    | { kind: 'closed' }
+    | { kind: 'create' }
+    | { kind: 'edit'; purchaseId: string }
   >({ kind: 'closed' });
 
   const query = useMemo(
@@ -198,6 +203,7 @@ export function PurchasesPage() {
 
   function confirmRemove(record: PurchaseListItem) {
     Modal.confirm({
+      className: 'app-mobile-modal',
       title: PURCHASE_LABELS.remove.title,
       content: PURCHASE_LABELS.remove.text,
       okText: PURCHASE_LABELS.actions.remove,
@@ -231,8 +237,7 @@ export function PurchasesPage() {
           key: 'edit',
           icon: phIcon(PencilSimple, { size: ICON_SIZE.sm }),
           label: PURCHASE_LABELS.actions.edit,
-          onClick: () =>
-            setFormMode({ kind: 'edit', purchaseId: record.id }),
+          onClick: () => setFormMode({ kind: 'edit', purchaseId: record.id }),
         },
         {
           key: 'post',
@@ -300,9 +305,16 @@ export function PurchasesPage() {
           </>
         ) : null}
         <Dropdown menu={{ items: actionMenu(record) }} trigger={['click']}>
-          <Button type="text" size="small">
-            •••
-          </Button>
+          <Button
+            className="commercial-row-menu"
+            type="text"
+            size="small"
+            icon={phIcon(DotsThreeVertical, {
+              size: ICON_SIZE.md,
+              weight: 'bold',
+            })}
+            aria-label={PURCHASE_LABELS.columns.actions}
+          />
         </Dropdown>
       </Space>
     );
@@ -412,7 +424,7 @@ export function PurchasesPage() {
   };
 
   return (
-    <div>
+    <div className="ui-page ui-list-page ui-document-list-page commercial-documents-page purchases-page">
       <PageHeader
         title={PURCHASE_LABELS.title}
         description={PURCHASE_LABELS.description}
@@ -429,6 +441,7 @@ export function PurchasesPage() {
       />
 
       <Card
+        className="ui-filter-card commercial-filter-card"
         size="small"
         style={{ marginBottom: 16 }}
         title={
@@ -560,19 +573,26 @@ export function PurchasesPage() {
       ) : null}
 
       {isDesktop ? (
-        <Table
-          rowKey="id"
-          size="middle"
-          loading={list.isLoading}
-          dataSource={list.data?.data ?? []}
-          columns={columns}
-          pagination={false}
-          locale={{ emptyText: PURCHASE_LABELS.messages.empty }}
-          scroll={{ x: 1180 }}
-          onChange={handleTableChange}
-        />
+        <div className="commercial-table-shell">
+          <Table
+            className="commercial-documents-table"
+            rowKey="id"
+            size="middle"
+            loading={list.isLoading}
+            dataSource={list.data?.data ?? []}
+            columns={columns}
+            pagination={false}
+            locale={{ emptyText: PURCHASE_LABELS.messages.empty }}
+            scroll={{ x: 1180 }}
+            onChange={handleTableChange}
+          />
+        </div>
       ) : (
-        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+        <Space
+          className="ui-mobile-list commercial-mobile-list"
+          direction="vertical"
+          size="middle"
+        >
           {list.isLoading ? (
             <Text>{PURCHASE_LABELS.messages.loading}</Text>
           ) : null}
@@ -581,6 +601,7 @@ export function PurchasesPage() {
           ) : null}
           {(list.data?.data ?? []).map((record) => (
             <Card
+              className="ui-mobile-card ui-document-card commercial-document-card"
               key={record.id}
               size="small"
               title={
@@ -598,12 +619,17 @@ export function PurchasesPage() {
                 />
                 <Space wrap size={[12, 4]}>
                   <Text type="secondary">
-                    {phIcon(CalendarBlank, { size: 12 })} {formatDateTime(record.businessDate)}
+                    {phIcon(CalendarBlank, { size: 12 })}{' '}
+                    {formatDateTime(record.businessDate)}
                   </Text>
                   <Popover content={`${record.itemCount} sətir`}>
                     <Space size={4}>
                       {phIcon(Package, { size: 12 })}
-                      <Badge count={record.itemCount} showZero color="#1677ff" />
+                      <Badge
+                        count={record.itemCount}
+                        showZero
+                        color="#1677ff"
+                      />
                     </Space>
                   </Popover>
                 </Space>
@@ -618,12 +644,12 @@ export function PurchasesPage() {
       )}
 
       <Pagination
+        className="commercial-pagination"
         current={page}
         pageSize={pageSize}
         total={list.data?.meta.total ?? 0}
         showSizeChanger
         showTotal={(total) => `Cəmi ${total}`}
-        style={{ marginTop: 16, textAlign: 'right' }}
         onChange={(nextPage, nextPageSize) => {
           setPage(nextPage);
           setPageSize(nextPageSize);
@@ -631,6 +657,9 @@ export function PurchasesPage() {
       />
 
       <Modal
+        className="ui-confirm-modal ui-cancel-confirm-modal commercial-confirm-modal"
+        wrapClassName="commercial-modal-wrap"
+        centered
         open={Boolean(cancelTarget)}
         title={
           <Space>
@@ -728,9 +757,7 @@ export function PurchasesPage() {
             : formMode.kind
         }
         open={formMode.kind !== 'closed'}
-        purchaseId={
-          formMode.kind === 'edit' ? formMode.purchaseId : undefined
-        }
+        purchaseId={formMode.kind === 'edit' ? formMode.purchaseId : undefined}
         onCancel={() => setFormMode({ kind: 'closed' })}
         onSaved={() => setFormMode({ kind: 'closed' })}
       />

@@ -17,6 +17,7 @@ type FilterFieldProps = {
 export function FilterField({ label, children }: FilterFieldProps) {
   return (
     <div
+      className="ui-filter-field"
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -25,6 +26,7 @@ export function FilterField({ label, children }: FilterFieldProps) {
       }}
     >
       <Text
+        className="ui-filter-label"
         type="secondary"
         style={{ fontSize: 12, lineHeight: 1.2, whiteSpace: 'nowrap' }}
       >
@@ -51,7 +53,7 @@ export function ActiveStatusFilter({
       <Select
         value={value}
         onChange={onChange}
-        style={{ minWidth: 160 }}
+        className="ui-filter-control"
         aria-label={labels.status}
         options={[
           { value: 'all', label: labels.all },
@@ -74,6 +76,7 @@ type FilterBarProps = {
 export function FilterBar({ children }: FilterBarProps) {
   return (
     <Space
+      className="ui-filter-bar"
       wrap
       size={[12, 12]}
       style={{ width: '100%', marginBottom: 16 }}

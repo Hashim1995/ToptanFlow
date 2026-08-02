@@ -14,7 +14,13 @@ import {
   message,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { PencilSimple, Plus, Power, Prohibit, UsersThree } from '@phosphor-icons/react';
+import {
+  PencilSimple,
+  Plus,
+  Power,
+  Prohibit,
+  UsersThree,
+} from '@phosphor-icons/react';
 import { mapApiError } from '../../../api/map-api-error';
 import { ICON_SIZE, phIcon } from '../../../shared/ui/ph-icon';
 import { CodeText } from '../../../shared/ui/table-cells';
@@ -41,17 +47,12 @@ import type {
   EditUserFormValues,
 } from '../forms/users.schemas';
 import { USERS_LABELS } from '../ui/labels';
-import {
-  CreateUserFormModal,
-  EditUserFormModal,
-} from '../ui/user-form-modals';
+import { CreateUserFormModal, EditUserFormModal } from '../ui/user-form-modals';
 
 const { Text } = Typography;
 
 type FormMode =
-  | { kind: 'closed' }
-  | { kind: 'create' }
-  | { kind: 'edit'; user: AppUser };
+  { kind: 'closed' } | { kind: 'create' } | { kind: 'edit'; user: AppUser };
 
 export function UsersPage() {
   const screens = Grid.useBreakpoint();
@@ -127,15 +128,15 @@ export function UsersPage() {
           </Button>
           {record.isActive ? (
             record.isSuperAdmin ? null : (
-            <Button
-              type="text"
-              size="small"
-              danger
-              icon={phIcon(Prohibit, { size: ICON_SIZE.sm })}
-              onClick={() => confirmDeactivate(record)}
-            >
-              {USERS_LABELS.deactivate}
-            </Button>
+              <Button
+                type="text"
+                size="small"
+                danger
+                icon={phIcon(Prohibit, { size: ICON_SIZE.sm })}
+                onClick={() => confirmDeactivate(record)}
+              >
+                {USERS_LABELS.deactivate}
+              </Button>
             )
           ) : (
             <Button
@@ -208,6 +209,7 @@ export function UsersPage() {
       return;
     }
     Modal.confirm({
+      className: 'app-mobile-modal',
       title: USERS_LABELS.deactivateConfirm,
       okText: USERS_LABELS.confirm,
       cancelText: USERS_LABELS.cancel,
@@ -225,6 +227,7 @@ export function UsersPage() {
 
   function confirmActivate(user: AppUser) {
     Modal.confirm({
+      className: 'app-mobile-modal',
       title: USERS_LABELS.activateConfirm,
       okText: USERS_LABELS.confirm,
       cancelText: USERS_LABELS.cancel,
@@ -242,11 +245,13 @@ export function UsersPage() {
     });
   }
 
-  const listError = list.isError ? mapApiError(list.error).userMessage : undefined;
+  const listError = list.isError
+    ? mapApiError(list.error).userMessage
+    : undefined;
   const rows = list.data?.data ?? [];
 
   return (
-    <div>
+    <div className="ui-page ui-list-page">
       <PageHeader
         title={USERS_LABELS.title}
         description={USERS_LABELS.description}
@@ -311,9 +316,9 @@ export function UsersPage() {
           locale={{ emptyText: USERS_LABELS.empty }}
         />
       ) : (
-        <Space direction="vertical" style={{ width: '100%' }} size={12}>
+        <Space className="ui-mobile-list" direction="vertical" size={12}>
           {rows.map((user) => (
-            <Card key={user.id} size="small">
+            <Card className="ui-mobile-card" key={user.id} size="small">
               <Space direction="vertical" size={8} style={{ width: '100%' }}>
                 <Space wrap>
                   <Text strong>{user.fullName}</Text>
@@ -333,14 +338,14 @@ export function UsersPage() {
                   </Button>
                   {user.isActive ? (
                     user.isSuperAdmin ? null : (
-                    <Button
-                      size="small"
-                      danger
-                      icon={phIcon(Prohibit, { size: ICON_SIZE.sm })}
-                      onClick={() => confirmDeactivate(user)}
-                    >
-                      {USERS_LABELS.deactivate}
-                    </Button>
+                      <Button
+                        size="small"
+                        danger
+                        icon={phIcon(Prohibit, { size: ICON_SIZE.sm })}
+                        onClick={() => confirmDeactivate(user)}
+                      >
+                        {USERS_LABELS.deactivate}
+                      </Button>
                     )
                   ) : (
                     <Button
@@ -356,14 +361,16 @@ export function UsersPage() {
             </Card>
           ))}
           {!list.isLoading && rows.length === 0 ? (
-            <Card size="small">
+            <Card className="ui-mobile-card ui-empty-card" size="small">
               <Text type="secondary">{USERS_LABELS.empty}</Text>
             </Card>
           ) : null}
         </Space>
       )}
 
-      <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
+      <div
+        style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}
+      >
         <Pagination
           current={page}
           pageSize={pageSize}

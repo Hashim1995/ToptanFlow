@@ -1,0 +1,33 @@
+# CHANGE-011: Cash account detail UI refactor
+
+- **ID:** CHANGE-011
+- **Type:** CHANGE
+- **Title:** Cash account detail UI refactor
+- **Status:** Done
+- **Trigger:** Owner requested that the Cash account transaction-detail page receive the same professional, modern, mobile-first presentation treatment as the Cash main workspace before continuing to other modules.
+- **Urgency:** High
+- **Affected epics / stories / tasks:** US-024 Cash account detail presentation only; follow-up to CHANGE-008 and CHANGE-010.
+- **Why not in the original plan:** The functional detail route existed, but its generic header, flat account metadata, filter row, desktop table, and mobile cards did not yet match the accepted Cash workspace visual hierarchy.
+- **Scope:** Frontend-only UI/UX refactor of `apps/web/src/features/cash/pages/cash-account-detail-page.tsx` and a page-scoped stylesheet for the account summary, action layout, transaction history header/filter, desktop table, mobile transaction cards, empty/loading/error states, and pagination.
+- **Out of scope:** Backend files; API contracts or calls; hooks and queries; schemas and validation; calculations; permissions; route behavior; mutations; form defaults; modal behavior; Cash business terminology.
+- **Risks:** Hiding transaction identifiers, amounts, balances, statuses, notes, or cancellation actions on mobile; introducing broad CSS that affects Ant Design overlays or other pages.
+- **Acceptance criteria:**
+  - The account identity, status, current balance, responsible user, notes, and all existing actions remain readable and reachable on mobile and desktop.
+  - Transaction status filtering and pagination retain their existing behavior.
+  - Mobile uses structured transaction cards with number, type, date, status, direction, amount, partner, resulting balance, notes, and cancellation action when available.
+  - Desktop retains the complete table and horizontal overflow protection with clearer hierarchy and row readability.
+  - Styling is scoped to the Cash account detail page and does not override global Select, Dropdown, modal, portal, or page scrolling behavior.
+  - No business logic or backend code is changed.
+  - Focused lint, TypeScript checking, production bundling, and existing web tests pass.
+- **Impact on current work:** Standalone owner-directed presentation improvement; no active story is paused.
+- **Roadmap impact:** None; presentation hardening of an already delivered Cash route.
+- **Result:** Rebuilt the Cash account detail presentation around a responsive account header, balance-led summary card, clear metadata and action zones, a contained transaction filter, a polished desktop table, and mobile-first transaction cards. All existing data, actions, filters, pagination, queries, mutations, permissions, and modal flows remain unchanged. New CSS is page-scoped and does not target global Ant Design overlay or popup classes.
+- **Follow-up actions:** Owner visual acceptance, then continue the requested page-by-page UI refactor in a separately bounded scope.
+- **Evidence:**
+  - `apps/web/src/features/cash/pages/cash-account-detail-page.tsx`
+  - `apps/web/src/features/cash/pages/cash-account-detail-page.css`
+  - `yarn workspace web tsc --noEmit` — passed.
+  - Focused ESLint for the changed TSX page — passed.
+  - `yarn workspace web vite build` — passed (existing bundle-size warning only).
+  - `yarn workspace web test --run` — 17 files / 51 tests passed.
+  - Scope audit — no backend, API, hook, schema, validation, calculation, permission, or mutation file changed.

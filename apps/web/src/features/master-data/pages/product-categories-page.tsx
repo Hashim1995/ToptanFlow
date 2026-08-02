@@ -3,17 +3,25 @@ import {
   Alert,
   Button,
   Card,
+  Dropdown,
+  Empty,
   Grid,
   Input,
   Modal,
   Pagination,
+  Skeleton,
   Space,
   Table,
+  Tag,
+  Tooltip,
   Typography,
   message,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import type { MenuProps } from 'antd';
 import {
+  DotsThreeVertical,
+  FunnelSimple,
   PencilSimple,
   Plus,
   Power,
@@ -39,6 +47,7 @@ import { MASTER_DATA_LABELS } from '../ui/labels';
 import { ActiveStatusFilter, FilterBar, FilterField } from '../ui/list-toolbar';
 import { PageHeader } from '../ui/page-header';
 import { ProductCategoryFormModal } from '../ui/reference-form-modals';
+import './reference-data-pages.css';
 
 const { Text } = Typography;
 
@@ -97,39 +106,58 @@ export function ProductCategoriesPage() {
     {
       title: common.actions,
       key: 'actions',
-      width: 180,
-      render: (_, record) => (
-        <Space size={4}>
-          <Button
-            type="text"
-            size="small"
-            icon={phIcon(PencilSimple, { size: ICON_SIZE.sm })}
-            onClick={() => openEdit(record)}
-          >
-            {common.edit}
-          </Button>
-          {record.isActive ? (
-            <Button
-              type="text"
-              size="small"
-              danger
-              icon={phIcon(Prohibit, { size: ICON_SIZE.sm })}
-              onClick={() => confirmDeactivate(record)}
-            >
-              {common.deactivate}
-            </Button>
-          ) : (
-            <Button
-              type="text"
-              size="small"
-              icon={phIcon(Power, { size: ICON_SIZE.sm })}
-              onClick={() => confirmActivate(record)}
-            >
-              {common.activate}
-            </Button>
-          )}
-        </Space>
-      ),
+      width: 120,
+      fixed: 'right',
+      render: (_, record) => {
+        const menuItems: MenuProps['items'] = [
+          {
+            key: 'edit',
+            icon: phIcon(PencilSimple, { size: ICON_SIZE.sm }),
+            label: common.edit,
+            onClick: () => openEdit(record),
+          },
+          { type: 'divider' },
+          record.isActive
+            ? {
+                key: 'deactivate',
+                danger: true,
+                icon: phIcon(Prohibit, { size: ICON_SIZE.sm }),
+                label: common.deactivate,
+                onClick: () => confirmDeactivate(record),
+              }
+            : {
+                key: 'activate',
+                icon: phIcon(Power, { size: ICON_SIZE.sm }),
+                label: common.activate,
+                onClick: () => confirmActivate(record),
+              },
+        ];
+        return (
+          <Space size={4}>
+            <Tooltip title={common.edit}>
+              <Button
+                type="text"
+                size="small"
+                icon={phIcon(PencilSimple, { size: ICON_SIZE.sm })}
+                aria-label={common.edit}
+                onClick={() => openEdit(record)}
+              />
+            </Tooltip>
+            <Dropdown menu={{ items: menuItems }} trigger={['click']}>
+              <Button
+                className="reference-row-menu"
+                type="text"
+                size="small"
+                icon={phIcon(DotsThreeVertical, {
+                  size: ICON_SIZE.md,
+                  weight: 'bold',
+                })}
+                aria-label={common.actions}
+              />
+            </Dropdown>
+          </Space>
+        );
+      },
     },
   ];
 
@@ -171,7 +199,10 @@ export function ProductCategoriesPage() {
 
   function confirmDeactivate(category: ProductCategory) {
     Modal.confirm({
+      className: 'app-mobile-modal reference-confirm-modal',
+      centered: true,
       title: labels.deactivateConfirm,
+      content: <Text strong>{category.name}</Text>,
       okText: common.confirm,
       cancelText: common.cancel,
       okButtonProps: { danger: true },
@@ -189,7 +220,10 @@ export function ProductCategoriesPage() {
 
   function confirmActivate(category: ProductCategory) {
     Modal.confirm({
+      className: 'app-mobile-modal reference-confirm-modal',
+      centered: true,
       title: labels.activateConfirm,
+      content: <Text strong>{category.name}</Text>,
       okText: common.confirm,
       cancelText: common.cancel,
       onOk: async () => {
@@ -208,12 +242,12 @@ export function ProductCategoriesPage() {
   }
 
   const editInitialValues =
-    formMode.kind === 'edit'
-      ? { name: formMode.category.name }
-      : undefined;
+    formMode.kind === 'edit' ? { name: formMode.category.name } : undefined;
+  const categories = list.data?.data ?? [];
+  const categoryTotal = list.data?.meta.total ?? 0;
 
   return (
-    <div>
+    <div className="reference-page categories-page">
       <PageHeader
         title={labels.title}
         description={labels.description}
@@ -229,31 +263,44 @@ export function ProductCategoriesPage() {
         }
       />
 
-      <FilterBar>
-        <FilterField label={common.search}>
-          <Input.Search
-            allowClear
-            placeholder={common.searchPlaceholder}
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
-            onSearch={(value) => {
-              setSearch(value.trim());
+      <Card className="reference-filter-card" size="small">
+        <div className="reference-filter-heading">
+          <div>
+            <span className="reference-filter-icon">
+              {phIcon(FunnelSimple, { size: ICON_SIZE.sm, weight: 'bold' })}
+            </span>
+            <Text strong>{common.search}</Text>
+          </div>
+          <Tag className="reference-result-count" color="blue">
+            {categoryTotal}
+          </Tag>
+        </div>
+        <FilterBar>
+          <FilterField label={common.search}>
+            <Input.Search
+              allowClear
+              placeholder={common.searchPlaceholder}
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              onSearch={(value) => {
+                setSearch(value.trim());
+                setPage(1);
+              }}
+            />
+          </FilterField>
+          <ActiveStatusFilter
+            value={activeFilter}
+            onChange={(value) => {
+              setActiveFilter(value);
               setPage(1);
             }}
-            style={{ minWidth: 220, maxWidth: 320 }}
           />
-        </FilterField>
-        <ActiveStatusFilter
-          value={activeFilter}
-          onChange={(value) => {
-            setActiveFilter(value);
-            setPage(1);
-          }}
-        />
-      </FilterBar>
+        </FilterBar>
+      </Card>
 
       {list.isError ? (
         <Alert
+          className="reference-page-alert"
           type="error"
           showIcon
           message={mapApiError(list.error).userMessage || common.loadError}
@@ -262,61 +309,92 @@ export function ProductCategoriesPage() {
               {common.retry}
             </Button>
           }
-          style={{ marginBottom: 16 }}
         />
       ) : null}
 
       {isDesktop ? (
-        <Table<ProductCategory>
-          rowKey="id"
-          loading={list.isLoading}
-          columns={columns}
-          dataSource={list.data?.data ?? []}
-          pagination={false}
-          locale={{ emptyText: labels.empty }}
-        />
+        <div className="reference-table-shell">
+          <Table<ProductCategory>
+            className="reference-table"
+            rowKey="id"
+            loading={list.isLoading}
+            columns={columns}
+            dataSource={categories}
+            pagination={false}
+            locale={{ emptyText: labels.empty }}
+          />
+        </div>
       ) : (
-        <Space direction="vertical" style={{ width: '100%' }} size="middle">
-          {list.isLoading ? <Text type="secondary">{common.loading}</Text> : null}
-          {!list.isLoading && (list.data?.data.length ?? 0) === 0 ? (
-            <Text type="secondary">{labels.empty}</Text>
+        <div className="reference-mobile-list">
+          {list.isLoading ? (
+            <Card className="reference-mobile-card">
+              <Skeleton active paragraph={{ rows: 2 }} />
+            </Card>
           ) : null}
-          {(list.data?.data ?? []).map((category) => (
-            <Card key={category.id} size="small">
-              <Space direction="vertical" style={{ width: '100%' }}>
-                <Text strong>{category.name}</Text>
+          {!list.isLoading && categories.length === 0 ? (
+            <Card className="reference-empty-card">
+              <Empty description={labels.empty} />
+            </Card>
+          ) : null}
+          {categories.map((category) => (
+            <Card
+              className={`reference-mobile-card${
+                category.isActive ? '' : ' is-inactive'
+              }`}
+              key={category.id}
+              size="small"
+            >
+              <div className="reference-mobile-topline">
+                <div className="reference-mobile-name">
+                  <Text type="secondary">{common.name}</Text>
+                  <Text strong>{category.name}</Text>
+                </div>
                 <ActiveStatusTag isActive={category.isActive} />
-                <Space wrap>
-                  <Button onClick={() => openEdit(category)}>
-                    {common.edit}
+              </div>
+              <div className="reference-mobile-actions">
+                <Button
+                  icon={phIcon(PencilSimple, { size: ICON_SIZE.sm })}
+                  onClick={() => openEdit(category)}
+                >
+                  {common.edit}
+                </Button>
+                {category.isActive ? (
+                  <Button
+                    danger
+                    icon={phIcon(Prohibit, { size: ICON_SIZE.sm })}
+                    onClick={() => confirmDeactivate(category)}
+                  >
+                    {common.deactivate}
                   </Button>
-                  {category.isActive ? (
-                    <Button danger onClick={() => confirmDeactivate(category)}>
-                      {common.deactivate}
-                    </Button>
-                  ) : (
-                    <Button onClick={() => confirmActivate(category)}>
-                      {common.activate}
-                    </Button>
-                  )}
-                </Space>
-              </Space>
+                ) : (
+                  <Button
+                    icon={phIcon(Power, { size: ICON_SIZE.sm })}
+                    onClick={() => confirmActivate(category)}
+                  >
+                    {common.activate}
+                  </Button>
+                )}
+              </div>
             </Card>
           ))}
-        </Space>
+        </div>
       )}
 
-      <Pagination
-        style={{ marginTop: 16, textAlign: 'right' }}
-        current={page}
-        pageSize={pageSize}
-        total={list.data?.meta.total ?? 0}
-        showSizeChanger
-        onChange={(nextPage, nextPageSize) => {
-          setPage(nextPage);
-          setPageSize(nextPageSize);
-        }}
-      />
+      {categoryTotal > 0 ? (
+        <div className="reference-pagination">
+          <Pagination
+            current={page}
+            pageSize={pageSize}
+            total={categoryTotal}
+            showSizeChanger
+            responsive
+            onChange={(nextPage, nextPageSize) => {
+              setPage(nextPage);
+              setPageSize(nextPageSize);
+            }}
+          />
+        </div>
+      ) : null}
 
       <ProductCategoryFormModal
         open={formMode.kind !== 'closed'}

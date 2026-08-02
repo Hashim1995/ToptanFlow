@@ -8,6 +8,7 @@ export const PURCHASE_LABELS = {
   create: 'Yeni alış',
   edit: 'Alışı redaktə et',
   detail: 'Alış məlumatları',
+  printTitle: 'Alış sənədi',
   statuses: {
     DRAFT: 'Qaralama',
     POSTED: 'Təsdiqlənib',
@@ -74,6 +75,7 @@ export const PURCHASE_LABELS = {
     removeLine: 'Sətiri sil',
     retry: 'Yenidən cəhd et',
     confirm: 'Təsdiqlə',
+    print: 'Çap et',
   },
   post: {
     title: 'Alışı təsdiqləyirsiniz?',
@@ -121,6 +123,7 @@ export const PURCHASE_LABELS = {
     empty: 'Alış tapılmadı.',
     loading: 'Məlumatlar yüklənir...',
     loadError: 'Alış məlumatlarını yükləmək mümkün olmadı.',
+    printOpenError: 'Çap pəncərəsini açmaq mümkün olmadı.',
     createSuccess: 'Qaralama alış yaradıldı.',
     updateSuccess: 'Qaralama alış yeniləndi.',
     draftOnly: 'Yalnız qaralama alış redaktə edilə bilər.',

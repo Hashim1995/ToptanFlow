@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Alert,
   Button,
@@ -11,41 +11,35 @@ import {
   Modal,
   Pagination,
   Row,
+  Skeleton,
   Space,
-  Statistic,
   Tag,
   Typography,
   message,
-} from 'antd';
-import type { MenuProps } from 'antd';
+} from "antd";
+import type { MenuProps } from "antd";
 import {
   ArrowDown,
   ArrowUp,
   ArrowsLeftRight,
+  CaretRight,
+  ClockCounterClockwise,
   DotsThree,
   PencilSimple,
   Plus,
   Power,
   Prohibit,
   Receipt,
+  UserCircle,
   Wallet,
-} from '@phosphor-icons/react';
-import { mapApiError } from '../../../api/map-api-error';
-import { formatMoney } from '../../../shared/money/format-money';
-import { ICON_SIZE, phIcon } from '../../../shared/ui/ph-icon';
-import { CodeText } from '../../../shared/ui/table-cells';
-import {
-  activeFilterToIsActive,
-  type ActiveFilterValue,
-} from '../../master-data/ui/active-filter';
-import { ActiveStatusTag } from '../../master-data/ui/active-status-tag';
-import {
-  ActiveStatusFilter,
-  FilterBar,
-  FilterField,
-} from '../../master-data/ui/list-toolbar';
-import { PageHeader } from '../../master-data/ui/page-header';
-import type { CashAccount } from '../api/cash.api';
+} from "@phosphor-icons/react";
+import { mapApiError } from "../../../api/map-api-error";
+import { formatDateTime } from "../../../shared/datetime";
+import { formatMoney } from "../../../shared/money/format-money";
+import { ICON_SIZE, phIcon } from "../../../shared/ui/ph-icon";
+import { CodeText } from "../../../shared/ui/table-cells";
+import { ActiveStatusTag } from "../../master-data/ui/active-status-tag";
+import type { CashAccount } from "../api/cash.api";
 import {
   useCashAccountsList,
   useCreateCashAccount,
@@ -58,36 +52,37 @@ import {
   useCashWorkspaceOverview,
   useTotalCompanyCash,
   useUpdateCashAccount,
-} from '../api/cash.hooks';
+} from "../api/cash.hooks";
 import type {
   CashAccountFormValues,
   CashInFormValues,
   CashOutFormValues,
   ExpenseFormValues,
   TransferFormValues,
-} from '../forms/cash.schemas';
+} from "../forms/cash.schemas";
 import {
   CashAccountFormModal,
   CashInFormModal,
   CashOutFormModal,
   ExpenseFormModal,
   TransferFormModal,
-} from '../ui/cash-form-modals';
-import { CASH_LABELS } from '../ui/labels';
+} from "../ui/cash-form-modals";
+import { CASH_LABELS } from "../ui/labels";
+import "./cash-accounts-page.css";
 
-const { Text } = Typography;
+const { Text, Title } = Typography;
 
 type AccountFormMode =
-  | { kind: 'closed' }
-  | { kind: 'create' }
-  | { kind: 'edit'; account: CashAccount };
+  | { kind: "closed" }
+  | { kind: "create" }
+  | { kind: "edit"; account: CashAccount };
 
 type MovementMode =
-  | { kind: 'closed' }
-  | { kind: 'in'; account: CashAccount | null }
-  | { kind: 'out'; account: CashAccount | null }
-  | { kind: 'expense'; account: CashAccount | null }
-  | { kind: 'transfer'; account: CashAccount | null };
+  | { kind: "closed" }
+  | { kind: "in"; account: CashAccount | null }
+  | { kind: "out"; account: CashAccount | null }
+  | { kind: "expense"; account: CashAccount | null }
+  | { kind: "transfer"; account: CashAccount | null };
 
 function isNegativeBalance(value: string): boolean {
   const n = Number.parseFloat(value);
@@ -95,14 +90,13 @@ function isNegativeBalance(value: string): boolean {
 }
 
 export function CashAccountsPage() {
-  const [searchInput, setSearchInput] = useState('');
-  const [search, setSearch] = useState('');
-  const [activeFilter, setActiveFilter] = useState<ActiveFilterValue>('all');
+  const navigate = useNavigate();
+
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [formMode, setFormMode] = useState<AccountFormMode>({ kind: 'closed' });
+  const [formMode, setFormMode] = useState<AccountFormMode>({ kind: "closed" });
   const [movementMode, setMovementMode] = useState<MovementMode>({
-    kind: 'closed',
+    kind: "closed",
   });
   const [formError, setFormError] = useState<string | undefined>();
   const [movementError, setMovementError] = useState<string | undefined>();
@@ -111,12 +105,10 @@ export function CashAccountsPage() {
     () => ({
       page,
       pageSize,
-      search: search || undefined,
-      isActive: activeFilterToIsActive(activeFilter),
-      sortBy: 'name' as const,
-      sortOrder: 'asc' as const,
+      sortBy: "name" as const,
+      sortOrder: "asc" as const,
     }),
-    [page, pageSize, search, activeFilter],
+    [page, pageSize],
   );
 
   const list = useCashAccountsList(listQuery);
@@ -142,14 +134,14 @@ export function CashAccountsPage() {
   async function handleAccountSubmit(values: CashAccountFormValues) {
     setFormError(undefined);
     try {
-      if (formMode.kind === 'create') {
+      if (formMode.kind === "create") {
         await createMutation.mutateAsync({
           name: values.name,
           notes: values.notes || undefined,
           openingBalance: values.openingBalance || undefined,
         });
         message.success(CASH_LABELS.success.created);
-      } else if (formMode.kind === 'edit') {
+      } else if (formMode.kind === "edit") {
         await updateMutation.mutateAsync({
           id: formMode.account.id,
           input: {
@@ -159,7 +151,7 @@ export function CashAccountsPage() {
         });
         message.success(CASH_LABELS.success.updated);
       }
-      setFormMode({ kind: 'closed' });
+      setFormMode({ kind: "closed" });
     } catch (error) {
       setFormError(mapApiError(error).userMessage);
     }
@@ -177,7 +169,7 @@ export function CashAccountsPage() {
         notes: values.notes || undefined,
       });
       message.success(CASH_LABELS.success.cashIn);
-      setMovementMode({ kind: 'closed' });
+      setMovementMode({ kind: "closed" });
     } catch (error) {
       setMovementError(mapApiError(error).userMessage);
     }
@@ -197,7 +189,7 @@ export function CashAccountsPage() {
           values.negativeBalanceOverrideReason || undefined,
       });
       message.success(CASH_LABELS.success.cashOut);
-      setMovementMode({ kind: 'closed' });
+      setMovementMode({ kind: "closed" });
     } catch (error) {
       setMovementError(mapApiError(error).userMessage);
     }
@@ -216,7 +208,7 @@ export function CashAccountsPage() {
           values.negativeBalanceOverrideReason || undefined,
       });
       message.success(CASH_LABELS.success.expense);
-      setMovementMode({ kind: 'closed' });
+      setMovementMode({ kind: "closed" });
     } catch (error) {
       setMovementError(mapApiError(error).userMessage);
     }
@@ -235,20 +227,29 @@ export function CashAccountsPage() {
           values.negativeBalanceOverrideReason || undefined,
       });
       message.success(CASH_LABELS.success.transfer);
-      setMovementMode({ kind: 'closed' });
+      setMovementMode({ kind: "closed" });
     } catch (error) {
       setMovementError(mapApiError(error).userMessage);
     }
   }
 
   function confirmDeactivate(account: CashAccount) {
-    let reason = '';
+    let reason = "";
     Modal.confirm({
+      className: "cash-confirm-modal cash-account-state-confirm",
+      centered: true,
+      width: 460,
       title: CASH_LABELS.confirmations.deactivateTitle,
       content: (
-        <Space direction="vertical" style={{ width: '100%' }} size={12}>
+        <Space
+          className="cash-confirm-content"
+          direction="vertical"
+          style={{ width: "100%" }}
+          size={12}
+        >
           <Text>{CASH_LABELS.confirmations.deactivate}</Text>
           <Input.TextArea
+            className="cash-confirm-reason"
             rows={2}
             placeholder={CASH_LABELS.fields.deactivationReasonPlaceholder}
             onChange={(e) => {
@@ -277,6 +278,9 @@ export function CashAccountsPage() {
 
   function confirmReactivate(account: CashAccount) {
     Modal.confirm({
+      className: "cash-confirm-modal cash-account-state-confirm",
+      centered: true,
+      width: 440,
       title: CASH_LABELS.confirmations.reactivateTitle,
       content: CASH_LABELS.confirmations.reactivate,
       okText: CASH_LABELS.reactivate,
@@ -293,25 +297,25 @@ export function CashAccountsPage() {
     });
   }
 
-  function accountMenuItems(record: CashAccount): MenuProps['items'] {
+  function accountMenuItems(record: CashAccount): MenuProps["items"] {
     return [
       {
-        key: 'edit',
+        key: "edit",
         icon: phIcon(PencilSimple, { size: ICON_SIZE.sm }),
         label: CASH_LABELS.editAccount,
-        onClick: () => setFormMode({ kind: 'edit', account: record }),
+        onClick: () => setFormMode({ kind: "edit", account: record }),
       },
-      { type: 'divider' },
+      { type: "divider" },
       record.isActive
         ? {
-            key: 'deactivate',
+            key: "deactivate",
             icon: phIcon(Prohibit, { size: ICON_SIZE.sm }),
             label: CASH_LABELS.deactivate,
             danger: true,
             onClick: () => confirmDeactivate(record),
           }
         : {
-            key: 'reactivate',
+            key: "reactivate",
             icon: phIcon(Power, { size: ICON_SIZE.sm }),
             label: CASH_LABELS.reactivate,
             onClick: () => confirmReactivate(record),
@@ -350,76 +354,145 @@ export function CashAccountsPage() {
 
   return (
     <>
-      <PageHeader
-        title={CASH_LABELS.title}
-        description={CASH_LABELS.description}
-        icon={phIcon(Wallet, { size: ICON_SIZE.lg })}
-        extra={
-          <Space wrap>
-            <Button
-              type="primary"
-              icon={phIcon(ArrowDown, { size: ICON_SIZE.sm })}
-              onClick={() => setMovementMode({ kind: 'in', account: null })}
-            >
-              {CASH_LABELS.cashIn}
-            </Button>
-            <Button
-              danger
-              icon={phIcon(ArrowUp, { size: ICON_SIZE.sm })}
-              onClick={() => setMovementMode({ kind: 'out', account: null })}
-            >
-              {CASH_LABELS.cashOut}
-            </Button>
-            <Button
-              icon={phIcon(Receipt, { size: ICON_SIZE.sm })}
-              onClick={() => setMovementMode({ kind: 'expense', account: null })}
-            >
-              {CASH_LABELS.expense}
-            </Button>
-            <Button
-              icon={phIcon(ArrowsLeftRight, { size: ICON_SIZE.sm })}
-              onClick={() =>
-                setMovementMode({ kind: 'transfer', account: null })
-              }
-            >
-              {CASH_LABELS.transfer}
-            </Button>
-            <Button
-              icon={phIcon(Plus, { size: ICON_SIZE.sm })}
-              onClick={() => setFormMode({ kind: 'create' })}
-            >
-              {CASH_LABELS.createAccount}
-            </Button>
-          </Space>
-        }
-      />
+      <main className="cash-workspace">
+        <header className="cash-page-header">
+          <div className="cash-page-heading">
+            <span className="cash-page-heading-icon" aria-hidden="true">
+              {phIcon(Wallet, { size: ICON_SIZE.xl, weight: "duotone" })}
+            </span>
+            <div>
+              <Title level={2} className="cash-page-title">
+                {CASH_LABELS.title}
+              </Title>
+            </div>
+          </div>
+          <Button
+            className="cash-create-button"
+            icon={phIcon(Plus, { size: ICON_SIZE.md, weight: "bold" })}
+            onClick={() => setFormMode({ kind: "create" })}
+          >
+            {CASH_LABELS.createAccount}
+          </Button>
+        </header>
 
-      <Card size="small" style={{ marginBottom: 16 }}>
-        <Row gutter={[16, 16]}>
-          <Col xs={24} sm={12}>
-            <Statistic
-              title={CASH_LABELS.totalCompanyCash}
-              value={
-                totalCash.data
-                  ? formatMoney(totalCash.data.totalCompanyCash)
-                  : '—'
-              }
-              loading={totalCash.isLoading}
-            />
-          </Col>
-          <Col xs={24} sm={12}>
-            <Statistic
-              title={CASH_LABELS.activeAccounts}
-              value={totalCash.data?.activeAccountCount ?? '—'}
-              loading={totalCash.isLoading}
-            />
-          </Col>
-        </Row>
+        <Card className="cash-hero-card">
+          <div className="cash-hero-layout">
+            <section className="cash-total-panel">
+              <Text className="cash-hero-eyebrow">
+                {CASH_LABELS.totalCompanyCash}
+              </Text>
+              <div className="cash-total-value" aria-live="polite">
+                {totalCash.isLoading ? (
+                  <Skeleton.Input active size="large" />
+                ) : totalCash.data ? (
+                  formatMoney(totalCash.data.totalCompanyCash)
+                ) : (
+                  "—"
+                )}
+              </div>
+              <div className="cash-hero-meta">
+                <span className="cash-account-count">
+                  {totalCash.isLoading
+                    ? "—"
+                    : `${totalCash.data?.activeAccountCount ?? "—"} ${CASH_LABELS.activeAccountSuffix}`}
+                </span>
+                <Text className="cash-hero-caption">
+                  {CASH_LABELS.companyCashHint}
+                </Text>
+              </div>
+            </section>
+
+            <section aria-labelledby="cash-primary-actions-title">
+              <Text
+                id="cash-primary-actions-title"
+                className="cash-hero-eyebrow"
+              >
+                {CASH_LABELS.primaryActions}
+              </Text>
+              <div className="cash-primary-actions">
+                <Button
+                  className="cash-primary-action"
+                  onClick={() => setMovementMode({ kind: "in", account: null })}
+                >
+                  <span className="cash-action-icon" aria-hidden="true">
+                    {phIcon(ArrowDown, { size: ICON_SIZE.lg, weight: "bold" })}
+                  </span>
+                  <span className="cash-action-copy">
+                    <span className="cash-action-label">
+                      {CASH_LABELS.cashIn}
+                    </span>
+                    <span className="cash-action-hint">
+                      {CASH_LABELS.actionHints.cashIn}
+                    </span>
+                  </span>
+                </Button>
+                <Button
+                  className="cash-primary-action"
+                  onClick={() =>
+                    setMovementMode({ kind: "out", account: null })
+                  }
+                >
+                  <span className="cash-action-icon" aria-hidden="true">
+                    {phIcon(ArrowUp, { size: ICON_SIZE.lg, weight: "bold" })}
+                  </span>
+                  <span className="cash-action-copy">
+                    <span className="cash-action-label">
+                      {CASH_LABELS.cashOut}
+                    </span>
+                    <span className="cash-action-hint">
+                      {CASH_LABELS.actionHints.cashOut}
+                    </span>
+                  </span>
+                </Button>
+                <Button
+                  className="cash-primary-action"
+                  onClick={() =>
+                    setMovementMode({ kind: "expense", account: null })
+                  }
+                >
+                  <span className="cash-action-icon" aria-hidden="true">
+                    {phIcon(Receipt, { size: ICON_SIZE.lg, weight: "bold" })}
+                  </span>
+                  <span className="cash-action-copy">
+                    <span className="cash-action-label">
+                      {CASH_LABELS.expense}
+                    </span>
+                    <span className="cash-action-hint">
+                      {CASH_LABELS.actionHints.expense}
+                    </span>
+                  </span>
+                </Button>
+                <Button
+                  className="cash-primary-action"
+                  onClick={() =>
+                    setMovementMode({ kind: "transfer", account: null })
+                  }
+                >
+                  <span className="cash-action-icon" aria-hidden="true">
+                    {phIcon(ArrowsLeftRight, {
+                      size: ICON_SIZE.lg,
+                      weight: "bold",
+                    })}
+                  </span>
+                  <span className="cash-action-copy">
+                    <span className="cash-action-label">
+                      {CASH_LABELS.transfer}
+                    </span>
+                    <span className="cash-action-hint">
+                      {CASH_LABELS.actionHints.transfer}
+                    </span>
+                  </span>
+                </Button>
+              </div>
+            </section>
+          </div>
+        </Card>
+
         {totalCash.isError ? (
           <Alert
+            className="cash-summary-alert"
             type="warning"
             showIcon
-            style={{ marginTop: 12 }}
             message={mapApiError(totalCash.error).userMessage}
             action={
               <Button size="small" onClick={() => void totalCash.refetch()}>
@@ -428,275 +501,383 @@ export function CashAccountsPage() {
             }
           />
         ) : null}
-      </Card>
-
-      <FilterBar>
-        <FilterField label={CASH_LABELS.filters.search}>
-          <Input.Search
-            allowClear
-            placeholder={CASH_LABELS.filters.searchPlaceholder}
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            onSearch={(value) => {
-              setSearch(value.trim());
-              setPage(1);
-            }}
-            style={{ minWidth: 220 }}
+        {workspace.isError ? (
+          <Alert
+            className="cash-summary-alert"
+            type="warning"
+            showIcon
+            message={CASH_LABELS.workspaceLoadError}
+            action={
+              <Button size="small" onClick={() => void workspace.refetch()}>
+                {CASH_LABELS.retry}
+              </Button>
+            }
           />
-        </FilterField>
-        <ActiveStatusFilter
-          value={activeFilter}
-          onChange={(value) => {
-            setActiveFilter(value);
-            setPage(1);
-          }}
-        />
-      </FilterBar>
+        ) : null}
 
-      {list.isError ? (
-        <Alert
-          type="error"
-          showIcon
-          style={{ marginBottom: 16 }}
-          message={mapApiError(list.error).userMessage}
-          action={
-            <Button size="small" onClick={() => void list.refetch()}>
-              {CASH_LABELS.retry}
-            </Button>
-          }
-        />
-      ) : null}
+        <section aria-labelledby="cash-accounts-title">
+          {list.isError ? (
+            <Alert
+              className="cash-list-alert"
+              type="error"
+              showIcon
+              message={mapApiError(list.error).userMessage}
+              action={
+                <Button size="small" onClick={() => void list.refetch()}>
+                  {CASH_LABELS.retry}
+                </Button>
+              }
+            />
+          ) : null}
 
-      {list.isLoading ? <Card loading /> : null}
-      {!list.isLoading && rows.length === 0 ? (
-        <Empty
-          description={
-            <Space direction="vertical" size={4}>
-              <Text>{CASH_LABELS.empty}</Text>
-              <Text type="secondary">{CASH_LABELS.emptyHint}</Text>
-            </Space>
-          }
-        >
-          <Button
-            type="primary"
-            icon={phIcon(Plus, { size: ICON_SIZE.sm })}
-            onClick={() => setFormMode({ kind: 'create' })}
-          >
-            {CASH_LABELS.createAccount}
-          </Button>
-        </Empty>
-      ) : null}
-      <Row gutter={[16, 16]}>
-        {rows.map((account) => (
-          <Col key={account.id} xs={24} md={12} xl={8}>
-            <Card
-              size="small"
-              title={
-                <Space wrap>
-                  <Link to={`/cash/accounts/${account.id}`}>
-                    <Text strong>{account.name}</Text>
-                  </Link>
-                  <ActiveStatusTag isActive={account.isActive} />
-                  {isNegativeBalance(account.currentBalance) ? (
-                    <Tag color="error">{CASH_LABELS.negativeBalance}</Tag>
-                  ) : null}
-                </Space>
-              }
-              extra={
-                <Dropdown
-                  menu={{ items: accountMenuItems(account) }}
-                  trigger={['click']}
-                >
-                  <Button
-                    type="text"
-                    icon={phIcon(DotsThree, { size: ICON_SIZE.md })}
-                    aria-label={CASH_LABELS.columns.actions}
-                  />
-                </Dropdown>
-              }
-            >
-              <Space direction="vertical" size={8} style={{ width: '100%' }}>
-                <CodeText value={account.code} />
-                <Text strong>{formatMoney(account.currentBalance)}</Text>
-                <Text type="secondary">
-                  {CASH_LABELS.columns.responsible}:{' '}
-                  {account.responsibleUserName || '—'}
-                </Text>
-                <Row gutter={[8, 8]}>
-                  <Col span={8}>
-                    <Statistic
-                      title={CASH_LABELS.todayCashIn}
-                      value={formatMoney(
-                        todayByAccountId.get(account.id)?.todayCashIn ?? '0.00',
-                      )}
-                      valueStyle={{ fontSize: 14 }}
-                    />
-                  </Col>
-                  <Col span={8}>
-                    <Statistic
-                      title={CASH_LABELS.todayCashOut}
-                      value={formatMoney(
-                        todayByAccountId.get(account.id)?.todayCashOut ??
-                          '0.00',
-                      )}
-                      valueStyle={{ fontSize: 14 }}
-                    />
-                  </Col>
-                  <Col span={8}>
-                    <Statistic
-                      title={CASH_LABELS.todayExpenses}
-                      value={formatMoney(
-                        todayByAccountId.get(account.id)?.todayExpenses ??
-                          '0.00',
-                      )}
-                      valueStyle={{ fontSize: 14 }}
-                    />
-                  </Col>
-                </Row>
-                {(todayByAccountId.get(account.id)?.recentActivity.length ??
-                  0) > 0 ? (
-                  <Space direction="vertical" size={2} style={{ width: '100%' }}>
-                    <Text type="secondary">{CASH_LABELS.recentActivity}</Text>
-                    {todayByAccountId
-                      .get(account.id)
-                      ?.recentActivity.map((txn) => (
-                        <Text key={txn.id} style={{ fontSize: 12 }}>
-                          {CASH_LABELS.types[
-                            txn.type as keyof typeof CASH_LABELS.types
-                          ] ?? txn.type}{' '}
-                          · {formatMoney(txn.amount)}
-                        </Text>
-                      ))}
+          {list.isLoading ? (
+            <Row gutter={[16, 16]} className="cash-loading-grid">
+              {[0, 1, 2].map((item) => (
+                <Col key={item} xs={24} lg={12} xxl={8}>
+                  <Card className="cash-loading-card">
+                    <Skeleton active paragraph={{ rows: 6 }} />
+                  </Card>
+                </Col>
+              ))}
+            </Row>
+          ) : null}
+
+          {!list.isLoading && rows.length === 0 ? (
+            <Card className="cash-empty-card">
+              <Empty
+                description={
+                  <Space direction="vertical" size={4}>
+                    <Text>{CASH_LABELS.empty}</Text>
+                    <Text type="secondary">{CASH_LABELS.emptyHint}</Text>
                   </Space>
-                ) : null}
-                {!account.isActive ? (
-                  <Text type="secondary">{CASH_LABELS.inactiveAccountHint}</Text>
-                ) : null}
-                <Space wrap>
-                  <Button
-                    size="small"
-                    type="primary"
-                    ghost
-                    disabled={!account.isActive}
-                    icon={phIcon(ArrowDown, { size: ICON_SIZE.sm })}
-                    onClick={() =>
-                      setMovementMode({ kind: 'in', account })
-                    }
-                  >
-                    {CASH_LABELS.cashIn}
-                  </Button>
-                  <Button
-                    size="small"
-                    danger
-                    ghost
-                    disabled={!account.isActive}
-                    icon={phIcon(ArrowUp, { size: ICON_SIZE.sm })}
-                    onClick={() =>
-                      setMovementMode({ kind: 'out', account })
-                    }
-                  >
-                    {CASH_LABELS.cashOut}
-                  </Button>
-                  <Button
-                    size="small"
-                    disabled={!account.isActive}
-                    icon={phIcon(Receipt, { size: ICON_SIZE.sm })}
-                    onClick={() =>
-                      setMovementMode({ kind: 'expense', account })
-                    }
-                  >
-                    {CASH_LABELS.expense}
-                  </Button>
-                  <Button
-                    size="small"
-                    disabled={!account.isActive}
-                    icon={phIcon(ArrowsLeftRight, { size: ICON_SIZE.sm })}
-                    onClick={() =>
-                      setMovementMode({ kind: 'transfer', account })
-                    }
-                  >
-                    {CASH_LABELS.transfer}
-                  </Button>
-                </Space>
-              </Space>
+                }
+              >
+                <Button
+                  type="primary"
+                  icon={phIcon(Plus, { size: ICON_SIZE.sm })}
+                  onClick={() => setFormMode({ kind: "create" })}
+                >
+                  {CASH_LABELS.createAccount}
+                </Button>
+              </Empty>
             </Card>
-          </Col>
-        ))}
-      </Row>
+          ) : null}
 
-      <Pagination
-        style={{ marginTop: 16, textAlign: 'right' }}
-        current={page}
-        pageSize={pageSize}
-        total={list.data?.meta.total ?? 0}
-        showSizeChanger
-        showTotal={(total) => `${total}`}
-        onChange={(nextPage, nextSize) => {
-          setPage(nextPage);
-          setPageSize(nextSize);
-        }}
-      />
+          <Row gutter={[16, 16]}>
+            {rows.map((account) => {
+              const overview = todayByAccountId.get(account.id);
+              const negative = isNegativeBalance(account.currentBalance);
+              const summaryUnavailable = workspace.isError || !overview;
+
+              return (
+                <Col key={account.id} xs={24} lg={12} xxl={8}>
+                  <Card
+                    className={[
+                      "cash-account-card",
+                      negative ? "cash-account-card-negative" : "",
+                      !account.isActive ? "cash-account-card-inactive" : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                  >
+                    <div className="cash-account-topline">
+                      <div className="cash-account-heading">
+                        <Link to={`/cash/accounts/${account.id}`}>
+                          <Text strong className="cash-account-name" ellipsis>
+                            {account.name}
+                          </Text>
+                        </Link>
+                        <div className="cash-account-tags">
+                          <ActiveStatusTag isActive={account.isActive} />
+                          {negative ? (
+                            <Tag color="error">
+                              {CASH_LABELS.negativeBalance}
+                            </Tag>
+                          ) : null}
+                        </div>
+                      </div>
+                      <Dropdown
+                        menu={{ items: accountMenuItems(account) }}
+                        trigger={["click"]}
+                      >
+                        <Button
+                          className="cash-account-menu"
+                          type="text"
+                          icon={phIcon(DotsThree, { size: ICON_SIZE.lg })}
+                          aria-label={`${account.name}: ${CASH_LABELS.columns.actions}`}
+                        />
+                      </Dropdown>
+                    </div>
+
+                    <div className="cash-account-identity">
+                      <CodeText value={account.code} />
+                      <Text type="secondary" className="cash-responsible">
+                        {phIcon(UserCircle, { size: ICON_SIZE.sm })}
+                        <span>
+                          {CASH_LABELS.columns.responsible}:{" "}
+                          {account.responsibleUserName || "—"}
+                        </span>
+                      </Text>
+                    </div>
+
+                    <div className="cash-balance-panel">
+                      <Text type="secondary" className="cash-balance-label">
+                        {CASH_LABELS.currentBalanceLabel}
+                      </Text>
+                      <div className="cash-balance-value">
+                        {formatMoney(account.currentBalance)}
+                      </div>
+                    </div>
+
+                    <Text type="secondary" className="cash-today-label">
+                      {CASH_LABELS.todaySummary}
+                    </Text>
+                    <div className="cash-daily-grid">
+                      <div className="cash-daily-item cash-daily-item-in">
+                        <div className="cash-daily-title">
+                          {phIcon(ArrowDown, { size: 12, weight: "bold" })}
+                          <span>{CASH_LABELS.todayCashInShort}</span>
+                        </div>
+                        <div className="cash-daily-value">
+                          {workspace.isLoading ? (
+                            <Skeleton.Input active size="small" block />
+                          ) : summaryUnavailable ? (
+                            "—"
+                          ) : (
+                            formatMoney(overview.todayCashIn)
+                          )}
+                        </div>
+                      </div>
+                      <div className="cash-daily-item cash-daily-item-out">
+                        <div className="cash-daily-title">
+                          {phIcon(ArrowUp, { size: 12, weight: "bold" })}
+                          <span>{CASH_LABELS.todayCashOutShort}</span>
+                        </div>
+                        <div className="cash-daily-value">
+                          {workspace.isLoading ? (
+                            <Skeleton.Input active size="small" block />
+                          ) : summaryUnavailable ? (
+                            "—"
+                          ) : (
+                            formatMoney(overview.todayCashOut)
+                          )}
+                        </div>
+                      </div>
+                      <div className="cash-daily-item cash-daily-item-expense">
+                        <div className="cash-daily-title">
+                          {phIcon(Receipt, { size: 12, weight: "bold" })}
+                          <span>{CASH_LABELS.todayExpensesShort}</span>
+                        </div>
+                        <div className="cash-daily-value">
+                          {workspace.isLoading ? (
+                            <Skeleton.Input active size="small" block />
+                          ) : summaryUnavailable ? (
+                            "—"
+                          ) : (
+                            formatMoney(overview.todayExpenses)
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="cash-activity">
+                      <div className="cash-activity-heading">
+                        {phIcon(ClockCounterClockwise, {
+                          size: ICON_SIZE.sm,
+                        })}
+                        <Text strong>{CASH_LABELS.recentActivity}</Text>
+                      </div>
+                      {workspace.isLoading ? (
+                        <Skeleton
+                          active
+                          title={false}
+                          paragraph={{ rows: 2 }}
+                        />
+                      ) : summaryUnavailable ? (
+                        <Text type="secondary" className="cash-activity-empty">
+                          {CASH_LABELS.workspaceUnavailable}
+                        </Text>
+                      ) : overview.recentActivity.length > 0 ? (
+                        <div className="cash-activity-list">
+                          {overview.recentActivity.map((txn) => {
+                            const isIncoming = txn.direction === "IN";
+                            return (
+                              <div key={txn.id} className="cash-activity-row">
+                                <div className="cash-activity-main">
+                                  <Text className="cash-activity-type">
+                                    {CASH_LABELS.types[
+                                      txn.type as keyof typeof CASH_LABELS.types
+                                    ] ?? CASH_LABELS.unknownTransactionType}
+                                  </Text>
+                                  <Text
+                                    type="secondary"
+                                    className="cash-activity-meta"
+                                  >
+                                    {txn.transactionNumber} ·{" "}
+                                    {formatDateTime(txn.transactionDate)}
+                                  </Text>
+                                </div>
+                                <span
+                                  className={`cash-activity-amount ${
+                                    isIncoming
+                                      ? "cash-activity-amount-in"
+                                      : "cash-activity-amount-out"
+                                  }`}
+                                >
+                                  {isIncoming ? "+" : "−"}
+                                  {formatMoney(txn.amount)}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <Text type="secondary" className="cash-activity-empty">
+                          {CASH_LABELS.emptyTxns}
+                        </Text>
+                      )}
+                    </div>
+
+                    {!account.isActive ? (
+                      <Alert
+                        className="cash-inactive-note"
+                        type="info"
+                        showIcon
+                        message={CASH_LABELS.inactiveAccountHint}
+                      />
+                    ) : null}
+
+                    <div className="cash-account-footer">
+                      <Button
+                        className="cash-details-button"
+                        block
+                        onClick={() => navigate(`/cash/accounts/${account.id}`)}
+                      >
+                        <span>{CASH_LABELS.accountDetails}</span>
+                        {phIcon(CaretRight, { size: ICON_SIZE.sm })}
+                      </Button>
+                      <Button
+                        type="primary"
+                        disabled={!account.isActive}
+                        icon={phIcon(ArrowDown, { size: ICON_SIZE.sm })}
+                        onClick={() => setMovementMode({ kind: "in", account })}
+                      >
+                        {CASH_LABELS.cashIn}
+                      </Button>
+                      <Button
+                        danger
+                        disabled={!account.isActive}
+                        icon={phIcon(ArrowUp, { size: ICON_SIZE.sm })}
+                        onClick={() =>
+                          setMovementMode({ kind: "out", account })
+                        }
+                      >
+                        {CASH_LABELS.cashOut}
+                      </Button>
+                      <Button
+                        disabled={!account.isActive}
+                        icon={phIcon(Receipt, { size: ICON_SIZE.sm })}
+                        onClick={() =>
+                          setMovementMode({ kind: "expense", account })
+                        }
+                      >
+                        {CASH_LABELS.expense}
+                      </Button>
+                      <Button
+                        disabled={!account.isActive}
+                        icon={phIcon(ArrowsLeftRight, { size: ICON_SIZE.sm })}
+                        onClick={() =>
+                          setMovementMode({ kind: "transfer", account })
+                        }
+                      >
+                        {CASH_LABELS.transfer}
+                      </Button>
+                    </div>
+                  </Card>
+                </Col>
+              );
+            })}
+          </Row>
+
+          {(list.data?.meta.total ?? 0) > 0 ? (
+            <div className="cash-pagination">
+              <Pagination
+                current={page}
+                pageSize={pageSize}
+                total={list.data?.meta.total ?? 0}
+                showSizeChanger
+                responsive
+                showTotal={(total) =>
+                  `${total} ${CASH_LABELS.accountCountSuffix}`
+                }
+                onChange={(nextPage, nextSize) => {
+                  setPage(nextPage);
+                  setPageSize(nextSize);
+                }}
+              />
+            </div>
+          ) : null}
+        </section>
+      </main>
 
       <CashAccountFormModal
-        open={formMode.kind !== 'closed'}
-        mode={formMode.kind === 'edit' ? 'edit' : 'create'}
-        account={formMode.kind === 'edit' ? formMode.account : null}
+        open={formMode.kind !== "closed"}
+        mode={formMode.kind === "edit" ? "edit" : "create"}
+        account={formMode.kind === "edit" ? formMode.account : null}
         submitting={submitting}
         error={formError}
         onCancel={() => {
-          setFormMode({ kind: 'closed' });
+          setFormMode({ kind: "closed" });
           setFormError(undefined);
         }}
         onSubmit={handleAccountSubmit}
       />
 
       <CashInFormModal
-        open={movementMode.kind === 'in'}
-        account={movementMode.kind === 'in' ? movementMode.account : null}
+        open={movementMode.kind === "in"}
+        account={movementMode.kind === "in" ? movementMode.account : null}
         submitting={cashInMutation.isPending}
         error={movementError}
         onCancel={() => {
-          setMovementMode({ kind: 'closed' });
+          setMovementMode({ kind: "closed" });
           setMovementError(undefined);
         }}
         onSubmit={handleCashIn}
       />
 
       <CashOutFormModal
-        open={movementMode.kind === 'out'}
-        account={movementMode.kind === 'out' ? movementMode.account : null}
+        open={movementMode.kind === "out"}
+        account={movementMode.kind === "out" ? movementMode.account : null}
         submitting={cashOutMutation.isPending}
         error={movementError}
         onCancel={() => {
-          setMovementMode({ kind: 'closed' });
+          setMovementMode({ kind: "closed" });
           setMovementError(undefined);
         }}
         onSubmit={handleCashOut}
       />
 
       <ExpenseFormModal
-        open={movementMode.kind === 'expense'}
-        account={
-          movementMode.kind === 'expense' ? movementMode.account : null
-        }
+        open={movementMode.kind === "expense"}
+        account={movementMode.kind === "expense" ? movementMode.account : null}
         submitting={expenseMutation.isPending}
         error={movementError}
         onCancel={() => {
-          setMovementMode({ kind: 'closed' });
+          setMovementMode({ kind: "closed" });
           setMovementError(undefined);
         }}
         onSubmit={handleExpense}
       />
 
       <TransferFormModal
-        open={movementMode.kind === 'transfer'}
+        open={movementMode.kind === "transfer"}
         sourceAccount={
-          movementMode.kind === 'transfer' ? movementMode.account : null
+          movementMode.kind === "transfer" ? movementMode.account : null
         }
         submitting={transferMutation.isPending}
         error={movementError}
         onCancel={() => {
-          setMovementMode({ kind: 'closed' });
+          setMovementMode({ kind: "closed" });
           setMovementError(undefined);
         }}
         onSubmit={handleTransfer}

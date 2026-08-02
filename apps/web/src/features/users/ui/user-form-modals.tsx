@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Alert, Form, Input, Modal } from 'antd';
+import { appRequiredMark } from '../../../shared/ui/form-required-mark';
 import {
   createUserFormSchema,
   editUserFormSchema,
@@ -43,6 +44,7 @@ export function CreateUserFormModal({
 
   return (
     <Modal
+      className="ui-form-modal ui-user-form-modal"
       title={USERS_LABELS.create}
       open={open}
       onCancel={onCancel}
@@ -61,7 +63,7 @@ export function CreateUserFormModal({
           style={{ marginBottom: 16 }}
         />
       ) : null}
-      <Form layout="vertical" requiredMark>
+      <Form layout="vertical" requiredMark={appRequiredMark}>
         <Form.Item
           label={USERS_LABELS.fullName}
           required
@@ -156,6 +158,7 @@ export function EditUserFormModal({
 
   return (
     <Modal
+      className="ui-form-modal ui-user-form-modal"
       title={USERS_LABELS.edit}
       open={open}
       onCancel={onCancel}
@@ -174,7 +177,7 @@ export function EditUserFormModal({
           style={{ marginBottom: 16 }}
         />
       ) : null}
-      <Form layout="vertical" requiredMark>
+      <Form layout="vertical" requiredMark={appRequiredMark}>
         <Form.Item
           label={USERS_LABELS.fullName}
           required

@@ -1,26 +1,16 @@
 import { useState } from 'react';
-import {
-  Alert,
-  Input,
-  List,
-  Modal,
-  Space,
-  Typography,
-} from 'antd';
+import { Alert, Input, List, Modal, Space, Typography } from 'antd';
 import { CheckCircle, WarningCircle } from '@phosphor-icons/react';
 import { ICON_SIZE, phIcon } from '../../../shared/ui/ph-icon';
 import type { ImmediatePaymentInput } from '../api/sales.api';
-import {
-  formatShortageLine,
-  type QuantityShortage,
-} from './quantity-shortage';
+import { formatShortageLine, type QuantityShortage } from './quantity-shortage';
 import { SALES_LABELS } from './labels';
 import {
   emptySaleImmediatePayment,
   isSaleImmediatePaymentValid,
-  SaleImmediatePaymentSection,
   type SaleImmediatePaymentState,
-} from './sale-immediate-payment-section';
+} from './sale-immediate-payment';
+import { SaleImmediatePaymentSection } from './sale-immediate-payment-section';
 
 const { Text } = Typography;
 
@@ -83,14 +73,16 @@ function SalePostConfirmModalBody({
 }) {
   const [negativeQuantityReason, setNegativeQuantityReason] = useState('');
   const [payment, setPayment] = useState<SaleImmediatePaymentState>(
-    () =>
-      initialPayment ?? emptySaleImmediatePayment(documentTotal),
+    () => initialPayment ?? emptySaleImmediatePayment(documentTotal),
   );
   const hasShortage = shortages.length > 0;
   const paymentValid = isSaleImmediatePaymentValid(payment);
 
   return (
     <Modal
+      className="ui-confirm-modal ui-post-confirm-modal commercial-confirm-modal commercial-post-modal"
+      wrapClassName="commercial-modal-wrap"
+      centered
       open
       zIndex={1100}
       title={
@@ -144,7 +136,9 @@ function SalePostConfirmModalBody({
               dataSource={shortages}
               renderItem={(item) => (
                 <List.Item style={{ padding: '4px 0', border: 'none' }}>
-                  <Text style={{ fontSize: 13 }}>{formatShortageLine(item)}</Text>
+                  <Text style={{ fontSize: 13 }}>
+                    {formatShortageLine(item)}
+                  </Text>
                 </List.Item>
               )}
             />

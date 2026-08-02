@@ -1,0 +1,36 @@
+# CHANGE-013: Products UI refactor
+
+- **ID:** CHANGE-013
+- **Type:** CHANGE
+- **Title:** Products UI refactor
+- **Status:** Done
+- **Trigger:** Owner requested a professional, modern, mobile-first UI/UX refactor of the Products page, table, filters, modals, and related presentation states.
+- **Urgency:** High
+- **Affected epics / stories / tasks:** US-038 Products frontend presentation; follow-up to CHANGE-010.
+- **Why not in the original plan:** The delivered Products workflow was functionally complete but relied on generic presentation classes that no longer had styling after the global CSS rollback.
+- **Scope:** Frontend-only UI/UX refactor of the Products page header, filter surface, result count, desktop table, mobile cards, actions, confirmations, pagination, loading/error/empty states, and product create/edit modal under `apps/web/src/features/master-data/{pages,ui}/**`.
+- **Out of scope:** Backend files; APIs; hooks and query behavior; schemas and validation rules; calculations; product lifecycle rules; permissions; form defaults; request payloads; mutations; route behavior; global Ant Design popup/scroll overrides.
+- **Risks:** Hiding product identity, status, quantity, unit, prices, threshold, category, barcode, or actions on mobile; changing required/optional meaning; reintroducing global overlay regressions.
+- **Acceptance criteria:**
+  - Product filters remain behaviorally unchanged and are readable from mobile through large desktop.
+  - Desktop table retains all existing columns and actions while presenting sale price, purchase price, and minimum quantity clearly with safe horizontal overflow.
+  - Mobile cards expose product code, name, status, type, category, quantity, unit, prices, threshold, barcode when present, and lifecycle actions.
+  - Product create/edit modal groups related fields, retains all validation messages, and derives required/optional markers from existing `Form.Item` flags.
+  - Mobile modal remains full-screen with fixed header/footer and only body scrolling through the established scoped modal foundation.
+  - All styling is Products-scoped and does not override global Select, Dropdown, modal portal, or page scrolling behavior.
+  - No API, hook, schema, mutation, payload, permission, route, backend, or business logic is changed.
+  - Focused lint, TypeScript checking, production bundling, and existing web tests pass.
+- **Impact on current work:** Standalone owner-directed presentation improvement; no active story is paused.
+- **Roadmap impact:** None; presentation hardening of an already delivered Products workflow.
+- **Result:** Refactored the Products page into a responsive catalog workspace with a clear header, contained four-control filter surface, result count, polished desktop table, information-complete mobile cards, accessible actions, and improved loading/error/empty states. Product code and product name now have explicit separate table columns and labeled mobile fields. Expanded the desktop table presentation to expose existing purchase-price and minimum-quantity data. Reorganized the unchanged product form fields into responsive Azerbaijani information sections with clear required/optional markers and polished footer controls; price-field label rows are equalized for consistent input alignment. The Product modal uses the Cash modal's centered, viewport-bounded wrapper pattern and mobile full-screen behavior with fixed header/footer and body-only scrolling. A follow-up corrected the body flex basis from zero to auto so content remains visible when the bounded container has intrinsic height. Confirmation dialogs identify the selected product. All data flow and business behavior remain unchanged, and both new stylesheets are locally scoped.
+- **Follow-up actions:** Owner visual acceptance, then continue the requested module-by-module frontend presentation refactor.
+- **Evidence:**
+  - `apps/web/src/features/master-data/pages/products-page.tsx`
+  - `apps/web/src/features/master-data/pages/products-page.css`
+  - `apps/web/src/features/master-data/ui/product-form-modal.tsx`
+  - `apps/web/src/features/master-data/ui/product-form-modal.css`
+  - `yarn workspace web tsc --noEmit` — passed.
+  - Focused ESLint for the changed TSX files — passed.
+  - `yarn workspace web vite build` — passed (existing bundle-size warning only).
+  - `yarn workspace web test --run` — 17 files / 51 tests passed.
+  - Scope audit — no backend, API, hook, schema, validation, calculation, permission, route, or mutation file changed.

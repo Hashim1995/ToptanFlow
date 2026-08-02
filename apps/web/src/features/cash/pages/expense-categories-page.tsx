@@ -104,6 +104,9 @@ export function ExpenseCategoriesPage() {
 
   function confirmDeactivate(category: ExpenseCategory) {
     Modal.confirm({
+      className: 'cash-confirm-modal cash-account-state-confirm',
+      centered: true,
+      width: 440,
       title: CASH_LABELS.deactivate,
       content: CASH_LABELS.confirmations.deactivate,
       okText: CASH_LABELS.deactivate,
@@ -257,9 +260,7 @@ export function ExpenseCategoriesPage() {
               <Space wrap>
                 <Button
                   size="small"
-                  onClick={() =>
-                    setFormMode({ kind: 'edit', category })
-                  }
+                  onClick={() => setFormMode({ kind: 'edit', category })}
                 >
                   {CASH_LABELS.editExpenseCategory}
                 </Button>

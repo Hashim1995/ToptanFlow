@@ -1,0 +1,40 @@
+# CHANGE-015: Business Partners UI refactor
+
+- **ID:** CHANGE-015
+- **Type:** CHANGE
+- **Title:** Business Partners UI refactor
+- **Status:** Done
+- **Trigger:** Owner requested the next professional, modern, mobile-first UI/UX pass for the Business Partners module.
+- **Urgency:** High
+- **Affected epics / stories / tasks:** US-038 Business Partners frontend presentation; follow-up to CHANGE-010 and CHANGE-014.
+- **Why not in the original plan:** The delivered Business Partners workflow was functionally complete but still used generic list and modal presentation without the scoped catalog design system.
+- **Scope:** Frontend-only UI/UX refactor of the Business Partners page header, search/status/role filters, result count, desktop table, mobile cards, actions, confirmations, pagination, loading/error/empty states, create/edit modal, and duplicate-review modal.
+- **Out of scope:** Backend files; APIs; hooks and queries; duplicate detection/acknowledgement behavior; schemas and validation rules; signed debt calculations; partner roles; permissions; payloads; mutations; routes; global Ant Design popup/scroll overrides.
+- **Risks:** Misrepresenting signed partner debt; hiding duplicate candidates or acknowledgement actions; making activate/deactivate/edit actions unreachable; collapsing the nested duplicate modal body.
+- **Acceptance criteria:**
+  - Page uses the same 1680px catalog canvas and responsive header/filter/table patterns as Products, Categories, and Units.
+  - Partner code and partner name are explicit separate desktop columns and labeled mobile fields.
+  - Mobile cards expose status, role, signed debt value/meaning, phone, email, tax number, and lifecycle actions.
+  - Desktop table retains partner identity, role, phone, signed debt meaning, and compact edit/overflow actions.
+  - Create/edit form groups existing fields into clear responsive sections and preserves every validation message and required/optional rule.
+  - Duplicate review remains an explicit acknowledgement workflow and presents every returned candidate and matched field.
+  - Both partner modals use the corrected centered viewport-bounded shell with visible body, fixed header/footer, body-only scrolling, and full-screen mobile mode.
+  - Styling is locally scoped and does not override global Select, Dropdown, portal, modal, or page scrolling behavior.
+  - No API, hook, schema, mutation, payload, permission, route, backend, duplicate, debt, or business logic is changed.
+  - Focused lint, TypeScript checking, production bundling, and existing web tests pass.
+- **Impact on current work:** Standalone owner-directed presentation improvement; no active story is paused.
+- **Roadmap impact:** None; presentation hardening of an already delivered Business Partners workflow.
+- **Result:** Refactored Business Partners onto the shared 1680px catalog presentation with a contained three-control filter surface, result count, polished desktop table, compact edit/overflow actions, structured mobile cards, and improved loading/error/empty states. Partner code/name are explicit separate table columns and labeled mobile identity fields. Mobile cards preserve signed debt value and meaning alongside role and contact information. Reorganized the unchanged partner form into main, contact, and additional-information sections with a clearer role selector and schema-driven required/optional markers. Rebuilt both the form and duplicate-review dialog around the corrected non-collapsing viewport shell; duplicate candidates are presented as clear cards while acknowledgement behavior remains unchanged. Data flow, roles, debt semantics, validation, duplicate handling, and lifecycle behavior are unchanged.
+- **Follow-up actions:** Owner visual acceptance, then continue the requested module-by-module frontend presentation refactor.
+- **Evidence:**
+  - `apps/web/src/features/master-data/pages/business-partners-page.tsx`
+  - `apps/web/src/features/master-data/pages/business-partners-page.css`
+  - `apps/web/src/features/master-data/ui/business-partner-form-modal.tsx`
+  - `apps/web/src/features/master-data/ui/duplicate-review-modal.tsx`
+  - `apps/web/src/features/master-data/ui/business-partner-modals.css`
+  - `apps/web/src/features/master-data/ui/labels.ts`
+  - `yarn workspace web tsc --noEmit` — passed.
+  - Focused ESLint for the changed TSX/label files — passed.
+  - `yarn workspace web vite build` — passed (existing bundle-size warning only).
+  - `yarn workspace web test --run` — 17 files / 51 tests passed.
+  - Scope audit — no backend, API, hook, schema, validation, debt calculation, duplicate behavior, permission, route, or mutation file changed.

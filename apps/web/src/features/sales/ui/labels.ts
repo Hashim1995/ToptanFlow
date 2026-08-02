@@ -8,6 +8,7 @@ export const SALES_LABELS = {
   create: 'Yeni satış',
   edit: 'Satışı redaktə et',
   detail: 'Satış məlumatları',
+  printTitle: 'Satış sənədi',
   statuses: {
     DRAFT: 'Qaralama',
     POSTED: 'Təsdiqlənib',
@@ -73,6 +74,7 @@ export const SALES_LABELS = {
     removeLine: 'Sətiri sil',
     retry: 'Yenidən cəhd et',
     confirm: 'Təsdiqlə',
+    print: 'Çap et',
   },
   post: {
     title: 'Satışı təsdiqləyirsiniz?',
@@ -123,6 +125,7 @@ export const SALES_LABELS = {
     empty: 'Satış tapılmadı.',
     loading: 'Məlumatlar yüklənir...',
     loadError: 'Satış məlumatlarını yükləmək mümkün olmadı.',
+    printOpenError: 'Çap pəncərəsini açmaq mümkün olmadı.',
     createSuccess: 'Qaralama satış yaradıldı.',
     updateSuccess: 'Qaralama satış yeniləndi.',
     draftOnly: 'Yalnız qaralama satış redaktə edilə bilər.',

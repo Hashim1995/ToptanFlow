@@ -75,19 +75,23 @@ const SHORTCUTS = [
  */
 export function HomePage() {
   return (
-    <>
-      <Title level={2} style={{ marginBottom: 8 }}>
-        Ana səhifə
-      </Title>
-      <Paragraph type="secondary" style={{ marginBottom: 28, maxWidth: 560 }}>
-        Əsas iş axınlarına buradan keçin.
-      </Paragraph>
+    <div className="home-page">
+      <div className="home-hero">
+        <Text className="home-eyebrow">TOPTANFLOW</Text>
+        <Title className="home-title" level={2}>
+          Ana səhifə
+        </Title>
+        <Paragraph className="home-description" type="secondary">
+          Əsas iş axınlarına buradan keçin.
+        </Paragraph>
+      </div>
 
-      <Row gutter={[16, 16]}>
+      <Row className="home-shortcuts" gutter={[16, 16]}>
         {SHORTCUTS.map((item) => (
           <Col xs={24} sm={12} lg={8} key={item.to}>
-            <Link to={item.to} style={{ display: 'block', height: '100%' }}>
+            <Link className="home-shortcut-link" to={item.to}>
               <Card
+                className="home-shortcut-card"
                 hoverable
                 styles={{
                   body: {
@@ -99,9 +103,11 @@ export function HomePage() {
                 }}
               >
                 <Space
+                  className="home-shortcut-top"
                   style={{ width: '100%', justifyContent: 'space-between' }}
                 >
                   <span
+                    className="home-shortcut-icon"
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',
@@ -120,10 +126,11 @@ export function HomePage() {
                   </span>
                   {phIcon(ArrowRight, { size: ICON_SIZE.sm })}
                 </Space>
-                <Text strong style={{ fontSize: 16 }}>
+                <Text className="home-shortcut-title" strong>
                   {item.title}
                 </Text>
                 <Paragraph
+                  className="home-shortcut-description"
                   type="secondary"
                   style={{ marginBottom: 0, marginTop: 0 }}
                 >
@@ -134,6 +141,6 @@ export function HomePage() {
           </Col>
         ))}
       </Row>
-    </>
+    </div>
   );
 }

@@ -3,39 +3,14 @@ import { Alert, Checkbox, Form, Input, Select, Space, Typography } from 'antd';
 import { DecimalInput } from '../../master-data/ui/decimal-input';
 import { useCashAccountsList } from '../../cash/api/cash.hooks';
 import { formatMoney } from '../../../shared/money/format-money';
+import { appRequiredMark } from '../../../shared/ui/form-required-mark';
 import { SALES_LABELS } from './labels';
+import {
+  emptySaleImmediatePayment,
+  type SaleImmediatePaymentState,
+} from './sale-immediate-payment';
 
 const { Text } = Typography;
-
-export type SaleImmediatePaymentState = {
-  enabled: boolean;
-  cashAccountId?: string;
-  amount: string;
-  notes: string;
-};
-
-export function emptySaleImmediatePayment(
-  documentTotal?: string,
-): SaleImmediatePaymentState {
-  const parsed = documentTotal ? Number.parseFloat(documentTotal) : NaN;
-  return {
-    enabled: false,
-    cashAccountId: undefined,
-    amount: Number.isFinite(parsed) ? parsed.toFixed(2) : '',
-    notes: '',
-  };
-}
-
-export function isSaleImmediatePaymentValid(
-  payment: SaleImmediatePaymentState,
-): boolean {
-  if (!payment.enabled) return true;
-  return (
-    Boolean(payment.cashAccountId) &&
-    Number.parseFloat(payment.amount) > 0 &&
-    Number.isFinite(Number.parseFloat(payment.amount))
-  );
-}
 
 type SaleImmediatePaymentSectionProps = {
   value: SaleImmediatePaymentState;
@@ -97,19 +72,25 @@ export function SaleImmediatePaymentSection({
             ...value,
             enabled: event.target.checked,
             amount:
-              value.amount ||
-              emptySaleImmediatePayment(documentTotal).amount,
+              value.amount || emptySaleImmediatePayment(documentTotal).amount,
           })
         }
       >
         {SALES_LABELS.post.acceptPayment}
       </Checkbox>
-      <Text type="secondary" style={{ display: 'block', marginTop: 4, fontSize: 12 }}>
+      <Text
+        type="secondary"
+        style={{ display: 'block', marginTop: 4, fontSize: 12 }}
+      >
         {SALES_LABELS.post.acceptPaymentHint}
       </Text>
 
       {value.enabled ? (
-        <Form layout="vertical" style={{ marginTop: 12 }} size="small">
+        <Form
+          layout="vertical"
+          requiredMark={appRequiredMark}
+          style={{ marginTop: 12 }}
+        >
           <Form.Item
             label={SALES_LABELS.post.cashAccount}
             required

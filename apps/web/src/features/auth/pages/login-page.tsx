@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { Alert, Button, Card, Form, Input, Space, Typography } from 'antd';
+import { Alert, Button, Card, Form, Input, Typography } from 'antd';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { SignIn } from '@phosphor-icons/react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { mapApiError } from '../../../api/map-api-error';
 import { ICON_SIZE, phIcon } from '../../../shared/ui/ph-icon';
+import { appRequiredMark } from '../../../shared/ui/form-required-mark';
+import { BrandLogo } from '../../../shared/ui/brand-logo';
 import { useAuth } from '../use-auth';
 import { AUTH_LABELS } from '../ui/labels';
+import './login-page.css';
 
 const { Title, Paragraph } = Typography;
 
@@ -59,35 +62,12 @@ export function LoginPage() {
   }
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 16,
-      }}
-    >
-      <Card style={{ width: '100%', maxWidth: 420 }}>
-        <Space align="center" size={12} style={{ marginBottom: 8 }}>
-          <span
-            style={{
-              display: 'inline-flex',
-              width: 40,
-              height: 40,
-              borderRadius: 10,
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'rgba(22, 119, 255, 0.08)',
-              color: '#1677ff',
-            }}
-          >
-            {phIcon(SignIn, { size: ICON_SIZE.xl, weight: 'duotone' })}
-          </span>
-          <Title level={3} style={{ margin: 0 }}>
-            {AUTH_LABELS.loginTitle}
-          </Title>
-        </Space>
+    <div className="login-page">
+      <Card className="login-card">
+        <div className="login-heading">
+          <BrandLogo className="login-brand-logo" />
+          <Title level={3}>{AUTH_LABELS.loginTitle}</Title>
+        </div>
         <Paragraph type="secondary">{AUTH_LABELS.loginDescription}</Paragraph>
 
         {submitError ? (
@@ -99,9 +79,15 @@ export function LoginPage() {
           />
         ) : null}
 
-        <Form layout="vertical" onFinish={() => void handleSubmit(onSubmit)()}>
+        <Form
+          className="login-form"
+          layout="vertical"
+          requiredMark={appRequiredMark}
+          onFinish={() => void handleSubmit(onSubmit)()}
+        >
           <Form.Item
             label={AUTH_LABELS.username}
+            required
             validateStatus={errors.username ? 'error' : undefined}
             help={errors.username?.message}
           >
@@ -120,6 +106,7 @@ export function LoginPage() {
 
           <Form.Item
             label={AUTH_LABELS.password}
+            required
             validateStatus={errors.password ? 'error' : undefined}
             help={errors.password?.message}
           >

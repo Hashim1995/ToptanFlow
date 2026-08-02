@@ -3,5 +3,5 @@
   "typescript.enablePromptUseWorkspaceTsdk": true,
   "npm.packageManager": "yarn",
   "npm.scriptExplorerAction": "run",
-  "debug.javascript.autoAttachFilter": "smart"
+  "debug.javascript.autoAttachFilter": "disabled"
 }

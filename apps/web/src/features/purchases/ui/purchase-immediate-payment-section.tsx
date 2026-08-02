@@ -4,44 +4,14 @@ import { DecimalInput } from '../../master-data/ui/decimal-input';
 import { useCashAccountsList } from '../../cash/api/cash.hooks';
 import { CASH_LABELS } from '../../cash/ui/labels';
 import { formatMoney } from '../../../shared/money/format-money';
+import { appRequiredMark } from '../../../shared/ui/form-required-mark';
 import { PURCHASE_LABELS } from './labels';
+import {
+  emptyPurchaseImmediatePayment,
+  type PurchaseImmediatePaymentState,
+} from './purchase-immediate-payment';
 
 const { Text } = Typography;
-
-export type PurchaseImmediatePaymentState = {
-  enabled: boolean;
-  cashAccountId?: string;
-  amount: string;
-  notes: string;
-  negativeBalanceOverrideReason: string;
-};
-
-export function emptyPurchaseImmediatePayment(
-  documentTotal?: string,
-): PurchaseImmediatePaymentState {
-  const parsed = documentTotal ? Number.parseFloat(documentTotal) : NaN;
-  return {
-    enabled: false,
-    cashAccountId: undefined,
-    amount: Number.isFinite(parsed) ? parsed.toFixed(2) : '',
-    notes: '',
-    negativeBalanceOverrideReason: '',
-  };
-}
-
-export function isPurchaseImmediatePaymentValid(
-  payment: PurchaseImmediatePaymentState,
-  needsNegativeReason: boolean,
-): boolean {
-  if (!payment.enabled) return true;
-  return (
-    Boolean(payment.cashAccountId) &&
-    Number.parseFloat(payment.amount) > 0 &&
-    Number.isFinite(Number.parseFloat(payment.amount)) &&
-    (!needsNegativeReason ||
-      Boolean(payment.negativeBalanceOverrideReason.trim()))
-  );
-}
 
 type PurchaseImmediatePaymentSectionProps = {
   value: PurchaseImmediatePaymentState;
@@ -79,8 +49,7 @@ export function PurchaseImmediatePaymentSection({
     return { before, after: before - amount };
   }, [selectedAccount, value.enabled, value.amount]);
 
-  const needsNegativeReason =
-    cashPreview !== null && cashPreview.after < 0;
+  const needsNegativeReason = cashPreview !== null && cashPreview.after < 0;
 
   const debtPreview = useMemo(() => {
     const before = Number.parseFloat(partnerDebtBalance);
@@ -115,12 +84,19 @@ export function PurchaseImmediatePaymentSection({
       >
         {PURCHASE_LABELS.post.payNow}
       </Checkbox>
-      <Text type="secondary" style={{ display: 'block', marginTop: 4, fontSize: 12 }}>
+      <Text
+        type="secondary"
+        style={{ display: 'block', marginTop: 4, fontSize: 12 }}
+      >
         {PURCHASE_LABELS.post.payNowHint}
       </Text>
 
       {value.enabled ? (
-        <Form layout="vertical" style={{ marginTop: 12 }} size="small">
+        <Form
+          layout="vertical"
+          requiredMark={appRequiredMark}
+          style={{ marginTop: 12 }}
+        >
           <Form.Item
             label={PURCHASE_LABELS.post.cashAccount}
             required
@@ -226,17 +202,4 @@ export function PurchaseImmediatePaymentSection({
       ) : null}
     </div>
   );
-}
-
-export function purchaseNeedsNegativeReason(
-  payment: PurchaseImmediatePaymentState,
-  accountBalance: string | undefined,
-): boolean {
-  if (!payment.enabled || !accountBalance) return false;
-  const before = Number.parseFloat(accountBalance);
-  const amount = Number.parseFloat(payment.amount);
-  if (!Number.isFinite(before) || !Number.isFinite(amount) || amount <= 0) {
-    return false;
-  }
-  return before - amount < 0;
 }

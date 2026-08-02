@@ -1,0 +1,25 @@
+.toptanflow-logo {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  overflow: hidden;
+}
+
+.toptanflow-logo img {
+  display: block;
+  user-select: none;
+}
+
+.toptanflow-logo-full img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.toptanflow-logo-compact img {
+  width: auto;
+  max-width: none;
+  height: 100%;
+  object-fit: cover;
+  object-position: left center;
+}

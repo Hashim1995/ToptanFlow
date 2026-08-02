@@ -16,12 +16,8 @@ import {
   Typography,
   message,
 } from 'antd';
-import {
-  CheckCircle,
-  Plus,
-  ShoppingCart,
-  Trash,
-} from '@phosphor-icons/react';
+import { appRequiredMark } from '../../../shared/ui/form-required-mark';
+import { CheckCircle, Plus, ShoppingCart, Trash } from '@phosphor-icons/react';
 import {
   DATE_DISPLAY_FORMAT,
   bakuTodayDateOnly,
@@ -29,12 +25,7 @@ import {
   dateOnlyPickerValue,
   toDateOnlyApi,
 } from '../../../shared/datetime';
-import {
-  Controller,
-  useFieldArray,
-  useForm,
-  useWatch,
-} from 'react-hook-form';
+import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { mapApiError } from '../../../api/map-api-error';
 import { formatMoney } from '../../../shared/money/format-money';
 import { ICON_SIZE, phIcon } from '../../../shared/ui/ph-icon';
@@ -59,9 +50,9 @@ import { PurchasePostConfirmModal } from './purchase-post-confirm-modal';
 import {
   emptyPurchaseImmediatePayment,
   isPurchaseImmediatePaymentValid,
-  PurchaseImmediatePaymentSection,
   type PurchaseImmediatePaymentState,
-} from './purchase-immediate-payment-section';
+} from './purchase-immediate-payment';
+import { PurchaseImmediatePaymentSection } from './purchase-immediate-payment-section';
 
 const { Text } = Typography;
 
@@ -143,6 +134,7 @@ export function PurchaseFormModal({
     useState<PurchaseImmediatePaymentState>(() =>
       emptyPurchaseImmediatePayment(),
     );
+  const [paymentDocumentTotal, setPaymentDocumentTotal] = useState('');
 
   const {
     control,
@@ -174,7 +166,6 @@ export function PurchaseFormModal({
   useEffect(() => {
     if (!open) {
       initializedId.current = undefined;
-      setImmediatePayment(emptyPurchaseImmediatePayment());
       return;
     }
     if (!isEdit) {
@@ -183,7 +174,6 @@ export function PurchaseFormModal({
         businessDate: bakuTodayDateOnly(),
         items: [emptyLine],
       });
-      setImmediatePayment(emptyPurchaseImmediatePayment());
       return;
     }
     if (!purchase.data || initializedId.current === purchase.data.id) return;
@@ -192,7 +182,6 @@ export function PurchaseFormModal({
     }
     initializedId.current = purchase.data.id;
     reset(toFormValues(purchase.data));
-    setImmediatePayment(emptyPurchaseImmediatePayment(purchase.data.totalAmount));
   }, [isEdit, open, purchase.data, reset]);
 
   const partnerOptions = useMemo(() => {
@@ -261,21 +250,19 @@ export function PurchaseFormModal({
       return purchaseData.partner.currentDebtBalance;
     }
     return '0';
-  }, [partners.data?.data, values.partnerId, purchase.data?.partner]);
+  }, [partners.data?.data, values.partnerId, purchase.data]);
 
-  useEffect(() => {
-    if (!immediatePayment.enabled) return;
-    setImmediatePayment((previous) =>
-      previous.amount === documentTotalAmount
-        ? previous
-        : { ...previous, amount: documentTotalAmount },
-    );
-  }, [documentTotalAmount, immediatePayment.enabled]);
+  if (paymentDocumentTotal !== documentTotalAmount) {
+    setPaymentDocumentTotal(documentTotalAmount);
+    if (immediatePayment.enabled) {
+      setImmediatePayment((previous) => ({
+        ...previous,
+        amount: documentTotalAmount,
+      }));
+    }
+  }
 
-  const paymentValid = isPurchaseImmediatePaymentValid(
-    immediatePayment,
-    false,
-  );
+  const paymentValid = isPurchaseImmediatePaymentValid(immediatePayment, false);
 
   const draftBlocked =
     isEdit && purchase.data && purchase.data.status !== 'DRAFT';
@@ -286,6 +273,11 @@ export function PurchaseFormModal({
     createMutation.isPending ||
     updateMutation.isPending ||
     postMutation.isPending;
+
+  function resetImmediatePayment() {
+    setImmediatePayment(emptyPurchaseImmediatePayment());
+    setPaymentDocumentTotal('');
+  }
 
   async function save(formValues: PurchaseFormValues, shouldPost: boolean) {
     setSubmitError(undefined);
@@ -303,6 +295,7 @@ export function PurchaseFormModal({
       );
 
       if (!shouldPost) {
+        resetImmediatePayment();
         onSaved(saved);
         return;
       }
@@ -331,6 +324,7 @@ export function PurchaseFormModal({
       message.success(PURCHASE_LABELS.post.success);
       setPostConfirmOpen(false);
       setPendingPostPurchase(undefined);
+      resetImmediatePayment();
       onSaved(posted);
     } catch (error) {
       message.error(mapApiError(error).userMessage);
@@ -344,439 +338,462 @@ export function PurchaseFormModal({
   return (
     <>
       <Modal
+        className="ui-form-modal ui-document-form-modal commercial-document-modal purchase-form-modal"
+        wrapClassName="commercial-modal-wrap"
+        centered
         title={
           <Space>
             {phIcon(ShoppingCart, { size: ICON_SIZE.lg, weight: 'duotone' })}
             {isEdit ? PURCHASE_LABELS.edit : PURCHASE_LABELS.create}
           </Space>
         }
-      open={open && !postConfirmOpen}
-      onCancel={onCancel}
-      width={960}
-      destroyOnHidden
-      forceRender
-      styles={{ body: { maxHeight: '75vh', overflowY: 'auto', paddingTop: 12 } }}
-      footer={
-        <Space wrap style={{ width: '100%', justifyContent: 'flex-end' }}>
-          <Button onClick={onCancel}>{PURCHASE_LABELS.actions.back}</Button>
-          <Button
-            loading={submitting}
-            disabled={loadingEdit || Boolean(loadError) || !paymentValid}
-            icon={phIcon(CheckCircle, { size: ICON_SIZE.sm })}
-            onClick={() =>
-              void handleSubmit((formValues) => save(formValues, true))()
-            }
-          >
-            {PURCHASE_LABELS.actions.saveAndPost}
-          </Button>
-          <Button
-            type="primary"
-            loading={submitting}
-            disabled={loadingEdit || Boolean(loadError)}
-            onClick={() =>
-              void handleSubmit((formValues) => save(formValues, false))()
-            }
-          >
-            {PURCHASE_LABELS.actions.save}
-          </Button>
-        </Space>
-      }
-    >
-      {loadingEdit ? (
-        <div style={{ textAlign: 'center', padding: 32 }}>
-          <Spin tip={PURCHASE_LABELS.messages.loading} />
-        </div>
-      ) : null}
-
-      {loadError ? (
-        <Alert
-          type="error"
-          showIcon
-          message={mapApiError(purchase.error).userMessage}
-          action={
-            <Button size="small" onClick={() => void purchase.refetch()}>
-              {PURCHASE_LABELS.actions.retry}
-            </Button>
-          }
-        />
-      ) : null}
-
-      {!loadingEdit && !loadError ? (
-        <Form layout="vertical" requiredMark size="small">
-          {displayError ? (
-            <Alert
-              type="error"
-              showIcon
-              message={displayError}
-              style={{ marginBottom: 12 }}
-            />
-          ) : null}
-
-          <Row gutter={[12, 0]}>
-            <Col xs={24} sm={12} md={8}>
-              <Controller
-                control={control}
-                name="partnerId"
-                render={({ field }) => (
-                  <Form.Item
-                    label={PURCHASE_LABELS.fields.partner}
-                    required
-                    validateStatus={errors.partnerId ? 'error' : undefined}
-                    help={errors.partnerId?.message}
-                    style={{ marginBottom: 12 }}
-                  >
-                    <Select
-                      {...field}
-                      value={field.value || undefined}
-                      showSearch
-                      optionFilterProp="label"
-                      options={partnerOptions}
-                      placeholder={PURCHASE_LABELS.fields.partnerPlaceholder}
-                    />
-                  </Form.Item>
-                )}
-              />
-            </Col>
-            <Col xs={24} sm={12} md={5}>
-              <Controller
-                control={control}
-                name="businessDate"
-                render={({ field }) => (
-                  <Form.Item
-                    label={PURCHASE_LABELS.fields.businessDate}
-                    required
-                    validateStatus={errors.businessDate ? 'error' : undefined}
-                    help={errors.businessDate?.message}
-                    style={{ marginBottom: 12 }}
-                  >
-                    <DatePicker
-                      value={dateOnlyPickerValue(field.value)}
-                      format={DATE_DISPLAY_FORMAT}
-                      style={{ width: '100%' }}
-                      onChange={(date) =>
-                        field.onChange(dateOnlyPickerToApi(date))
-                      }
-                    />
-                  </Form.Item>
-                )}
-              />
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <Controller
-                control={control}
-                name="supplierInvoiceNumber"
-                render={({ field }) => (
-                  <Form.Item
-                    label={PURCHASE_LABELS.fields.supplierInvoiceNumber}
-                    validateStatus={
-                      errors.supplierInvoiceNumber ? 'error' : undefined
-                    }
-                    help={errors.supplierInvoiceNumber?.message}
-                    style={{ marginBottom: 12 }}
-                  >
-                    <Input
-                      {...field}
-                      placeholder={
-                        PURCHASE_LABELS.fields.supplierInvoicePlaceholder
-                      }
-                    />
-                  </Form.Item>
-                )}
-              />
-            </Col>
-            <Col xs={24} sm={12} md={5}>
-              <Controller
-                control={control}
-                name="discountAmount"
-                render={({ field }) => (
-                  <Form.Item
-                    label={PURCHASE_LABELS.fields.documentDiscount}
-                    validateStatus={
-                      errors.discountAmount ? 'error' : undefined
-                    }
-                    help={errors.discountAmount?.message}
-                    style={{ marginBottom: 12 }}
-                  >
-                    <DecimalInput {...field} placeholder="0.00" />
-                  </Form.Item>
-                )}
-              />
-            </Col>
-            <Col xs={24}>
-              <Controller
-                control={control}
-                name="notes"
-                render={({ field }) => (
-                  <Form.Item
-                    label={PURCHASE_LABELS.fields.notes}
-                    validateStatus={errors.notes ? 'error' : undefined}
-                    help={errors.notes?.message}
-                    style={{ marginBottom: 8 }}
-                  >
-                    <Input
-                      {...field}
-                      placeholder={PURCHASE_LABELS.fields.notesPlaceholder}
-                    />
-                  </Form.Item>
-                )}
-              />
-            </Col>
-          </Row>
-
-          <Divider style={{ margin: '8px 0 12px' }} />
-
-          <Space
-            style={{
-              width: '100%',
-              justifyContent: 'space-between',
-              marginBottom: 8,
-            }}
-          >
-            <Text strong>{PURCHASE_LABELS.fields.items}</Text>
+        open={open && !postConfirmOpen}
+        afterOpenChange={(visible) => {
+          if (!visible && !open) resetImmediatePayment();
+        }}
+        onCancel={() => {
+          resetImmediatePayment();
+          onCancel();
+        }}
+        width={960}
+        destroyOnHidden
+        forceRender
+        footer={
+          <Space wrap style={{ width: '100%', justifyContent: 'flex-end' }}>
             <Button
+              onClick={() => {
+                resetImmediatePayment();
+                onCancel();
+              }}
+            >
+              {PURCHASE_LABELS.actions.back}
+            </Button>
+            <Button
+              loading={submitting}
+              disabled={loadingEdit || Boolean(loadError) || !paymentValid}
+              icon={phIcon(CheckCircle, { size: ICON_SIZE.sm })}
+              onClick={() =>
+                void handleSubmit((formValues) => save(formValues, true))()
+              }
+            >
+              {PURCHASE_LABELS.actions.saveAndPost}
+            </Button>
+            <Button
+              type="primary"
+              loading={submitting}
+              disabled={loadingEdit || Boolean(loadError)}
+              onClick={() =>
+                void handleSubmit((formValues) => save(formValues, false))()
+              }
+            >
+              {PURCHASE_LABELS.actions.save}
+            </Button>
+          </Space>
+        }
+      >
+        {loadingEdit ? (
+          <div style={{ textAlign: 'center', padding: 32 }}>
+            <Spin tip={PURCHASE_LABELS.messages.loading} />
+          </div>
+        ) : null}
+
+        {loadError ? (
+          <Alert
+            type="error"
+            showIcon
+            message={mapApiError(purchase.error).userMessage}
+            action={
+              <Button size="small" onClick={() => void purchase.refetch()}>
+                {PURCHASE_LABELS.actions.retry}
+              </Button>
+            }
+          />
+        ) : null}
+
+        {!loadingEdit && !loadError ? (
+          <Form
+            className="ui-document-form commercial-document-form"
+            layout="vertical"
+            requiredMark={appRequiredMark}
+          >
+            {displayError ? (
+              <Alert
+                type="error"
+                showIcon
+                message={displayError}
+                style={{ marginBottom: 12 }}
+              />
+            ) : null}
+
+            <Row className="commercial-document-meta-grid" gutter={[12, 0]}>
+              <Col xs={24} sm={12} md={8}>
+                <Controller
+                  control={control}
+                  name="partnerId"
+                  render={({ field }) => (
+                    <Form.Item
+                      label={PURCHASE_LABELS.fields.partner}
+                      required
+                      validateStatus={errors.partnerId ? 'error' : undefined}
+                      help={errors.partnerId?.message}
+                      style={{ marginBottom: 12 }}
+                    >
+                      <Select
+                        {...field}
+                        value={field.value || undefined}
+                        showSearch
+                        optionFilterProp="label"
+                        options={partnerOptions}
+                        placeholder={PURCHASE_LABELS.fields.partnerPlaceholder}
+                      />
+                    </Form.Item>
+                  )}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={5}>
+                <Controller
+                  control={control}
+                  name="businessDate"
+                  render={({ field }) => (
+                    <Form.Item
+                      label={PURCHASE_LABELS.fields.businessDate}
+                      required
+                      validateStatus={errors.businessDate ? 'error' : undefined}
+                      help={errors.businessDate?.message}
+                      style={{ marginBottom: 12 }}
+                    >
+                      <DatePicker
+                        value={dateOnlyPickerValue(field.value)}
+                        format={DATE_DISPLAY_FORMAT}
+                        style={{ width: '100%' }}
+                        onChange={(date) =>
+                          field.onChange(dateOnlyPickerToApi(date))
+                        }
+                      />
+                    </Form.Item>
+                  )}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={6}>
+                <Controller
+                  control={control}
+                  name="supplierInvoiceNumber"
+                  render={({ field }) => (
+                    <Form.Item
+                      label={PURCHASE_LABELS.fields.supplierInvoiceNumber}
+                      validateStatus={
+                        errors.supplierInvoiceNumber ? 'error' : undefined
+                      }
+                      help={errors.supplierInvoiceNumber?.message}
+                      style={{ marginBottom: 12 }}
+                    >
+                      <Input
+                        {...field}
+                        placeholder={
+                          PURCHASE_LABELS.fields.supplierInvoicePlaceholder
+                        }
+                      />
+                    </Form.Item>
+                  )}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={5}>
+                <Controller
+                  control={control}
+                  name="discountAmount"
+                  render={({ field }) => (
+                    <Form.Item
+                      label={PURCHASE_LABELS.fields.documentDiscount}
+                      validateStatus={
+                        errors.discountAmount ? 'error' : undefined
+                      }
+                      help={errors.discountAmount?.message}
+                      style={{ marginBottom: 12 }}
+                    >
+                      <DecimalInput {...field} placeholder="0.00" />
+                    </Form.Item>
+                  )}
+                />
+              </Col>
+              <Col xs={24}>
+                <Controller
+                  control={control}
+                  name="notes"
+                  render={({ field }) => (
+                    <Form.Item
+                      label={PURCHASE_LABELS.fields.notes}
+                      validateStatus={errors.notes ? 'error' : undefined}
+                      help={errors.notes?.message}
+                      style={{ marginBottom: 8 }}
+                    >
+                      <Input
+                        {...field}
+                        placeholder={PURCHASE_LABELS.fields.notesPlaceholder}
+                      />
+                    </Form.Item>
+                  )}
+                />
+              </Col>
+            </Row>
+
+            <Divider style={{ margin: '8px 0 12px' }} />
+
+            <div className="commercial-lines-heading">
+              <Text strong>{PURCHASE_LABELS.fields.items}</Text>
+              <Text type="secondary">{fields.length}</Text>
+            </div>
+
+            {errors.items?.root?.message ||
+            (typeof errors.items?.message === 'string'
+              ? errors.items.message
+              : null) ? (
+              <Alert
+                type="error"
+                message={
+                  errors.items?.root?.message ??
+                  (typeof errors.items?.message === 'string'
+                    ? errors.items.message
+                    : undefined)
+                }
+                style={{ marginBottom: 8 }}
+              />
+            ) : null}
+
+            <Space className="ui-document-lines" direction="vertical" size={10}>
+              {fields.map((field, index) => {
+                const watchedLine = values.items?.[index];
+                const line = {
+                  productId: watchedLine?.productId ?? '',
+                  quantity: watchedLine?.quantity ?? '',
+                  unitPrice: watchedLine?.unitPrice ?? '',
+                  discountAmount: watchedLine?.discountAmount ?? '',
+                  notes: watchedLine?.notes ?? '',
+                };
+                const lineErrors = errors.items?.[index];
+                return (
+                  <div
+                    className="ui-document-line-card commercial-line-card"
+                    key={field.id}
+                    style={{
+                      border: '1px solid #f0f0f0',
+                      borderRadius: 8,
+                      padding: '8px 10px',
+                      background: '#fafafa',
+                    }}
+                  >
+                    <Row gutter={[8, 0]} align="top">
+                      <Col className="commercial-line-product" xs={24} md={8}>
+                        <Controller
+                          control={control}
+                          name={`items.${index}.productId`}
+                          render={({ field: itemField }) => (
+                            <Form.Item
+                              label={PURCHASE_LABELS.fields.product}
+                              required
+                              validateStatus={
+                                lineErrors?.productId ? 'error' : undefined
+                              }
+                              help={lineErrors?.productId?.message}
+                              style={{ marginBottom: 4 }}
+                            >
+                              <Select
+                                {...itemField}
+                                value={itemField.value || undefined}
+                                showSearch
+                                optionFilterProp="label"
+                                options={productOptions}
+                                placeholder={
+                                  PURCHASE_LABELS.fields.productPlaceholder
+                                }
+                                onChange={(value) => {
+                                  itemField.onChange(value);
+                                  const selected = products.data?.data.find(
+                                    (product) => product.id === value,
+                                  );
+                                  if (
+                                    selected?.latestPurchasePrice &&
+                                    !values.items?.[index]?.unitPrice
+                                  ) {
+                                    setValue(
+                                      `items.${index}.unitPrice`,
+                                      selected.latestPurchasePrice,
+                                    );
+                                  }
+                                }}
+                              />
+                            </Form.Item>
+                          )}
+                        />
+                      </Col>
+                      <Col className="commercial-line-quantity" xs={12} md={3}>
+                        <Controller
+                          control={control}
+                          name={`items.${index}.quantity`}
+                          render={({ field: itemField }) => (
+                            <Form.Item
+                              label={PURCHASE_LABELS.fields.quantity}
+                              required
+                              validateStatus={
+                                lineErrors?.quantity ? 'error' : undefined
+                              }
+                              help={lineErrors?.quantity?.message}
+                              style={{ marginBottom: 4 }}
+                            >
+                              <DecimalInput {...itemField} placeholder="0" />
+                            </Form.Item>
+                          )}
+                        />
+                      </Col>
+                      <Col className="commercial-line-price" xs={12} md={3}>
+                        <Controller
+                          control={control}
+                          name={`items.${index}.unitPrice`}
+                          render={({ field: itemField }) => (
+                            <Form.Item
+                              label={PURCHASE_LABELS.fields.unitPrice}
+                              required
+                              validateStatus={
+                                lineErrors?.unitPrice ? 'error' : undefined
+                              }
+                              help={lineErrors?.unitPrice?.message}
+                              style={{ marginBottom: 4 }}
+                            >
+                              <DecimalInput {...itemField} placeholder="0.00" />
+                            </Form.Item>
+                          )}
+                        />
+                      </Col>
+                      <Col className="commercial-line-discount" xs={12} md={3}>
+                        <Controller
+                          control={control}
+                          name={`items.${index}.discountAmount`}
+                          render={({ field: itemField }) => (
+                            <Form.Item
+                              label={PURCHASE_LABELS.fields.lineDiscount}
+                              validateStatus={
+                                lineErrors?.discountAmount ? 'error' : undefined
+                              }
+                              help={lineErrors?.discountAmount?.message}
+                              style={{ marginBottom: 4 }}
+                            >
+                              <DecimalInput {...itemField} placeholder="0.00" />
+                            </Form.Item>
+                          )}
+                        />
+                      </Col>
+                      <Col className="commercial-line-total" xs={12} md={4}>
+                        <Form.Item
+                          className="ui-form-field-readonly"
+                          label={PURCHASE_LABELS.fields.lineTotal}
+                          style={{ marginBottom: 4 }}
+                        >
+                          <Input
+                            readOnly
+                            value={formatMoney(
+                              calculateLineTotal({
+                                quantity: line.quantity,
+                                unitPrice: line.unitPrice,
+                                discountAmount: line.discountAmount,
+                              }),
+                            )}
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col className="commercial-line-remove" xs={24} md={3}>
+                        <Form.Item
+                          className="commercial-line-remove-item"
+                          label=" "
+                          colon={false}
+                          style={{ marginBottom: 4 }}
+                        >
+                          <Button
+                            className="commercial-remove-line-button"
+                            danger
+                            type="text"
+                            icon={phIcon(Trash, { size: ICON_SIZE.sm })}
+                            disabled={fields.length === 1}
+                            aria-label={PURCHASE_LABELS.actions.removeLine}
+                            onClick={() => remove(index)}
+                            style={{ width: '100%' }}
+                          >
+                            <span>{PURCHASE_LABELS.actions.removeLine}</span>
+                          </Button>
+                        </Form.Item>
+                      </Col>
+                      <Col className="commercial-line-notes" xs={24} md={24}>
+                        <Controller
+                          control={control}
+                          name={`items.${index}.notes`}
+                          render={({ field: itemField }) => (
+                            <Form.Item
+                              validateStatus={
+                                lineErrors?.notes ? 'error' : undefined
+                              }
+                              help={lineErrors?.notes?.message}
+                              style={{ marginBottom: 0 }}
+                            >
+                              <Input
+                                {...itemField}
+                                placeholder={
+                                  PURCHASE_LABELS.fields.lineNotesPlaceholder
+                                }
+                              />
+                            </Form.Item>
+                          )}
+                        />
+                      </Col>
+                    </Row>
+                  </div>
+                );
+              })}
+            </Space>
+
+            <Button
+              className="commercial-add-line-button"
               type="dashed"
-              size="small"
               icon={phIcon(Plus, { size: ICON_SIZE.sm, weight: 'bold' })}
               onClick={() => append(emptyLine)}
             >
               {PURCHASE_LABELS.actions.addLine}
             </Button>
-          </Space>
 
-          {errors.items?.root?.message ||
-          (typeof errors.items?.message === 'string'
-            ? errors.items.message
-            : null) ? (
-            <Alert
-              type="error"
-              message={
-                errors.items?.root?.message ??
-                (typeof errors.items?.message === 'string'
-                  ? errors.items.message
-                  : undefined)
-              }
-              style={{ marginBottom: 8 }}
-            />
-          ) : null}
+            <div className="commercial-payment-section">
+              <PurchaseImmediatePaymentSection
+                value={immediatePayment}
+                onChange={setImmediatePayment}
+                documentTotal={documentTotalAmount}
+                partnerDebtBalance={selectedPartnerDebt}
+              />
+            </div>
 
-          <Space direction="vertical" size={8} style={{ width: '100%' }}>
-            {fields.map((field, index) => {
-              const watchedLine = values.items?.[index];
-              const line = {
-                productId: watchedLine?.productId ?? '',
-                quantity: watchedLine?.quantity ?? '',
-                unitPrice: watchedLine?.unitPrice ?? '',
-                discountAmount: watchedLine?.discountAmount ?? '',
-                notes: watchedLine?.notes ?? '',
-              };
-              const lineErrors = errors.items?.[index];
-              return (
-                <div
-                  key={field.id}
-                  style={{
-                    border: '1px solid #f0f0f0',
-                    borderRadius: 8,
-                    padding: '8px 10px',
-                    background: '#fafafa',
-                  }}
-                >
-                  <Row gutter={[8, 0]} align="top">
-                    <Col xs={24} md={8}>
-                      <Controller
-                        control={control}
-                        name={`items.${index}.productId`}
-                        render={({ field: itemField }) => (
-                          <Form.Item
-                            label={PURCHASE_LABELS.fields.product}
-                            required
-                            validateStatus={
-                              lineErrors?.productId ? 'error' : undefined
-                            }
-                            help={lineErrors?.productId?.message}
-                            style={{ marginBottom: 4 }}
-                          >
-                            <Select
-                              {...itemField}
-                              value={itemField.value || undefined}
-                              showSearch
-                              optionFilterProp="label"
-                              options={productOptions}
-                              placeholder={
-                                PURCHASE_LABELS.fields.productPlaceholder
-                              }
-                              onChange={(value) => {
-                                itemField.onChange(value);
-                                const selected = products.data?.data.find(
-                                  (product) => product.id === value,
-                                );
-                                if (
-                                  selected?.latestPurchasePrice &&
-                                  !values.items?.[index]?.unitPrice
-                                ) {
-                                  setValue(
-                                    `items.${index}.unitPrice`,
-                                    selected.latestPurchasePrice,
-                                  );
-                                }
-                              }}
-                            />
-                          </Form.Item>
-                        )}
-                      />
-                    </Col>
-                    <Col xs={8} md={3}>
-                      <Controller
-                        control={control}
-                        name={`items.${index}.quantity`}
-                        render={({ field: itemField }) => (
-                          <Form.Item
-                            label={PURCHASE_LABELS.fields.quantity}
-                            required
-                            validateStatus={
-                              lineErrors?.quantity ? 'error' : undefined
-                            }
-                            help={lineErrors?.quantity?.message}
-                            style={{ marginBottom: 4 }}
-                          >
-                            <DecimalInput {...itemField} placeholder="0" />
-                          </Form.Item>
-                        )}
-                      />
-                    </Col>
-                    <Col xs={8} md={3}>
-                      <Controller
-                        control={control}
-                        name={`items.${index}.unitPrice`}
-                        render={({ field: itemField }) => (
-                          <Form.Item
-                            label={PURCHASE_LABELS.fields.unitPrice}
-                            required
-                            validateStatus={
-                              lineErrors?.unitPrice ? 'error' : undefined
-                            }
-                            help={lineErrors?.unitPrice?.message}
-                            style={{ marginBottom: 4 }}
-                          >
-                            <DecimalInput {...itemField} placeholder="0.00" />
-                          </Form.Item>
-                        )}
-                      />
-                    </Col>
-                    <Col xs={8} md={3}>
-                      <Controller
-                        control={control}
-                        name={`items.${index}.discountAmount`}
-                        render={({ field: itemField }) => (
-                          <Form.Item
-                            label={PURCHASE_LABELS.fields.lineDiscount}
-                            validateStatus={
-                              lineErrors?.discountAmount ? 'error' : undefined
-                            }
-                            help={lineErrors?.discountAmount?.message}
-                            style={{ marginBottom: 4 }}
-                          >
-                            <DecimalInput {...itemField} placeholder="0.00" />
-                          </Form.Item>
-                        )}
-                      />
-                    </Col>
-                    <Col xs={16} md={4}>
-                      <Form.Item
-                        label={PURCHASE_LABELS.fields.lineTotal}
-                        style={{ marginBottom: 4 }}
-                      >
-                        <Input
-                          readOnly
-                          value={formatMoney(
-                            calculateLineTotal({
-                              quantity: line.quantity,
-                              unitPrice: line.unitPrice,
-                              discountAmount: line.discountAmount,
-                            }),
-                          )}
-                        />
-                      </Form.Item>
-                    </Col>
-                    <Col xs={8} md={3}>
-                      <Form.Item
-                        label=" "
-                        colon={false}
-                        style={{ marginBottom: 4 }}
-                      >
-                        <Button
-                          danger
-                          type="text"
-                          icon={phIcon(Trash, { size: ICON_SIZE.sm })}
-                          disabled={fields.length === 1}
-                          aria-label={PURCHASE_LABELS.actions.removeLine}
-                          onClick={() => remove(index)}
-                          style={{ width: '100%' }}
-                        />
-                      </Form.Item>
-                    </Col>
-                    <Col xs={24} md={24}>
-                      <Controller
-                        control={control}
-                        name={`items.${index}.notes`}
-                        render={({ field: itemField }) => (
-                          <Form.Item
-                            validateStatus={
-                              lineErrors?.notes ? 'error' : undefined
-                            }
-                            help={lineErrors?.notes?.message}
-                            style={{ marginBottom: 0 }}
-                          >
-                            <Input
-                              {...itemField}
-                              size="small"
-                              placeholder={
-                                PURCHASE_LABELS.fields.lineNotesPlaceholder
-                              }
-                            />
-                          </Form.Item>
-                        )}
-                      />
-                    </Col>
-                  </Row>
-                </div>
-              );
-            })}
-          </Space>
-
-          <div style={{ marginTop: 16 }}>
-            <PurchaseImmediatePaymentSection
-              value={immediatePayment}
-              onChange={setImmediatePayment}
-              documentTotal={documentTotalAmount}
-              partnerDebtBalance={selectedPartnerDebt}
-            />
-          </div>
-
-          <div
-            style={{
-              marginTop: 12,
-              padding: '10px 12px',
-              borderRadius: 8,
-              background: '#f5f5f5',
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 16,
-              justifyContent: 'flex-end',
-            }}
-          >
-            <Text>
-              {PURCHASE_LABELS.columns.subtotal}: {formatMoney(totals.subtotal)}
-            </Text>
-            <Text>
-              {PURCHASE_LABELS.columns.discount}: {formatMoney(totals.discount)}
-            </Text>
-            <Text strong>
-              {PURCHASE_LABELS.columns.total}: {formatMoney(totals.total)}
-            </Text>
-          </div>
-        </Form>
-      ) : null}
-    </Modal>
+            <div
+              className="commercial-form-totals"
+              style={{
+                marginTop: 12,
+                padding: '10px 12px',
+                borderRadius: 8,
+                background: '#f5f5f5',
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 16,
+                justifyContent: 'flex-end',
+              }}
+            >
+              <Text>
+                {PURCHASE_LABELS.columns.subtotal}:{' '}
+                {formatMoney(totals.subtotal)}
+              </Text>
+              <Text>
+                {PURCHASE_LABELS.columns.discount}:{' '}
+                {formatMoney(totals.discount)}
+              </Text>
+              <Text strong>
+                {PURCHASE_LABELS.columns.total}: {formatMoney(totals.total)}
+              </Text>
+            </div>
+          </Form>
+        ) : null}
+      </Modal>
 
       <PurchasePostConfirmModal
         open={postConfirmOpen}
@@ -789,6 +806,7 @@ export function PurchaseFormModal({
           if (pendingPostPurchase) {
             onSaved(pendingPostPurchase);
           }
+          resetImmediatePayment();
           setPendingPostPurchase(undefined);
         }}
         onConfirm={handlePostConfirm}

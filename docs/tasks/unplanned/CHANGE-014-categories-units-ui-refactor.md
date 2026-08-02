@@ -1,0 +1,39 @@
+# CHANGE-014: Categories and Units UI refactor
+
+- **ID:** CHANGE-014
+- **Type:** CHANGE
+- **Title:** Categories and Units UI refactor
+- **Status:** Done
+- **Trigger:** Owner requested the next professional, modern, mobile-first UI/UX pass for the Product Categories and Units modules.
+- **Urgency:** High
+- **Affected epics / stories / tasks:** US-038 Product Categories and Units frontend presentation; follow-up to CHANGE-010 and CHANGE-013.
+- **Why not in the original plan:** Both delivered reference-data workflows were functional but still depended on generic presentation classes that no longer had styling after the global CSS rollback.
+- **Scope:** Frontend-only UI/UX refactor of the Categories and Units page headers, filter surfaces, result counts, desktop tables, mobile cards, actions, confirmations, pagination, loading/error/empty states, and their shared create/edit modals.
+- **Out of scope:** Backend files; APIs; hooks and queries; schemas and validation rules; calculations; lifecycle rules; permissions; payloads; mutations; routes; global Ant Design popup/scroll overrides.
+- **Risks:** Making edit/activate/deactivate actions unreachable on mobile; obscuring Unit code/name/fractional behavior or Category name/status; repeating the Product modal body-collapse regression.
+- **Acceptance criteria:**
+  - Both pages have consistent, responsive headers and compact filter surfaces with unchanged search/status behavior.
+  - Desktop tables remain complete and readable with clear actions and status presentation.
+  - Mobile cards expose all existing Category or Unit information and lifecycle actions.
+  - Confirmation dialogs identify the selected record.
+  - Shared create/edit modals use the corrected centered, viewport-bounded Cash/Product pattern with visible content, fixed header/footer, and body-only scrolling.
+  - Mobile modals are full-screen and retain safe-area action spacing.
+  - Required markers reflect existing schema-required fields, including the Unit fractional-quantity boolean.
+  - Styling is locally scoped and does not override global Select, Dropdown, portal, modal, or page-scroll behavior.
+  - No API, hook, schema, mutation, payload, permission, route, backend, or business logic is changed.
+  - Focused lint, TypeScript checking, production bundling, and existing web tests pass.
+- **Impact on current work:** Standalone owner-directed presentation improvement; no active story is paused.
+- **Roadmap impact:** None; presentation hardening of delivered reference-data workflows.
+- **Result:** Added one scoped reference-data presentation system shared by Product Categories and Units: responsive page headers, contained search/status filters, result counts, polished desktop tables, structured mobile cards, accessible actions, and complete loading/error/empty states. A screenshot-led consistency follow-up aligned both pages to the Products module's 1680px canvas, standardized count badges and compact icon/overflow table actions, unified Category/Unit modal width, and restored right-aligned desktop footer actions. Confirmation dialogs identify the selected record. Rebuilt the shared Category/Unit modal styling around the corrected centered, viewport-bounded wrapper with `flex: 1 1 auto` body sizing; header/footer remain fixed and only the visible body scrolls, including full-screen mobile mode. Unit code/name fields align responsively and fractional-quantity permission is presented as a clear required switch card with its current Azerbaijani value. Data flow and business behavior remain unchanged.
+- **Follow-up actions:** Owner visual acceptance, then continue the requested module-by-module frontend presentation refactor.
+- **Evidence:**
+  - `apps/web/src/features/master-data/pages/product-categories-page.tsx`
+  - `apps/web/src/features/master-data/pages/units-page.tsx`
+  - `apps/web/src/features/master-data/pages/reference-data-pages.css`
+  - `apps/web/src/features/master-data/ui/reference-form-modals.tsx`
+  - `apps/web/src/features/master-data/ui/reference-form-modals.css`
+  - `yarn workspace web tsc --noEmit` — passed.
+  - Focused ESLint for the changed TSX files — passed.
+  - `yarn workspace web vite build` — passed (existing bundle-size warning only).
+  - `yarn workspace web test --run` — 17 files / 51 tests passed.
+  - Scope audit — no backend, API, hook, schema, validation, calculation, permission, route, or mutation file changed.

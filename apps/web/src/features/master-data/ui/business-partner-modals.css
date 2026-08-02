@@ -1,0 +1,294 @@
+.business-partner-modal-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding-block: max(16px, env(safe-area-inset-top))
+    max(16px, env(safe-area-inset-bottom));
+}
+
+.business-partner-modal-wrap.ant-modal-centered::before {
+  display: none;
+}
+
+:is(.business-partner-form-modal, .business-duplicate-modal).ant-modal {
+  top: 0;
+  max-width: calc(100vw - 32px);
+  margin: 0;
+  padding-bottom: 0;
+}
+
+:is(.business-partner-form-modal, .business-duplicate-modal)
+  .ant-modal-container {
+  display: flex;
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 18px;
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.2);
+}
+
+:is(.business-partner-form-modal, .business-duplicate-modal) .ant-modal-header {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #e8edf3;
+}
+
+:is(.business-partner-form-modal, .business-duplicate-modal) .ant-modal-title {
+  font-size: 18px;
+  font-weight: 750;
+}
+
+:is(.business-partner-form-modal, .business-duplicate-modal) .ant-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px 24px 4px;
+  overscroll-behavior: contain;
+  scroll-padding-block: 16px 96px;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+}
+
+:is(.business-partner-form-modal, .business-duplicate-modal) .ant-modal-footer {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+  justify-content: flex-end;
+  margin: 0;
+  padding: 14px 24px 18px;
+  background: #fbfcfe;
+  border-top: 1px solid #e8edf3;
+}
+
+:is(.business-partner-form-modal, .business-duplicate-modal)
+  .ant-modal-footer
+  .ant-btn {
+  min-width: 108px;
+  min-height: 40px;
+  margin-inline-start: 0;
+  border-radius: 9px;
+  font-weight: 650;
+}
+
+.business-partner-form-alert.ant-alert {
+  margin-bottom: 16px;
+  border-radius: 11px;
+}
+
+.business-partner-form-section {
+  padding: 15px;
+  background: #fbfcfe;
+  border: 1px solid #e8edf3;
+  border-radius: 12px;
+}
+
+.business-partner-form-section + .business-partner-form-section {
+  margin-top: 13px;
+}
+
+.business-partner-form-section-heading {
+  margin-bottom: 13px;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: 0.035em;
+}
+
+.business-partner-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0 14px;
+}
+
+.business-partner-form .ant-form-item {
+  min-width: 0;
+  margin-bottom: 15px;
+}
+
+.business-partner-form .ant-form-item:last-child {
+  margin-bottom: 0;
+}
+
+.business-partner-form .ant-form-item-label {
+  padding-bottom: 6px;
+}
+
+.business-partner-form .ui-field-label {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.business-partner-form .ui-required-mark {
+  color: #cf1322;
+  font-weight: 800;
+}
+
+.business-partner-form .ui-optional-mark {
+  padding: 1px 6px;
+  color: #64748b;
+  font-size: 9px;
+  font-weight: 500;
+  background: #eef1f5;
+  border-radius: 999px;
+}
+
+.business-partner-form .ui-form-field-readonly .ui-optional-mark {
+  display: none;
+}
+
+.business-partner-form .ant-input {
+  min-height: 40px;
+  border-radius: 9px;
+}
+
+.business-partner-form textarea.ant-input {
+  min-height: 78px;
+  resize: vertical;
+}
+
+.business-partner-form .ui-form-field-readonly .ant-input-disabled {
+  color: #475569;
+  background: #f1f4f8;
+}
+
+.business-partner-role-field.ant-form-item {
+  padding: 13px 14px;
+  background: #f7f9fc;
+  border: 1px solid #e5eaf0;
+  border-radius: 11px;
+}
+
+.business-partner-role-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.business-partner-role-options .ant-checkbox-wrapper {
+  min-height: 40px;
+  margin: 0;
+  padding: 9px 11px;
+  background: #fff;
+  border: 1px solid #e1e7ee;
+  border-radius: 9px;
+}
+
+.business-partner-role-options .ant-checkbox-wrapper:has(.ant-checkbox-checked) {
+  color: #0958d9;
+  background: #eef6ff;
+  border-color: #91caff;
+}
+
+.business-partner-form .ant-form-item-explain-error {
+  margin-top: 3px;
+  font-size: 11px;
+}
+
+.business-duplicate-intro.ant-typography {
+  margin-bottom: 15px;
+  padding: 12px 14px;
+  color: #614700;
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 11px;
+}
+
+.business-duplicate-list .ant-list-items {
+  display: grid;
+  gap: 10px;
+}
+
+.business-duplicate-item.ant-list-item {
+  padding: 14px;
+  background: #fbfcfe;
+  border: 1px solid #e6ebf1;
+  border-radius: 11px;
+}
+
+.business-duplicate-identity {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 3px 9px;
+}
+
+.business-duplicate-identity .ant-typography-secondary {
+  font-size: 10px;
+}
+
+:is(.business-partner-form-modal, .business-duplicate-modal)
+  .ant-modal-body::-webkit-scrollbar {
+  width: 7px;
+}
+
+:is(.business-partner-form-modal, .business-duplicate-modal)
+  .ant-modal-body::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.2);
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+}
+
+@media (min-width: 576px) {
+  .business-partner-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .business-partner-form-field-wide {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 767px) {
+  .business-partner-modal-wrap {
+    padding: 0 !important;
+  }
+
+  :is(.business-partner-form-modal, .business-duplicate-modal).ant-modal {
+    top: 0;
+    height: 100%;
+  }
+
+  :is(.business-partner-form-modal, .business-duplicate-modal)
+    .ant-modal-container {
+    height: 100%;
+    max-height: none;
+    border-radius: 0;
+  }
+
+  :is(.business-partner-form-modal, .business-duplicate-modal)
+    .ant-modal-header {
+    padding: 16px;
+  }
+
+  :is(.business-partner-form-modal, .business-duplicate-modal) .ant-modal-body {
+    padding: 14px 14px 4px;
+  }
+
+  :is(.business-partner-form-modal, .business-duplicate-modal)
+    .ant-modal-footer {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+  }
+
+  :is(.business-partner-form-modal, .business-duplicate-modal)
+    .ant-modal-footer
+    .ant-btn {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .business-partner-form-section {
+    padding: 13px;
+  }
+}

@@ -1,0 +1,302 @@
+.reference-page {
+  --reference-radius-lg: 18px;
+  --reference-radius-md: 13px;
+  width: 100%;
+  max-width: 1680px;
+  margin: 0 auto;
+}
+
+.reference-page .ui-page-header {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 20px !important;
+}
+
+.reference-page .ui-page-header-main,
+.reference-page .ui-page-header-title-row,
+.reference-page .ui-page-actions {
+  width: 100%;
+}
+
+.reference-page .ui-page-header-title-row {
+  align-items: flex-start !important;
+}
+
+.reference-page .ui-page-header-icon {
+  width: 44px !important;
+  height: 44px !important;
+  color: #1677ff !important;
+  background: #eaf3ff !important;
+  border-radius: 14px !important;
+}
+
+.reference-page .ui-page-title.ant-typography {
+  margin: 0;
+  font-size: clamp(24px, 6vw, 30px);
+  line-height: 1.2;
+}
+
+.reference-page .ui-page-description {
+  max-width: 720px;
+  margin-top: 4px !important;
+  margin-left: 54px !important;
+  line-height: 1.5;
+}
+
+.reference-page .ui-page-actions .ant-btn {
+  width: 100%;
+  min-height: 42px;
+  border-radius: 10px;
+  font-weight: 650;
+}
+
+.reference-filter-card.ant-card {
+  margin-bottom: 18px;
+  background: #fbfcfe;
+  border-color: #e5eaf0;
+  border-radius: var(--reference-radius-md);
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.035);
+}
+
+.reference-filter-card > .ant-card-body {
+  padding: 14px;
+}
+
+.reference-filter-heading,
+.reference-filter-heading > div {
+  display: flex;
+  align-items: center;
+}
+
+.reference-filter-heading {
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.reference-filter-heading > div {
+  gap: 8px;
+}
+
+.reference-filter-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  color: #1457a6;
+  background: #eaf3ff;
+  border-radius: 9px;
+}
+
+.reference-result-count.ant-tag {
+  min-width: 34px;
+  margin: 0;
+  padding: 3px 10px;
+  text-align: center;
+  border-radius: 999px;
+}
+
+.reference-filter-card .ui-filter-bar.ant-space {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 11px !important;
+  margin: 0 !important;
+}
+
+.reference-filter-card .ui-filter-bar > .ant-space-item,
+.reference-filter-card .ui-filter-field,
+.reference-filter-card .ant-input-search,
+.reference-filter-card .ant-select {
+  width: 100%;
+}
+
+.reference-filter-card .ui-filter-label.ant-typography {
+  color: #64748b;
+  font-size: 11px !important;
+  font-weight: 650;
+}
+
+.reference-filter-card .ant-input-affix-wrapper,
+.reference-filter-card .ant-input-search-button,
+.reference-filter-card .ant-select-selector {
+  min-height: 40px;
+  border-radius: 9px;
+}
+
+.reference-page-alert.ant-alert {
+  margin-bottom: 16px;
+  border-radius: 12px;
+}
+
+.reference-table-shell {
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #e4e9ef;
+  border-radius: var(--reference-radius-md);
+  box-shadow: 0 9px 28px rgba(15, 23, 42, 0.045);
+}
+
+.reference-table .ant-table-thead > tr > th {
+  padding-block: 13px;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 750;
+  background: #f7f9fc;
+  border-bottom-color: #e4e9ef;
+}
+
+.reference-table .ant-table-tbody > tr > td {
+  padding-block: 14px;
+  vertical-align: middle;
+}
+
+.reference-table .ant-table-tbody > tr:hover > td {
+  background: #f8fbff;
+}
+
+.reference-table .ant-btn-text,
+.reference-row-menu.ant-btn {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 9px;
+}
+
+.reference-table .ant-table-cell-fix-right {
+  box-shadow: -8px 0 16px rgba(15, 23, 42, 0.025);
+}
+
+.reference-mobile-list {
+  display: grid;
+  gap: 12px;
+}
+
+.reference-mobile-card.ant-card,
+.reference-empty-card.ant-card {
+  overflow: hidden;
+  border-color: #e4e9ef;
+  border-radius: var(--reference-radius-md);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.055);
+}
+
+.reference-mobile-card.is-inactive {
+  background: #fafafa;
+  box-shadow: none;
+}
+
+.reference-mobile-card > .ant-card-body {
+  padding: 16px;
+}
+
+.reference-mobile-topline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.reference-mobile-topline > .ant-tag {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.reference-mobile-name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 4px;
+}
+
+.reference-mobile-name > .ant-typography-secondary {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.reference-mobile-name > strong {
+  font-size: 16px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.reference-mobile-property {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 15px;
+  padding: 11px 12px;
+  background: #f6f9fd;
+  border: 1px solid #e5edf6;
+  border-radius: 10px;
+}
+
+.reference-mobile-property .ant-typography {
+  font-size: 11px;
+}
+
+.reference-mobile-property .ant-tag {
+  margin: 0;
+}
+
+.reference-mobile-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 16px -16px -16px;
+  padding: 13px 16px 16px;
+  background: #f8fafc;
+  border-top: 1px solid #edf0f4;
+}
+
+.reference-mobile-actions .ant-btn {
+  min-width: 0;
+  min-height: 40px;
+  padding-inline: 8px;
+  border-radius: 9px;
+  font-weight: 600;
+}
+
+.reference-empty-card > .ant-card-body {
+  padding-block: 36px;
+}
+
+.reference-pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.reference-confirm-entity {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 12px;
+}
+
+@media (min-width: 576px) {
+  .reference-page .ui-page-header {
+    flex-direction: row;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+  }
+
+  .reference-page .ui-page-header-main,
+  .reference-page .ui-page-header-title-row,
+  .reference-page .ui-page-actions {
+    width: auto;
+  }
+
+  .reference-page .ui-page-actions .ant-btn {
+    width: auto;
+  }
+
+  .reference-filter-card .ui-filter-bar.ant-space {
+    grid-template-columns: minmax(260px, 1.5fr) minmax(170px, 0.7fr);
+  }
+
+  .reference-pagination {
+    justify-content: flex-end;
+  }
+}

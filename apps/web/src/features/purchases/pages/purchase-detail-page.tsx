@@ -4,6 +4,7 @@ import {
   Button,
   Card,
   Descriptions,
+  Grid,
   Input,
   Modal,
   Space,
@@ -22,6 +23,7 @@ import {
   NoteBlank,
   Package,
   PencilSimple,
+  Printer,
   Scales,
   ShoppingCart,
   Trash,
@@ -38,6 +40,8 @@ import {
   formatQuantity,
 } from '../../../shared/ui/format';
 import { ICON_SIZE, phIcon } from '../../../shared/ui/ph-icon';
+import { printCommercialDocument } from '../../../shared/ui/print-commercial-document';
+import { PrintableCommercialDocument } from '../../../shared/ui/printable-commercial-document';
 import {
   CodeText,
   EntityCell,
@@ -62,11 +66,16 @@ import {
 import { PurchaseFormModal } from '../ui/purchase-form-modal';
 import { PurchasePostConfirmModal } from '../ui/purchase-post-confirm-modal';
 import { PURCHASE_LABELS, purchaseStatusLabel } from '../ui/labels';
+import '../../../shared/ui/commercial-documents.css';
 
 const { Text, Title } = Typography;
 
 function statusColor(status: PurchaseStatus) {
-  return status === 'POSTED' ? 'success' : status === 'CANCELLED' ? 'error' : 'warning';
+  return status === 'POSTED'
+    ? 'success'
+    : status === 'CANCELLED'
+      ? 'error'
+      : 'warning';
 }
 
 const quantityKindLabels: Record<string, string> = {
@@ -95,6 +104,8 @@ const debtKindLabels: Record<string, string> = {
 export function PurchaseDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const screens = Grid.useBreakpoint();
+  const isDesktop = Boolean(screens.md);
   const purchase = usePurchase(id);
   const products = useProductsList({
     pageSize: 100,
@@ -159,6 +170,7 @@ export function PurchaseDetailPage() {
 
   function confirmRemove() {
     Modal.confirm({
+      className: 'app-mobile-modal',
       title: PURCHASE_LABELS.remove.title,
       content: PURCHASE_LABELS.remove.text,
       okText: PURCHASE_LABELS.actions.remove,
@@ -416,7 +428,7 @@ export function PurchaseDetailPage() {
   ];
 
   return (
-    <div>
+    <div className="ui-page ui-detail-page ui-document-detail-page commercial-document-detail purchase-detail-page">
       <PageHeader
         title={record.documentNumber}
         description={PURCHASE_LABELS.detail}
@@ -428,6 +440,20 @@ export function PurchaseDetailPage() {
               onClick={() => navigate('/purchases')}
             >
               {PURCHASE_LABELS.actions.back}
+            </Button>
+            <Button
+              className="commercial-print-trigger"
+              icon={phIcon(Printer, { size: ICON_SIZE.md })}
+              onClick={() => {
+                const opened = printCommercialDocument(
+                  'purchase-print-document',
+                  `${PURCHASE_LABELS.printTitle} — ${record.documentNumber}`,
+                );
+                if (!opened)
+                  void message.error(PURCHASE_LABELS.messages.printOpenError);
+              }}
+            >
+              {PURCHASE_LABELS.actions.print}
             </Button>
             {record.status === 'DRAFT' ? (
               <>
@@ -466,234 +492,453 @@ export function PurchaseDetailPage() {
         }
       />
 
-      <Card size="small" style={{ marginBottom: 16 }}>
-        <Descriptions
-          size="small"
-          column={{ xs: 1, sm: 2, lg: 3 }}
-          items={[
-            {
-              key: 'status',
-              label: PURCHASE_LABELS.columns.status,
-              children: (
-                <Tag color={statusColor(record.status)}>
-                  {purchaseStatusLabel(record.status)}
-                </Tag>
-              ),
-            },
-            {
-              key: 'document',
-              label: PURCHASE_LABELS.columns.documentNumber,
-              children: <CodeText value={record.documentNumber} strong />,
-            },
-            {
-              key: 'date',
-              label: PURCHASE_LABELS.columns.businessDate,
-              children: formatDateTime(record.businessDate),
-            },
-            {
-              key: 'partner',
-              label: PURCHASE_LABELS.columns.partner,
-              children: (
-                <EntityCell
-                  code={record.partner.code}
-                  name={record.partner.name}
-                />
-              ),
-            },
-            {
-              key: 'debt',
-              label: PURCHASE_LABELS.fields.partnerDebt,
-              children: (
-                <Space direction="vertical" size={0}>
-                  <Text strong>
-                    {formatMoney(record.partner.currentDebtBalance)}
+      <Card className="commercial-detail-workspace" size="small">
+        <PrintableCommercialDocument
+          id="purchase-print-document"
+          title={PURCHASE_LABELS.printTitle}
+          documentNumber={record.documentNumber}
+          status={purchaseStatusLabel(record.status)}
+          businessDate={record.businessDate}
+          partnerLabel={PURCHASE_LABELS.columns.partner}
+          partnerCode={record.partner.code}
+          partnerName={record.partner.name}
+          supplierInvoiceNumber={record.supplierInvoiceNumber}
+          notes={record.notes}
+          subtotalAmount={record.subtotalAmount}
+          totalAmount={record.totalAmount}
+          lines={record.items.map((item) => ({
+            id: item.id,
+            productCode: item.productCodeSnapshot,
+            productName: item.productNameSnapshot,
+            unitName: item.unitNameSnapshot,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            lineTotal: item.lineTotal,
+          }))}
+        />
+        <div className="commercial-detail-overview-grid">
+          <section className="commercial-summary-card">
+            <Space className="commercial-panel-heading" size={8}>
+              {phIcon(FileText, { size: ICON_SIZE.md })}
+              <span>Sənəd məlumatları</span>
+            </Space>
+            <Descriptions
+              size="small"
+              column={{ xs: 1, sm: 2, lg: 3 }}
+              items={[
+                {
+                  key: 'status',
+                  label: PURCHASE_LABELS.columns.status,
+                  children: (
+                    <Tag color={statusColor(record.status)}>
+                      {purchaseStatusLabel(record.status)}
+                    </Tag>
+                  ),
+                },
+                {
+                  key: 'document',
+                  label: PURCHASE_LABELS.columns.documentNumber,
+                  children: <CodeText value={record.documentNumber} strong />,
+                },
+                {
+                  key: 'date',
+                  label: PURCHASE_LABELS.columns.businessDate,
+                  children: formatDateTime(record.businessDate),
+                },
+                {
+                  key: 'partner',
+                  label: PURCHASE_LABELS.columns.partner,
+                  children: (
+                    <EntityCell
+                      code={record.partner.code}
+                      name={record.partner.name}
+                    />
+                  ),
+                },
+                {
+                  key: 'debt',
+                  label: PURCHASE_LABELS.fields.partnerDebt,
+                  children: (
+                    <Space direction="vertical" size={0}>
+                      <Text strong>
+                        {formatMoney(record.partner.currentDebtBalance)}
+                      </Text>
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        {debtBalanceSignLabel(
+                          record.partner.currentDebtBalance,
+                        )}
+                      </Text>
+                    </Space>
+                  ),
+                },
+                {
+                  key: 'itemCount',
+                  label: PURCHASE_LABELS.fields.itemCount,
+                  children: record.items.length,
+                },
+                {
+                  key: 'totalQuantity',
+                  label: PURCHASE_LABELS.fields.totalQuantity,
+                  children: formatQuantity(totalLineQuantity),
+                },
+                ...(projectedDebt != null
+                  ? [
+                      {
+                        key: 'projectedDebt',
+                        label: PURCHASE_LABELS.fields.projectedDebt,
+                        children: (
+                          <Space direction="vertical" size={0}>
+                            <Text strong>{formatMoney(projectedDebt)}</Text>
+                            <Text type="secondary" style={{ fontSize: 12 }}>
+                              {debtBalanceSignLabel(projectedDebt)}
+                            </Text>
+                          </Space>
+                        ),
+                      },
+                    ]
+                  : []),
+                {
+                  key: 'invoice',
+                  label: PURCHASE_LABELS.fields.supplierInvoiceNumber,
+                  children: emptyDash(record.supplierInvoiceNumber),
+                },
+                {
+                  key: 'notes',
+                  label: PURCHASE_LABELS.fields.notes,
+                  children: emptyDash(record.notes),
+                  span: 2,
+                },
+              ]}
+            />
+          </section>
+
+          <section className="commercial-audit-card">
+            <Space className="commercial-panel-heading" size={8}>
+              {phIcon(NoteBlank, { size: ICON_SIZE.md })}
+              <span>{PURCHASE_LABELS.audit.title}</span>
+            </Space>
+            <Descriptions
+              size="small"
+              column={{ xs: 1, sm: 2, lg: 2 }}
+              items={[
+                {
+                  key: 'createdBy',
+                  label: PURCHASE_LABELS.audit.createdBy,
+                  children: record.createdBy.fullName,
+                },
+                {
+                  key: 'createdAt',
+                  label: PURCHASE_LABELS.columns.createdAt,
+                  children: formatDateTime(record.createdAt),
+                },
+                {
+                  key: 'postedBy',
+                  label: PURCHASE_LABELS.audit.postedBy,
+                  children: emptyDash(record.postedBy?.fullName),
+                },
+                {
+                  key: 'postedAt',
+                  label: PURCHASE_LABELS.audit.postedAt,
+                  children: formatDateTime(record.postedAt),
+                },
+                {
+                  key: 'cancelledBy',
+                  label: PURCHASE_LABELS.audit.cancelledBy,
+                  children: emptyDash(record.cancelledBy?.fullName),
+                },
+                {
+                  key: 'cancelledAt',
+                  label: PURCHASE_LABELS.audit.cancelledAt,
+                  children: formatDateTime(record.cancelledAt),
+                },
+                {
+                  key: 'cancelReason',
+                  label: PURCHASE_LABELS.audit.cancelReason,
+                  children: emptyDash(record.cancelReason),
+                  span: 2,
+                },
+              ]}
+            />
+          </section>
+        </div>
+
+        <section className="commercial-detail-section commercial-items-section">
+          <Space className="commercial-section-heading" align="center">
+            {phIcon(Package, { size: ICON_SIZE.md })}
+            <Title level={5}>{PURCHASE_LABELS.fields.items}</Title>
+            <Tag>{record.items.length}</Tag>
+          </Space>
+          {isDesktop ? (
+            <Table
+              className="commercial-detail-table commercial-items-table"
+              rowKey="id"
+              size="small"
+              columns={itemColumns}
+              dataSource={record.items}
+              pagination={false}
+              scroll={{ x: 1040 }}
+            />
+          ) : (
+            <div className="commercial-record-list">
+              {record.items.map((item, index) => (
+                <article className="commercial-record-card" key={item.id}>
+                  <div className="commercial-record-card-head">
+                    <EntityCell
+                      code={item.productCodeSnapshot}
+                      name={item.productNameSnapshot}
+                      secondary={item.unitNameSnapshot}
+                    />
+                    <Text strong>{formatMoney(item.lineTotal)}</Text>
+                  </div>
+                  <div className="commercial-record-values">
+                    <div>
+                      <Text type="secondary">
+                        {PURCHASE_LABELS.fields.availableQuantity}
+                      </Text>
+                      <strong>
+                        {productById.get(item.productId)?.currentQuantity !=
+                        null
+                          ? formatQuantity(
+                              productById.get(item.productId)!.currentQuantity,
+                            )
+                          : emptyDash(null)}
+                      </strong>
+                    </div>
+                    <div>
+                      <Text type="secondary">
+                        {PURCHASE_LABELS.fields.quantity}
+                      </Text>
+                      <strong>{formatQuantity(item.quantity)}</strong>
+                    </div>
+                    <div>
+                      <Text type="secondary">
+                        {PURCHASE_LABELS.fields.unitPrice}
+                      </Text>
+                      <strong>{formatMoney(item.unitPrice)}</strong>
+                    </div>
+                    <div>
+                      <Text type="secondary">
+                        {PURCHASE_LABELS.fields.lineDiscount}
+                      </Text>
+                      <strong>{formatMoney(item.discountAmount)}</strong>
+                    </div>
+                  </div>
+                  <Text className="commercial-record-note" type="secondary">
+                    {index + 1}. {emptyDash(item.notes)}
                   </Text>
-                  <Text type="secondary" style={{ fontSize: 12 }}>
-                    {debtBalanceSignLabel(record.partner.currentDebtBalance)}
-                  </Text>
-                </Space>
-              ),
-            },
-            {
-              key: 'itemCount',
-              label: PURCHASE_LABELS.fields.itemCount,
-              children: record.items.length,
-            },
-            {
-              key: 'totalQuantity',
-              label: PURCHASE_LABELS.fields.totalQuantity,
-              children: formatQuantity(totalLineQuantity),
-            },
-            ...(projectedDebt != null
-              ? [
-                  {
-                    key: 'projectedDebt',
-                    label: PURCHASE_LABELS.fields.projectedDebt,
-                    children: (
-                      <Space direction="vertical" size={0}>
-                        <Text strong>{formatMoney(projectedDebt)}</Text>
-                        <Text type="secondary" style={{ fontSize: 12 }}>
-                          {debtBalanceSignLabel(projectedDebt)}
+                </article>
+              ))}
+            </div>
+          )}
+          <div className="ui-document-totals commercial-totals-card">
+            <Space size="large" wrap>
+              <Text type="secondary">
+                {PURCHASE_LABELS.columns.subtotal}:{' '}
+                {formatMoney(record.subtotalAmount)}
+              </Text>
+              <Text type="secondary">
+                {PURCHASE_LABELS.columns.discount}:{' '}
+                {formatMoney(record.discountAmount ?? 0)}
+              </Text>
+              <Text strong>
+                {PURCHASE_LABELS.columns.total}:{' '}
+                {formatMoney(record.totalAmount)}
+              </Text>
+            </Space>
+          </div>
+        </section>
+
+        <div className="commercial-history-grid">
+          <section className="commercial-detail-section">
+            <Space className="commercial-section-heading" align="center">
+              {phIcon(Scales, { size: ICON_SIZE.md })}
+              <Title level={5}>{PURCHASE_LABELS.history.quantity}</Title>
+              <Tag>{record.productQuantityHistory.length}</Tag>
+            </Space>
+            {isDesktop ? (
+              <Table
+                className="commercial-detail-table commercial-history-table"
+                rowKey="id"
+                size="small"
+                columns={quantityColumns}
+                dataSource={record.productQuantityHistory}
+                pagination={false}
+                locale={{ emptyText: 'Miqdar hərəkəti yoxdur.' }}
+                scroll={{ x: 640 }}
+              />
+            ) : (
+              <div className="commercial-record-list commercial-history-list">
+                {record.productQuantityHistory.map((row) => (
+                  <article className="commercial-record-card" key={row.id}>
+                    <div className="commercial-record-card-head">
+                      <Tag>
+                        {quantityKindLabels[row.kind] ?? 'Digər hərəkət'}
+                      </Tag>
+                      <Text>{formatDateTime(row.createdAt)}</Text>
+                    </div>
+                    <div className="commercial-record-values">
+                      <div>
+                        <Text type="secondary">
+                          {PURCHASE_LABELS.history.change}
                         </Text>
-                      </Space>
-                    ),
-                  },
-                ]
-              : []),
-            {
-              key: 'invoice',
-              label: PURCHASE_LABELS.fields.supplierInvoiceNumber,
-              children: emptyDash(record.supplierInvoiceNumber),
-            },
-            {
-              key: 'notes',
-              label: PURCHASE_LABELS.fields.notes,
-              children: emptyDash(record.notes),
-              span: 2,
-            },
-          ]}
-        />
+                        <strong>{formatQuantity(row.quantityChange)}</strong>
+                      </div>
+                      <div>
+                        <Text type="secondary">
+                          {PURCHASE_LABELS.history.before}
+                        </Text>
+                        <strong>{formatQuantity(row.quantityBefore)}</strong>
+                      </div>
+                      <div>
+                        <Text type="secondary">
+                          {PURCHASE_LABELS.history.after}
+                        </Text>
+                        <strong>{formatQuantity(row.quantityAfter)}</strong>
+                      </div>
+                    </div>
+                    <Text className="commercial-record-note" type="secondary">
+                      {PURCHASE_LABELS.history.reason}: {emptyDash(row.reason)}
+                    </Text>
+                  </article>
+                ))}
+                {!record.productQuantityHistory.length ? (
+                  <Text type="secondary">Miqdar hərəkəti yoxdur.</Text>
+                ) : null}
+              </div>
+            )}
+          </section>
+
+          <section className="commercial-detail-section">
+            <Space className="commercial-section-heading" align="center">
+              {phIcon(NoteBlank, { size: ICON_SIZE.md })}
+              <Title level={5}>{PURCHASE_LABELS.history.debt}</Title>
+              <Tag>{record.partnerDebtMovements.length}</Tag>
+            </Space>
+            {isDesktop ? (
+              <Table
+                className="commercial-detail-table commercial-history-table"
+                rowKey="id"
+                size="small"
+                columns={debtColumns}
+                dataSource={record.partnerDebtMovements}
+                pagination={false}
+                locale={{ emptyText: 'Borc hərəkəti yoxdur.' }}
+                scroll={{ x: 700 }}
+              />
+            ) : (
+              <div className="commercial-record-list commercial-history-list">
+                {record.partnerDebtMovements.map((row) => (
+                  <article className="commercial-record-card" key={row.id}>
+                    <div className="commercial-record-card-head">
+                      <Tag>{debtKindLabels[row.kind] ?? 'Digər hərəkət'}</Tag>
+                      <Text strong>{formatMoney(row.signedAmount)}</Text>
+                    </div>
+                    <div className="commercial-record-values">
+                      <div>
+                        <Text type="secondary">
+                          {PURCHASE_LABELS.history.before}
+                        </Text>
+                        <strong>{formatMoney(row.balanceBefore)}</strong>
+                      </div>
+                      <div>
+                        <Text type="secondary">
+                          {PURCHASE_LABELS.history.after}
+                        </Text>
+                        <strong>{formatMoney(row.balanceAfter)}</strong>
+                      </div>
+                      <div>
+                        <Text type="secondary">
+                          {PURCHASE_LABELS.history.date}
+                        </Text>
+                        <strong>{formatDateTime(row.createdAt)}</strong>
+                      </div>
+                    </div>
+                    <Text className="commercial-record-note" type="secondary">
+                      {PURCHASE_LABELS.history.reason}: {emptyDash(row.reason)}
+                    </Text>
+                  </article>
+                ))}
+                {!record.partnerDebtMovements.length ? (
+                  <Text type="secondary">Borc hərəkəti yoxdur.</Text>
+                ) : null}
+              </div>
+            )}
+          </section>
+        </div>
+
+        <section className="commercial-detail-section commercial-cash-section">
+          <div className="commercial-cash-heading">
+            <Space className="commercial-section-heading" align="center">
+              {phIcon(Wallet, { size: ICON_SIZE.md })}
+              <Title level={5}>{PURCHASE_LABELS.history.cash}</Title>
+              <Tag>{record.cashTransactions?.length ?? 0}</Tag>
+            </Space>
+            <Text type="secondary">
+              {PURCHASE_LABELS.history.cashCancelledHint}
+            </Text>
+          </div>
+          {isDesktop ? (
+            <Table
+              className="commercial-detail-table commercial-history-table"
+              rowKey="id"
+              size="small"
+              columns={cashColumns}
+              dataSource={record.cashTransactions ?? []}
+              pagination={false}
+              locale={{ emptyText: 'Əlaqəli kassa əməliyyatı yoxdur.' }}
+              scroll={{ x: 800 }}
+            />
+          ) : (
+            <div className="commercial-record-list commercial-history-list">
+              {(record.cashTransactions ?? []).map((row) => (
+                <article className="commercial-record-card" key={row.id}>
+                  <div className="commercial-record-card-head">
+                    <CodeText value={row.transactionNumber} />
+                    <Text strong>{formatMoney(row.amount)}</Text>
+                  </div>
+                  <Link to={`/cash/accounts/${row.cashAccountId}`}>
+                    {row.cashAccountName} ({row.cashAccountCode})
+                  </Link>
+                  <div className="commercial-record-values">
+                    <div>
+                      <Text type="secondary">Növ</Text>
+                      <strong>
+                        {CASH_LABELS.types[
+                          row.type as keyof typeof CASH_LABELS.types
+                        ] ?? 'Digər'}
+                      </strong>
+                    </div>
+                    <div>
+                      <Text type="secondary">
+                        {PURCHASE_LABELS.columns.status}
+                      </Text>
+                      <strong>
+                        {CASH_LABELS.statuses[
+                          row.status as keyof typeof CASH_LABELS.statuses
+                        ] ?? row.status}
+                      </strong>
+                    </div>
+                    <div>
+                      <Text type="secondary">
+                        {PURCHASE_LABELS.history.date}
+                      </Text>
+                      <strong>{formatDateTime(row.transactionDate)}</strong>
+                    </div>
+                  </div>
+                </article>
+              ))}
+              {!record.cashTransactions?.length ? (
+                <Text type="secondary">Əlaqəli kassa əməliyyatı yoxdur.</Text>
+              ) : null}
+            </div>
+          )}
+        </section>
       </Card>
-
-      <Space align="center" style={{ marginBottom: 8 }}>
-        {phIcon(Package, { size: ICON_SIZE.md })}
-        <Title level={5} style={{ margin: 0 }}>
-          {PURCHASE_LABELS.fields.items}
-        </Title>
-      </Space>
-      <Table
-        rowKey="id"
-        size="middle"
-        columns={itemColumns}
-        dataSource={record.items}
-        pagination={false}
-        scroll={{ x: 1040 }}
-      />
-      <Card size="small" style={{ marginTop: 12, marginBottom: 20 }}>
-        <Space
-          style={{ width: '100%', justifyContent: 'flex-end' }}
-          size="large"
-          wrap
-        >
-          <Text type="secondary">
-            {PURCHASE_LABELS.columns.subtotal}:{' '}
-            {formatMoney(record.subtotalAmount)}
-          </Text>
-          <Text type="secondary">
-            {PURCHASE_LABELS.columns.discount}:{' '}
-            {formatMoney(record.discountAmount ?? 0)}
-          </Text>
-          <Text strong style={{ fontSize: 16 }}>
-            {PURCHASE_LABELS.columns.total}: {formatMoney(record.totalAmount)}
-          </Text>
-        </Space>
-      </Card>
-
-      <Space align="center" style={{ marginBottom: 8 }}>
-        {phIcon(FileText, { size: ICON_SIZE.md })}
-        <Title level={5} style={{ margin: 0 }}>
-          {PURCHASE_LABELS.audit.title}
-        </Title>
-      </Space>
-      <Card size="small" style={{ marginBottom: 20 }}>
-        <Descriptions
-          size="small"
-          column={{ xs: 1, md: 2 }}
-          items={[
-            {
-              key: 'createdBy',
-              label: PURCHASE_LABELS.audit.createdBy,
-              children: record.createdBy.fullName,
-            },
-            {
-              key: 'createdAt',
-              label: PURCHASE_LABELS.columns.createdAt,
-              children: formatDateTime(record.createdAt),
-            },
-            {
-              key: 'postedBy',
-              label: PURCHASE_LABELS.audit.postedBy,
-              children: emptyDash(record.postedBy?.fullName),
-            },
-            {
-              key: 'postedAt',
-              label: PURCHASE_LABELS.audit.postedAt,
-              children: formatDateTime(record.postedAt),
-            },
-            {
-              key: 'cancelledBy',
-              label: PURCHASE_LABELS.audit.cancelledBy,
-              children: emptyDash(record.cancelledBy?.fullName),
-            },
-            {
-              key: 'cancelledAt',
-              label: PURCHASE_LABELS.audit.cancelledAt,
-              children: formatDateTime(record.cancelledAt),
-            },
-            {
-              key: 'cancelReason',
-              label: PURCHASE_LABELS.audit.cancelReason,
-              children: emptyDash(record.cancelReason),
-              span: 2,
-            },
-          ]}
-        />
-      </Card>
-
-      <Space align="center" style={{ marginBottom: 8 }}>
-        {phIcon(Scales, { size: ICON_SIZE.md })}
-        <Title level={5} style={{ margin: 0 }}>
-          {PURCHASE_LABELS.history.quantity}
-        </Title>
-      </Space>
-      <Table
-        rowKey="id"
-        size="small"
-        columns={quantityColumns}
-        dataSource={record.productQuantityHistory}
-        pagination={false}
-        locale={{ emptyText: 'Miqdar hərəkəti yoxdur.' }}
-        scroll={{ x: 700 }}
-        style={{ marginBottom: 20 }}
-      />
-
-      <Space align="center" style={{ marginBottom: 8 }}>
-        {phIcon(NoteBlank, { size: ICON_SIZE.md })}
-        <Title level={5} style={{ margin: 0 }}>
-          {PURCHASE_LABELS.history.debt}
-        </Title>
-      </Space>
-      <Table
-        rowKey="id"
-        size="small"
-        columns={debtColumns}
-        dataSource={record.partnerDebtMovements}
-        pagination={false}
-        locale={{ emptyText: 'Borc hərəkəti yoxdur.' }}
-        scroll={{ x: 800 }}
-        style={{ marginBottom: 20 }}
-      />
-
-      <Space align="center" style={{ marginBottom: 8 }}>
-        {phIcon(Wallet, { size: ICON_SIZE.md })}
-        <Title level={5} style={{ margin: 0 }}>
-          {PURCHASE_LABELS.history.cash}
-        </Title>
-      </Space>
-      <Text type="secondary" style={{ display: 'block', marginBottom: 8, fontSize: 12 }}>
-        {PURCHASE_LABELS.history.cashCancelledHint}
-      </Text>
-      <Table
-        rowKey="id"
-        size="small"
-        columns={cashColumns}
-        dataSource={record.cashTransactions ?? []}
-        pagination={false}
-        locale={{ emptyText: 'Əlaqəli kassa əməliyyatı yoxdur.' }}
-        scroll={{ x: 800 }}
-      />
 
       <Modal
+        className="ui-confirm-modal ui-cancel-confirm-modal commercial-confirm-modal"
+        wrapClassName="commercial-modal-wrap"
+        centered
         open={cancelOpen}
         title={
           <Space>

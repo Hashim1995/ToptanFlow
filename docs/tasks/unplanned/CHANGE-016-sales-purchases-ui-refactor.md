@@ -1,0 +1,44 @@
+# CHANGE-016: Sales and Purchases UI refactor
+
+- **ID:** CHANGE-016
+- **Type:** CHANGE
+- **Title:** Sales and Purchases UI refactor
+- **Status:** Done
+- **Trigger:** Owner requested the next professional, modern, mobile-first UI/UX pass for the Sales and Purchases modules, with compact and meaningful detail pages.
+- **Urgency:** High
+- **Affected epics / stories / tasks:** US-022 / TASK-022-02 and US-023 / TASK-023-02 presentation only; follow-up to CHANGE-010 and CHANGE-015.
+- **Why not in the original plan:** The delivered workflows were functionally complete but retained generic document list, detail, form, and confirmation presentation.
+- **Scope:** Frontend-only UI/UX refactor of Sales and Purchases list headers, filters, desktop tables, mobile cards, actions, pagination, detail summaries, item/history tables, totals, audit sections, create/edit modals, immediate-payment presentation, and post/cancel confirmations.
+- **Out of scope:** Backend files; APIs; hooks and queries; schemas and validation rules; calculations; payloads; mutations; permissions; routes; lifecycle behavior; quantity/debt/cash effects; global Ant Design popup/scroll overrides.
+- **Risks:** Hiding a lifecycle action or audit value; misrepresenting totals, signed debt, quantity history, or linked Cash records; clipping form fields or modal footers on mobile; regressing Select/Dropdown overlays.
+- **Acceptance criteria:**
+  - Sales and Purchases use one consistent responsive commercial-document presentation and the established 1680px application canvas.
+  - Filters remain labeled, retain all existing controls, and reflow without horizontal form scrolling.
+  - Desktop tables remain readable and horizontally reachable; mobile cards retain identity, status, partner, date, item count, total, creator, and available actions.
+  - Detail pages use a compact hierarchy for document context, item lines, totals, audit data, quantity movements, partner debt movements, and linked Cash transactions.
+  - Every draft/post/cancel/delete/edit/view action remains reachable at supported widths.
+  - Form and confirmation modals use a viewport-bounded desktop shell and full-screen mobile shell with fixed header/footer and body-only scrolling.
+  - Required/optional markers, validation messages, Select behavior, and existing inputs remain unchanged and visible.
+  - Styling is scoped to explicit commercial-document classes and does not modify global popup, portal, dropdown, or page-scrolling behavior.
+  - No API, hook, schema, calculation, mutation, lifecycle, permission, route, backend, quantity, debt, or Cash behavior is changed.
+  - TypeScript, focused lint, production bundling, and existing web tests pass.
+- **Impact on current work:** Standalone owner-directed presentation improvement; US-022 and US-023 remain in Review and their business behavior is not changed.
+- **Roadmap impact:** None; presentation hardening of already delivered workflows.
+- **Result:** Refactored both document lists onto a shared responsive visual system with polished headers, contained filter surfaces, bordered desktop tables, structured mobile cards, compact action menus, and responsive pagination. Each detail page now has exactly one unified document card: summary, audit, items, totals, quantity/debt history, linked Cash data, and mobile records are flat internal regions separated only by subtle dividers. The overview is compact and balanced; desktop histories share available width without nested surfaces, while mobile uses readable flat records rather than compressed tables. Create/edit forms place the add-row action after the current line list and give each line a labeled remove action. Modal shells remain full-screen on mobile with fixed actions and body-only scrolling. All data flow, validation, field-array operations, calculations, document lifecycle, inventory, signed partner-debt, and Cash behavior remain unchanged.
+- **Follow-up actions:** Owner visual acceptance, then continue the requested module-by-module frontend presentation refactor.
+- **Evidence:**
+  - `apps/web/src/features/sales/pages/sales-page.tsx`
+  - `apps/web/src/features/sales/pages/sale-detail-page.tsx`
+  - `apps/web/src/features/sales/ui/sale-form-modal.tsx`
+  - `apps/web/src/features/sales/ui/sale-post-confirm-modal.tsx`
+  - `apps/web/src/features/purchases/pages/purchases-page.tsx`
+  - `apps/web/src/features/purchases/pages/purchase-detail-page.tsx`
+  - `apps/web/src/features/purchases/ui/purchase-form-modal.tsx`
+  - `apps/web/src/features/purchases/ui/purchase-post-confirm-modal.tsx`
+  - `apps/web/src/shared/ui/commercial-documents.css`
+  - `yarn workspace web tsc --noEmit` — passed.
+  - Focused ESLint for changed TSX presentation — passed with the pre-existing effect/dependency rules excluded; those findings are logic-level and outside this UI-only change.
+  - `yarn workspace web vite build` — passed (existing bundle-size warning only).
+  - `yarn workspace web test --run` — 17 files / 51 tests passed, including modal Select interaction coverage.
+  - Scope audit — no backend, API, hook, schema, calculation, mutation, permission, or route file changed for CHANGE-016.
+  - Form-alignment follow-up — explicit responsive line-field classes align Sales/Purchase inputs on desktop and mobile; read-only/action optional-marker leakage removed without changing field-array behavior.

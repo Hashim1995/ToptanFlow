@@ -4,11 +4,13 @@ import {
   Button,
   Card,
   Dropdown,
+  Empty,
   Grid,
   Input,
   Modal,
   Pagination,
   Select,
+  Skeleton,
   Space,
   Table,
   Tag,
@@ -19,6 +21,8 @@ import {
 import type { MenuProps } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
+  DotsThreeVertical,
+  FunnelSimple,
   PencilSimple,
   Phone,
   Plus,
@@ -54,6 +58,7 @@ import { DuplicateReviewModal } from '../ui/duplicate-review-modal';
 import { MASTER_DATA_LABELS } from '../ui/labels';
 import { ActiveStatusFilter, FilterBar, FilterField } from '../ui/list-toolbar';
 import { PageHeader } from '../ui/page-header';
+import './business-partners-page.css';
 
 const { Text } = Typography;
 
@@ -102,15 +107,17 @@ function parseDuplicateCandidates(
   candidates: unknown[] | undefined,
 ): BusinessPartnerDuplicateCandidate[] {
   if (!candidates) return [];
-  return candidates.filter((item): item is BusinessPartnerDuplicateCandidate => {
-    if (typeof item !== 'object' || item === null) return false;
-    const row = item as Partial<BusinessPartnerDuplicateCandidate>;
-    return (
-      typeof row.code === 'string' &&
-      typeof row.name === 'string' &&
-      Array.isArray(row.matchedFields)
-    );
-  });
+  return candidates.filter(
+    (item): item is BusinessPartnerDuplicateCandidate => {
+      if (typeof item !== 'object' || item === null) return false;
+      const row = item as Partial<BusinessPartnerDuplicateCandidate>;
+      return (
+        typeof row.code === 'string' &&
+        typeof row.name === 'string' &&
+        Array.isArray(row.matchedFields)
+      );
+    },
+  );
 }
 
 function toPayload(
@@ -188,14 +195,14 @@ export function BusinessPartnersPage() {
       render: (isActive: boolean) => <ActiveStatusTag isActive={isActive} />,
     },
     {
-      title: common.code,
+      title: labels.partnerCode,
       dataIndex: 'code',
       key: 'code',
       width: 110,
       render: (value: string) => <CodeText value={value} />,
     },
     {
-      title: common.name,
+      title: labels.partnerName,
       dataIndex: 'name',
       key: 'name',
       ellipsis: true,
@@ -283,9 +290,16 @@ export function BusinessPartnersPage() {
               />
             </Tooltip>
             <Dropdown menu={{ items: menuItems }} trigger={['click']}>
-              <Button type="text" size="small">
-                •••
-              </Button>
+              <Button
+                className="partners-row-menu"
+                type="text"
+                size="small"
+                icon={phIcon(DotsThreeVertical, {
+                  size: ICON_SIZE.md,
+                  weight: 'bold',
+                })}
+                aria-label={common.actions}
+              />
             </Dropdown>
           </Space>
         );
@@ -342,10 +356,7 @@ export function BusinessPartnersPage() {
       await executeSubmit(pending);
     } catch (error) {
       const mapped = mapApiError(error);
-      if (
-        mapped.statusCode === 409 &&
-        mapped.code === DUPLICATE_CODE
-      ) {
+      if (mapped.statusCode === 409 && mapped.code === DUPLICATE_CODE) {
         setPendingSubmit(pending);
         setDuplicateCandidates(parseDuplicateCandidates(mapped.candidates));
         return;
@@ -373,7 +384,15 @@ export function BusinessPartnersPage() {
 
   function confirmDeactivate(partner: BusinessPartner) {
     Modal.confirm({
+      className: 'app-mobile-modal partners-confirm-modal',
+      centered: true,
       title: labels.deactivateConfirm,
+      content: (
+        <div className="partners-confirm-entity">
+          <CodeText value={partner.code} />
+          <Text strong>{partner.name}</Text>
+        </div>
+      ),
       okText: common.confirm,
       cancelText: common.cancel,
       okButtonProps: { danger: true },
@@ -391,7 +410,15 @@ export function BusinessPartnersPage() {
 
   function confirmActivate(partner: BusinessPartner) {
     Modal.confirm({
+      className: 'app-mobile-modal partners-confirm-modal',
+      centered: true,
       title: labels.activateConfirm,
+      content: (
+        <div className="partners-confirm-entity">
+          <CodeText value={partner.code} />
+          <Text strong>{partner.name}</Text>
+        </div>
+      ),
       okText: common.confirm,
       cancelText: common.cancel,
       onOk: async () => {
@@ -422,9 +449,11 @@ export function BusinessPartnersPage() {
           notes: formMode.partner.notes ?? '',
         }
       : undefined;
+  const partners = list.data?.data ?? [];
+  const partnerTotal = list.data?.meta.total ?? 0;
 
   return (
-    <div>
+    <div className="business-partners-page">
       <PageHeader
         title={labels.title}
         description={labels.description}
@@ -440,48 +469,60 @@ export function BusinessPartnersPage() {
         }
       />
 
-      <FilterBar>
-        <FilterField label={common.search}>
-          <Input.Search
-            allowClear
-            placeholder={common.searchPlaceholder}
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
-            onSearch={(value) => {
-              setSearch(value.trim());
+      <Card className="partners-filter-card" size="small">
+        <div className="partners-filter-heading">
+          <div>
+            <span className="partners-filter-icon">
+              {phIcon(FunnelSimple, { size: ICON_SIZE.sm, weight: 'bold' })}
+            </span>
+            <Text strong>{common.search}</Text>
+          </div>
+          <Tag className="partners-result-count" color="blue">
+            {partnerTotal}
+          </Tag>
+        </div>
+        <FilterBar>
+          <FilterField label={common.search}>
+            <Input.Search
+              allowClear
+              placeholder={common.searchPlaceholder}
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              onSearch={(value) => {
+                setSearch(value.trim());
+                setPage(1);
+              }}
+            />
+          </FilterField>
+          <ActiveStatusFilter
+            value={activeFilter}
+            onChange={(value) => {
+              setActiveFilter(value);
               setPage(1);
             }}
-            style={{ minWidth: 220, maxWidth: 320 }}
           />
-        </FilterField>
-        <ActiveStatusFilter
-          value={activeFilter}
-          onChange={(value) => {
-            setActiveFilter(value);
-            setPage(1);
-          }}
-        />
-        <FilterField label={labels.filterRole}>
-          <Select
-            value={roleFilter}
-            onChange={(value: RoleFilterValue) => {
-              setRoleFilter(value);
-              setPage(1);
-            }}
-            style={{ minWidth: 160 }}
-            aria-label={labels.filterRole}
-            options={[
-              { value: 'all', label: common.all },
-              { value: 'customer', label: labels.customer },
-              { value: 'supplier', label: labels.supplier },
-              { value: 'both', label: labels.bothRoles },
-            ]}
-          />
-        </FilterField>
-      </FilterBar>
+          <FilterField label={labels.filterRole}>
+            <Select
+              value={roleFilter}
+              onChange={(value: RoleFilterValue) => {
+                setRoleFilter(value);
+                setPage(1);
+              }}
+              aria-label={labels.filterRole}
+              options={[
+                { value: 'all', label: common.all },
+                { value: 'customer', label: labels.customer },
+                { value: 'supplier', label: labels.supplier },
+                { value: 'both', label: labels.bothRoles },
+              ]}
+            />
+          </FilterField>
+        </FilterBar>
+      </Card>
 
       {list.isError ? (
         <Alert
+          className="partners-page-alert"
           type="error"
           showIcon
           message={mapApiError(list.error).userMessage || common.loadError}
@@ -490,74 +531,126 @@ export function BusinessPartnersPage() {
               {common.retry}
             </Button>
           }
-          style={{ marginBottom: 16 }}
         />
       ) : null}
 
       {isDesktop ? (
-        <Table<BusinessPartner>
-          rowKey="id"
-          loading={list.isLoading}
-          columns={columns}
-          dataSource={list.data?.data ?? []}
-          pagination={false}
-          locale={{ emptyText: labels.empty }}
-          scroll={{ x: true }}
-        />
+        <div className="partners-table-shell">
+          <Table<BusinessPartner>
+            className="partners-table"
+            rowKey="id"
+            loading={list.isLoading}
+            columns={columns}
+            dataSource={partners}
+            pagination={false}
+            locale={{ emptyText: labels.empty }}
+            scroll={{ x: 980 }}
+          />
+        </div>
       ) : (
-        <Space direction="vertical" style={{ width: '100%' }} size="middle">
-          {list.isLoading ? <Text type="secondary">{common.loading}</Text> : null}
-          {!list.isLoading && (list.data?.data.length ?? 0) === 0 ? (
-            <Text type="secondary">{labels.empty}</Text>
+        <div className="partners-mobile-list">
+          {list.isLoading ? (
+            <Card className="partner-mobile-card">
+              <Skeleton active paragraph={{ rows: 4 }} />
+            </Card>
           ) : null}
-          {(list.data?.data ?? []).map((partner) => (
-            <Card key={partner.id} size="small">
-              <Space direction="vertical" style={{ width: '100%' }}>
-                <Text strong>
-                  {partner.code} — {partner.name}
-                </Text>
-                <Text type="secondary">
-                  {labels.role}: {roleLabel(partner)}
-                </Text>
-                <Text type="secondary">
-                  {labels.phone}: {partner.phone ?? '—'}
-                </Text>
-                <div>
-                  <Text type="secondary">{labels.debtBalance}: </Text>
-                  <DebtBalanceCell balance={partner.currentDebtBalance} />
+          {!list.isLoading && partners.length === 0 ? (
+            <Card className="partners-empty-card">
+              <Empty description={labels.empty} />
+            </Card>
+          ) : null}
+          {partners.map((partner) => (
+            <Card
+              className={`partner-mobile-card${
+                partner.isActive ? '' : ' is-inactive'
+              }`}
+              key={partner.id}
+              size="small"
+            >
+              <div className="partner-mobile-topline">
+                <div className="partner-mobile-identity">
+                  <div>
+                    <Text type="secondary">{labels.partnerCode}</Text>
+                    <CodeText value={partner.code} />
+                  </div>
+                  <div>
+                    <Text type="secondary">{labels.partnerName}</Text>
+                    <Text strong className="partner-mobile-name">
+                      {partner.name}
+                    </Text>
+                  </div>
                 </div>
                 <ActiveStatusTag isActive={partner.isActive} />
-                <Space wrap>
-                  <Button onClick={() => openEdit(partner)}>
-                    {common.edit}
+              </div>
+
+              <div className="partner-mobile-tags">
+                <Tag color="blue">{roleLabel(partner)}</Tag>
+              </div>
+
+              <div className="partner-mobile-balance">
+                <Text type="secondary">{labels.debtBalance}</Text>
+                <DebtBalanceCell balance={partner.currentDebtBalance} />
+              </div>
+
+              <div className="partner-mobile-details">
+                <div>
+                  <Text type="secondary">{labels.phone}</Text>
+                  <strong>{partner.phone ?? '—'}</strong>
+                </div>
+                <div>
+                  <Text type="secondary">{labels.email}</Text>
+                  <strong>{partner.email ?? '—'}</strong>
+                </div>
+                <div>
+                  <Text type="secondary">{labels.taxNumber}</Text>
+                  <strong>{partner.taxNumber ?? '—'}</strong>
+                </div>
+              </div>
+
+              <div className="partner-mobile-actions">
+                <Button
+                  icon={phIcon(PencilSimple, { size: ICON_SIZE.sm })}
+                  onClick={() => openEdit(partner)}
+                >
+                  {common.edit}
+                </Button>
+                {partner.isActive ? (
+                  <Button
+                    danger
+                    icon={phIcon(Prohibit, { size: ICON_SIZE.sm })}
+                    onClick={() => confirmDeactivate(partner)}
+                  >
+                    {common.deactivate}
                   </Button>
-                  {partner.isActive ? (
-                    <Button danger onClick={() => confirmDeactivate(partner)}>
-                      {common.deactivate}
-                    </Button>
-                  ) : (
-                    <Button onClick={() => confirmActivate(partner)}>
-                      {common.activate}
-                    </Button>
-                  )}
-                </Space>
-              </Space>
+                ) : (
+                  <Button
+                    icon={phIcon(Power, { size: ICON_SIZE.sm })}
+                    onClick={() => confirmActivate(partner)}
+                  >
+                    {common.activate}
+                  </Button>
+                )}
+              </div>
             </Card>
           ))}
-        </Space>
+        </div>
       )}
 
-      <Pagination
-        style={{ marginTop: 16, textAlign: 'right' }}
-        current={page}
-        pageSize={pageSize}
-        total={list.data?.meta.total ?? 0}
-        showSizeChanger
-        onChange={(nextPage, nextPageSize) => {
-          setPage(nextPage);
-          setPageSize(nextPageSize);
-        }}
-      />
+      {partnerTotal > 0 ? (
+        <div className="partners-pagination">
+          <Pagination
+            current={page}
+            pageSize={pageSize}
+            total={partnerTotal}
+            showSizeChanger
+            responsive
+            onChange={(nextPage, nextPageSize) => {
+              setPage(nextPage);
+              setPageSize(nextPageSize);
+            }}
+          />
+        </div>
+      ) : null}
 
       <BusinessPartnerFormModal
         open={formMode.kind !== 'closed'}

@@ -21,6 +21,7 @@ export function PageHeader({
 }: PageHeaderProps) {
   return (
     <Space
+      className="ui-page-header"
       style={{
         width: '100%',
         justifyContent: 'space-between',
@@ -29,10 +30,11 @@ export function PageHeader({
       }}
       wrap
     >
-      <div style={{ minWidth: 0, flex: 1 }}>
-        <Space align="center" size={10} style={{ marginBottom: 2 }}>
+      <div className="ui-page-header-main">
+        <Space className="ui-page-header-title-row" align="center" size={10}>
           {icon ? (
             <span
+              className="ui-page-header-icon"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -48,12 +50,13 @@ export function PageHeader({
               {icon}
             </span>
           ) : null}
-          <Title level={3} style={{ margin: 0 }}>
+          <Title className="ui-page-title" level={3}>
             {title}
           </Title>
         </Space>
         {description ? (
           <div
+            className="ui-page-description"
             style={{
               marginTop: 4,
               marginLeft: icon ? 46 : 0,
@@ -67,7 +70,7 @@ export function PageHeader({
           </div>
         ) : null}
       </div>
-      {extra ? <div>{extra}</div> : null}
+      {extra ? <div className="ui-page-actions">{extra}</div> : null}
     </Space>
   );
 }

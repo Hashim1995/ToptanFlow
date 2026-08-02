@@ -8,10 +8,10 @@ import { PURCHASE_LABELS } from './labels';
 import {
   emptyPurchaseImmediatePayment,
   isPurchaseImmediatePaymentValid,
-  PurchaseImmediatePaymentSection,
   purchaseNeedsNegativeReason,
   type PurchaseImmediatePaymentState,
-} from './purchase-immediate-payment-section';
+} from './purchase-immediate-payment';
+import { PurchaseImmediatePaymentSection } from './purchase-immediate-payment-section';
 
 const { Text } = Typography;
 
@@ -63,8 +63,7 @@ function PurchasePostConfirmModalBody({
   partnerDebtBalance: string;
 }) {
   const [payment, setPayment] = useState<PurchaseImmediatePaymentState>(
-    () =>
-      initialPayment ?? emptyPurchaseImmediatePayment(documentTotal),
+    () => initialPayment ?? emptyPurchaseImmediatePayment(documentTotal),
   );
 
   const accounts = useCashAccountsList({
@@ -93,6 +92,9 @@ function PurchasePostConfirmModalBody({
 
   return (
     <Modal
+      className="ui-confirm-modal ui-post-confirm-modal commercial-confirm-modal commercial-post-modal"
+      wrapClassName="commercial-modal-wrap"
+      centered
       open
       zIndex={1100}
       title={

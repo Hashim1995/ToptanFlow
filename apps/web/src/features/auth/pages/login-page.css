@@ -1,0 +1,70 @@
+.login-page {
+  display: flex;
+  min-height: 100vh;
+  min-height: 100dvh;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(16px, 4vw, 32px);
+  background:
+    radial-gradient(circle at 12% 8%, rgba(22, 119, 255, 0.1), transparent 34%),
+    #f4f7fb;
+}
+
+.login-card.ant-card {
+  width: min(100%, 420px);
+  border-color: #e2e8f0;
+  border-radius: 18px;
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.1);
+}
+
+.login-card .ant-card-body {
+  padding: clamp(22px, 5vw, 34px);
+}
+
+.login-heading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.login-brand-logo {
+  width: clamp(190px, 60vw, 245px);
+  height: auto;
+  max-width: 100%;
+}
+
+.login-heading h3.ant-typography {
+  margin: 0;
+  font-size: clamp(22px, 5vw, 27px);
+}
+
+.login-card > .ant-card-body > .ant-typography-secondary {
+  display: block;
+  margin-bottom: 22px;
+  text-align: center;
+}
+
+.login-form .ant-input,
+.login-form .ant-input-affix-wrapper,
+.login-form .ant-btn {
+  min-height: 44px;
+}
+
+@media (max-width: 380px) {
+  .login-page {
+    align-items: flex-start;
+    padding: 12px;
+    padding-top: max(20px, env(safe-area-inset-top));
+  }
+
+  .login-card .ant-card-body {
+    padding: 20px 18px;
+  }
+
+  .login-brand-logo {
+    width: 184px;
+  }
+}

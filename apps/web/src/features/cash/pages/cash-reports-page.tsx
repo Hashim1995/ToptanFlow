@@ -52,11 +52,17 @@ function SummaryStat(props: {
   danger?: boolean;
 }) {
   return (
-    <Card size="small">
+    <Card className="ui-summary-card cash-report-stat" size="small">
       <Text type="secondary">{props.label}</Text>
       <div>
-        <Text strong style={{ fontSize: 18 }} type={props.danger ? 'danger' : undefined}>
-          {typeof props.value === 'number' ? props.value : formatMoney(props.value)}
+        <Text
+          strong
+          style={{ fontSize: 18 }}
+          type={props.danger ? 'danger' : undefined}
+        >
+          {typeof props.value === 'number'
+            ? props.value
+            : formatMoney(props.value)}
         </Text>
       </div>
     </Card>
@@ -93,7 +99,11 @@ export function CashReportsPage() {
     [dateFrom, dateTo],
   );
 
-  const accounts = useCashAccountsList({ page: 1, pageSize: 100, isActive: true });
+  const accounts = useCashAccountsList({
+    page: 1,
+    pageSize: 100,
+    isActive: true,
+  });
   const summary = useCashPeriodSummary(summaryQuery);
   const statement = useCashAccountStatement(accountId, statementQuery);
 
@@ -178,7 +188,7 @@ export function CashReportsPage() {
   ];
 
   return (
-    <div>
+    <div className="ui-page ui-report-page cash-reports-page">
       <PageHeader
         title={CASH_LABELS.reportsTitle}
         description={CASH_LABELS.reportsDescription}
@@ -192,10 +202,7 @@ export function CashReportsPage() {
             format={DATE_DISPLAY_FORMAT}
             value={dateRange}
             onChange={(values) => {
-              setDateRange([
-                values?.[0] ?? null,
-                values?.[1] ?? null,
-              ]);
+              setDateRange([values?.[0] ?? null, values?.[1] ?? null]);
             }}
             allowClear
           />
@@ -228,7 +235,11 @@ export function CashReportsPage() {
         />
       ) : null}
 
-      <Row gutter={[12, 12]} style={{ marginBottom: 24 }}>
+      <Row
+        className="ui-summary-grid"
+        gutter={[12, 12]}
+        style={{ marginBottom: 24 }}
+      >
         <Col xs={24} sm={12} lg={8} xl={6}>
           <SummaryStat
             label={CASH_LABELS.totalCompanyCash}
@@ -294,6 +305,7 @@ export function CashReportsPage() {
 
       {(summary.data?.expensesByCategory.length ?? 0) > 0 ? (
         <Card
+          className="ui-report-breakdown-card"
           size="small"
           title={CASH_LABELS.expensesByCategory}
           style={{ marginBottom: 24 }}
@@ -347,20 +359,35 @@ export function CashReportsPage() {
           ) : null}
 
           {isMobile ? (
-            <Space direction="vertical" style={{ width: '100%' }} size={12}>
+            <Space className="ui-mobile-list" direction="vertical" size={12}>
               {(statement.data?.lines ?? []).map((row) => (
-                <Card key={row.id} size="small">
-                  <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                <Card
+                  className="ui-mobile-card ui-ledger-card"
+                  key={row.id}
+                  size="small"
+                >
+                  <Space
+                    direction="vertical"
+                    size={4}
+                    style={{ width: '100%' }}
+                  >
                     <Space wrap>
                       <CodeText value={row.transactionNumber} />
-                      <Tag color={row.status === 'CANCELLED' ? 'default' : 'success'}>
+                      <Tag
+                        color={
+                          row.status === 'CANCELLED' ? 'default' : 'success'
+                        }
+                      >
                         {statusLabel(row.status)}
                       </Tag>
                     </Space>
                     <Text>{typeLabel(row.type)}</Text>
-                    <Text type="secondary">{formatDateTime(row.transactionDate)}</Text>
+                    <Text type="secondary">
+                      {formatDateTime(row.transactionDate)}
+                    </Text>
                     <Text>
-                      {CASH_LABELS.signedEffect}: {formatMoney(row.signedEffect)}
+                      {CASH_LABELS.signedEffect}:{' '}
+                      {formatMoney(row.signedEffect)}
                     </Text>
                     <Text strong>
                       {CASH_LABELS.runningBalance}:{' '}
@@ -369,7 +396,8 @@ export function CashReportsPage() {
                   </Space>
                 </Card>
               ))}
-              {!statement.isLoading && (statement.data?.lines.length ?? 0) === 0 ? (
+              {!statement.isLoading &&
+              (statement.data?.lines.length ?? 0) === 0 ? (
                 <Empty description={CASH_LABELS.emptyStatement} />
               ) : null}
             </Space>

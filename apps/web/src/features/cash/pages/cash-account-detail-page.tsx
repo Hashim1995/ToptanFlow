@@ -1,41 +1,44 @@
-import { useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useMemo, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import {
   Alert,
   Button,
   Card,
-  Descriptions,
   Empty,
   Grid,
   Input,
   Modal,
   Pagination,
   Select,
+  Skeleton,
   Space,
   Table,
   Tag,
   Typography,
   message,
-} from "antd";
-import type { ColumnsType } from "antd/es/table";
+} from 'antd';
+import type { ColumnsType } from 'antd/es/table';
 import {
   ArrowDown,
   ArrowLeft,
   ArrowUp,
   ArrowsLeftRight,
+  ClockCounterClockwise,
+  IdentificationCard,
+  NotePencil,
   PencilSimple,
   Prohibit,
   Receipt,
-} from "@phosphor-icons/react";
-import { mapApiError } from "../../../api/map-api-error";
-import { formatMoney } from "../../../shared/money/format-money";
-import { formatDateTime } from "../../../shared/ui/format";
-import { ICON_SIZE, phIcon } from "../../../shared/ui/ph-icon";
-import { CodeText, MoneyCell } from "../../../shared/ui/table-cells";
-import { ActiveStatusTag } from "../../master-data/ui/active-status-tag";
-import { FilterBar, FilterField } from "../../master-data/ui/list-toolbar";
-import { PageHeader } from "../../master-data/ui/page-header";
-import type { CashAccount, CashTransaction } from "../api/cash.api";
+  User,
+  Wallet,
+} from '@phosphor-icons/react';
+import { mapApiError } from '../../../api/map-api-error';
+import { formatMoney } from '../../../shared/money/format-money';
+import { formatDateTime } from '../../../shared/ui/format';
+import { ICON_SIZE, phIcon } from '../../../shared/ui/ph-icon';
+import { CodeText, MoneyCell } from '../../../shared/ui/table-cells';
+import { ActiveStatusTag } from '../../master-data/ui/active-status-tag';
+import type { CashAccount, CashTransaction } from '../api/cash.api';
 import {
   useCancelCashTransaction,
   useCashAccount,
@@ -45,33 +48,34 @@ import {
   useCreateExpense,
   useCreateCashTransfer,
   useUpdateCashAccount,
-} from "../api/cash.hooks";
+} from '../api/cash.hooks';
 import type {
   CashAccountFormValues,
   CashInFormValues,
   CashOutFormValues,
   ExpenseFormValues,
   TransferFormValues,
-} from "../forms/cash.schemas";
+} from '../forms/cash.schemas';
 import {
   CashAccountFormModal,
   CashInFormModal,
   CashOutFormModal,
   ExpenseFormModal,
   TransferFormModal,
-} from "../ui/cash-form-modals";
-import { CASH_LABELS } from "../ui/labels";
+} from '../ui/cash-form-modals';
+import { CASH_LABELS } from '../ui/labels';
+import './cash-account-detail-page.css';
 
 const { Text, Title } = Typography;
 
-type TxnStatusFilter = "all" | "POSTED" | "CANCELLED";
+type TxnStatusFilter = 'all' | 'POSTED' | 'CANCELLED';
 
 function typeLabel(type: string): string {
-  return CASH_LABELS.types[type as keyof typeof CASH_LABELS.types] ?? "—";
+  return CASH_LABELS.types[type as keyof typeof CASH_LABELS.types] ?? '—';
 }
 
 function statusLabel(status: string): string {
-  return CASH_LABELS.statuses[status as "POSTED" | "CANCELLED"] ?? "—";
+  return CASH_LABELS.statuses[status as 'POSTED' | 'CANCELLED'] ?? '—';
 }
 
 function isNegativeBalance(value: string): boolean {
@@ -86,16 +90,16 @@ export function CashAccountDetailPage() {
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [statusFilter, setStatusFilter] = useState<TxnStatusFilter>("all");
+  const [statusFilter, setStatusFilter] = useState<TxnStatusFilter>('all');
   const [editOpen, setEditOpen] = useState(false);
   const [formError, setFormError] = useState<string | undefined>();
   const [movementMode, setMovementMode] = useState<
-    | { kind: "closed" }
-    | { kind: "in" }
-    | { kind: "out" }
-    | { kind: "expense" }
-    | { kind: "transfer" }
-  >({ kind: "closed" });
+    | { kind: 'closed' }
+    | { kind: 'in' }
+    | { kind: 'out' }
+    | { kind: 'expense' }
+    | { kind: 'transfer' }
+  >({ kind: 'closed' });
   const [movementError, setMovementError] = useState<string | undefined>();
 
   const account = useCashAccount(id);
@@ -104,9 +108,9 @@ export function CashAccountDetailPage() {
       page,
       pageSize,
       cashAccountId: id,
-      status: statusFilter === "all" ? undefined : statusFilter,
-      sortBy: "transactionDate" as const,
-      sortOrder: "desc" as const,
+      status: statusFilter === 'all' ? undefined : statusFilter,
+      sortBy: 'transactionDate' as const,
+      sortOrder: 'desc' as const,
     }),
     [page, pageSize, id, statusFilter],
   );
@@ -121,43 +125,52 @@ export function CashAccountDetailPage() {
   const data = account.data;
 
   function cancelEffectsForType(type: string): readonly string[] {
-    if (type === "CUSTOMER_RECEIPT") {
+    if (type === 'CUSTOMER_RECEIPT') {
       return CASH_LABELS.confirmations.cancelEffectsCashIn;
     }
-    if (type === "SUPPLIER_PAYMENT") {
+    if (type === 'SUPPLIER_PAYMENT') {
       return CASH_LABELS.confirmations.cancelEffectsCashOut;
     }
-    if (type === "EXPENSE") {
+    if (type === 'EXPENSE') {
       return CASH_LABELS.confirmations.cancelEffectsExpense;
     }
-    if (type === "TRANSFER_OUT" || type === "TRANSFER_IN") {
+    if (type === 'TRANSFER_OUT' || type === 'TRANSFER_IN') {
       return CASH_LABELS.confirmations.cancelEffectsTransfer;
     }
     return CASH_LABELS.confirmations.cancelEffectsGeneric;
   }
 
   function confirmCancel(txn: CashTransaction) {
-    let reason = "";
+    let reason = '';
     const effects = cancelEffectsForType(txn.type);
-    const isCashIn = txn.type === "CUSTOMER_RECEIPT";
+    const isCashIn = txn.type === 'CUSTOMER_RECEIPT';
     Modal.confirm({
+      className: 'cash-confirm-modal cash-cancel-transaction-confirm',
+      centered: true,
       title: CASH_LABELS.confirmations.cancelTxnTitle,
       width: 520,
       content: (
-        <Space direction="vertical" style={{ width: "100%" }} size={12}>
+        <Space
+          className="cash-confirm-content"
+          direction="vertical"
+          style={{ width: '100%' }}
+          size={12}
+        >
           <Text>{CASH_LABELS.confirmations.cancelTxn}</Text>
-          <Text type="secondary">
-            {txn.transactionNumber} · {typeLabel(txn.type)} ·{" "}
+          <Text type="secondary" className="cash-confirm-summary">
+            {txn.transactionNumber} · {typeLabel(txn.type)} ·{' '}
             {formatMoney(txn.amount)}
           </Text>
           {isCashIn ? (
-            <Text type="warning">
-              {CASH_LABELS.confirmations.cancelCashInMayGoNegative}
-            </Text>
+            <Alert
+              type="warning"
+              showIcon
+              message={CASH_LABELS.confirmations.cancelCashInMayGoNegative}
+            />
           ) : null}
-          <div>
+          <div className="cash-confirm-effects">
             <Text strong>{CASH_LABELS.confirmations.cancelEffectsTitle}</Text>
-            <ul style={{ margin: "8px 0 0", paddingLeft: 20 }}>
+            <ul>
               {effects.map((effect) => (
                 <li key={effect}>
                   <Text type="secondary">{effect}</Text>
@@ -166,6 +179,7 @@ export function CashAccountDetailPage() {
             </ul>
           </div>
           <Input.TextArea
+            className="cash-confirm-reason"
             rows={3}
             autoFocus
             maxLength={2000}
@@ -182,7 +196,7 @@ export function CashAccountDetailPage() {
       onOk: async () => {
         if (!reason.trim()) {
           message.error(CASH_LABELS.validation.reasonRequired);
-          return Promise.reject(new Error("reason required"));
+          return Promise.reject(new Error('reason required'));
         }
         try {
           await cancelMutation.mutateAsync({
@@ -228,7 +242,7 @@ export function CashAccountDetailPage() {
         notes: values.notes || undefined,
       });
       message.success(CASH_LABELS.success.cashIn);
-      setMovementMode({ kind: "closed" });
+      setMovementMode({ kind: 'closed' });
     } catch (error) {
       setMovementError(mapApiError(error).userMessage);
     }
@@ -248,7 +262,7 @@ export function CashAccountDetailPage() {
           values.negativeBalanceOverrideReason || undefined,
       });
       message.success(CASH_LABELS.success.cashOut);
-      setMovementMode({ kind: "closed" });
+      setMovementMode({ kind: 'closed' });
     } catch (error) {
       setMovementError(mapApiError(error).userMessage);
     }
@@ -267,7 +281,7 @@ export function CashAccountDetailPage() {
           values.negativeBalanceOverrideReason || undefined,
       });
       message.success(CASH_LABELS.success.expense);
-      setMovementMode({ kind: "closed" });
+      setMovementMode({ kind: 'closed' });
     } catch (error) {
       setMovementError(mapApiError(error).userMessage);
     }
@@ -286,7 +300,7 @@ export function CashAccountDetailPage() {
           values.negativeBalanceOverrideReason || undefined,
       });
       message.success(CASH_LABELS.success.transfer);
-      setMovementMode({ kind: "closed" });
+      setMovementMode({ kind: 'closed' });
     } catch (error) {
       setMovementError(mapApiError(error).userMessage);
     }
@@ -295,71 +309,71 @@ export function CashAccountDetailPage() {
   const columns: ColumnsType<CashTransaction> = [
     {
       title: CASH_LABELS.columns.date,
-      dataIndex: "transactionDate",
-      key: "transactionDate",
+      dataIndex: 'transactionDate',
+      key: 'transactionDate',
       width: 120,
       render: (value: string) => formatDateTime(value),
     },
     {
       title: CASH_LABELS.columns.number,
-      dataIndex: "transactionNumber",
-      key: "transactionNumber",
+      dataIndex: 'transactionNumber',
+      key: 'transactionNumber',
       width: 140,
       render: (value: string) => <CodeText value={value} />,
     },
     {
       title: CASH_LABELS.columns.type,
-      dataIndex: "type",
-      key: "type",
+      dataIndex: 'type',
+      key: 'type',
       render: (type: string) => typeLabel(type),
     },
     {
       title: CASH_LABELS.columns.partner,
-      dataIndex: "partnerName",
-      key: "partnerName",
+      dataIndex: 'partnerName',
+      key: 'partnerName',
       width: 180,
-      render: (value: string | null) => value || "—",
+      render: (value: string | null) => value || '—',
     },
     {
       title: CASH_LABELS.columns.status,
-      dataIndex: "status",
-      key: "status",
+      dataIndex: 'status',
+      key: 'status',
       width: 130,
       render: (status: string) => (
-        <Tag color={status === "CANCELLED" ? "default" : "success"}>
+        <Tag color={status === 'CANCELLED' ? 'default' : 'success'}>
           {statusLabel(status)}
         </Tag>
       ),
     },
     {
       title: CASH_LABELS.columns.cashIn,
-      key: "in",
-      align: "right",
+      key: 'in',
+      align: 'right',
       width: 120,
       render: (_: unknown, row) =>
-        row.direction === "IN" ? (
+        row.direction === 'IN' ? (
           <MoneyCell value={row.amount} format={formatMoney} />
         ) : (
-          "—"
+          '—'
         ),
     },
     {
       title: CASH_LABELS.columns.cashOut,
-      key: "out",
-      align: "right",
+      key: 'out',
+      align: 'right',
       width: 120,
       render: (_: unknown, row) =>
-        row.direction === "OUT" ? (
+        row.direction === 'OUT' ? (
           <MoneyCell value={row.amount} format={formatMoney} />
         ) : (
-          "—"
+          '—'
         ),
     },
     {
       title: CASH_LABELS.columns.balanceAfter,
-      dataIndex: "balanceAfter",
-      key: "balanceAfter",
-      align: "right",
+      dataIndex: 'balanceAfter',
+      key: 'balanceAfter',
+      align: 'right',
       width: 130,
       render: (value: string) => (
         <MoneyCell value={value} format={formatMoney} />
@@ -367,25 +381,25 @@ export function CashAccountDetailPage() {
     },
     {
       title: CASH_LABELS.columns.notes,
-      dataIndex: "notes",
-      key: "notes",
+      dataIndex: 'notes',
+      key: 'notes',
       ellipsis: true,
-      render: (value: string | null) => value || "—",
+      render: (value: string | null) => value || '—',
     },
     {
       title: CASH_LABELS.columns.createdBy,
-      dataIndex: "createdByName",
-      key: "createdByName",
+      dataIndex: 'createdByName',
+      key: 'createdByName',
       width: 160,
-      render: (value: string | null) => value || "—",
+      render: (value: string | null) => value || '—',
     },
     {
       title: CASH_LABELS.columns.actions,
-      key: "actions",
+      key: 'actions',
       width: 110,
-      fixed: "right",
+      fixed: 'right',
       render: (_: unknown, row) =>
-        row.status === "POSTED" && row.type !== "REVERSAL" ? (
+        row.status === 'POSTED' && row.type !== 'REVERSAL' ? (
           <Button
             type="link"
             danger
@@ -420,230 +434,316 @@ export function CashAccountDetailPage() {
   }
 
   const txnRows = transactions.data?.data ?? [];
+  const transactionTotal = transactions.data?.meta.total ?? 0;
 
   return (
-    <>
-      <PageHeader
-        title={data?.name ?? "…"}
-        description={
-          data ? (
-            <Space wrap size={8}>
-              <Text strong>{formatMoney(data.currentBalance)}</Text>
-              {isNegativeBalance(data.currentBalance) ? (
-                <Tag color="error">{CASH_LABELS.negativeBalance}</Tag>
-              ) : null}
-              <ActiveStatusTag isActive={data.isActive} />
-            </Space>
-          ) : undefined
-        }
-        icon={
+    <div className="cash-detail-page">
+      <header className="cash-detail-header">
+        <div className="cash-detail-heading">
           <Link to="/cash/accounts" aria-label={CASH_LABELS.backToList}>
             <Button
+              className="cash-detail-back"
               type="text"
               icon={phIcon(ArrowLeft, { size: ICON_SIZE.md })}
             />
           </Link>
-        }
-        extra={
-          data ? (
-            <Space wrap>
-              <Button
-                icon={phIcon(PencilSimple, { size: ICON_SIZE.sm })}
-                onClick={() => setEditOpen(true)}
-              >
-                {CASH_LABELS.editAccount}
-              </Button>
-              <Button
-                type="primary"
-                ghost
-                disabled={!data.isActive}
-                icon={phIcon(ArrowDown, { size: ICON_SIZE.sm })}
-                onClick={() => setMovementMode({ kind: "in" })}
-              >
-                {CASH_LABELS.cashIn}
-              </Button>
-              <Button
-                danger
-                ghost
-                disabled={!data.isActive}
-                icon={phIcon(ArrowUp, { size: ICON_SIZE.sm })}
-                onClick={() => setMovementMode({ kind: "out" })}
-              >
-                {CASH_LABELS.cashOut}
-              </Button>
-              <Button
-                disabled={!data.isActive}
-                icon={phIcon(Receipt, { size: ICON_SIZE.sm })}
-                onClick={() => setMovementMode({ kind: "expense" })}
-              >
-                {CASH_LABELS.expense}
-              </Button>
-              <Button
-                disabled={!data.isActive}
-                icon={phIcon(ArrowsLeftRight, { size: ICON_SIZE.sm })}
-                onClick={() => setMovementMode({ kind: "transfer" })}
-              >
-                {CASH_LABELS.transfer}
-              </Button>
-            </Space>
-          ) : null
-        }
-      />
+          <span className="cash-detail-heading-icon" aria-hidden="true">
+            {phIcon(Wallet, { size: 24, weight: 'duotone' })}
+          </span>
+          <div className="cash-detail-heading-copy">
+            {data ? (
+              <>
+                <Title level={2} className="cash-detail-title">
+                  {data.name}
+                </Title>
+                <div className="cash-detail-heading-meta">
+                  <CodeText value={data.code} />
+                  <ActiveStatusTag isActive={data.isActive} />
+                  {isNegativeBalance(data.currentBalance) ? (
+                    <Tag color="error">{CASH_LABELS.negativeBalance}</Tag>
+                  ) : null}
+                </div>
+              </>
+            ) : (
+              <Skeleton active title={{ width: 220 }} paragraph={false} />
+            )}
+          </div>
+        </div>
+
+        {data ? (
+          <Button
+            className="cash-detail-edit"
+            icon={phIcon(PencilSimple, { size: ICON_SIZE.sm })}
+            onClick={() => setEditOpen(true)}
+          >
+            {CASH_LABELS.editAccount}
+          </Button>
+        ) : null}
+      </header>
 
       {data && !data.isActive ? (
         <Alert
+          className="cash-detail-alert"
           type="warning"
           showIcon
-          style={{ marginBottom: 16 }}
           message={CASH_LABELS.inactiveAccountHint}
         />
       ) : null}
 
       {data ? (
-        <Card
-          size="small"
-          style={{ marginBottom: 16 }}
-          loading={account.isLoading}
-        >
-          <Descriptions column={{ xs: 1, sm: 2, md: 3 }} size="small">
-            <Descriptions.Item label={CASH_LABELS.columns.code}>
-              <CodeText value={data.code} />
-            </Descriptions.Item>
-            <Descriptions.Item label={CASH_LABELS.columns.balance}>
-              {formatMoney(data.currentBalance)}
-            </Descriptions.Item>
-            <Descriptions.Item label={CASH_LABELS.columns.responsible}>
-              {data.responsibleUserName || "—"}
-            </Descriptions.Item>
-            <Descriptions.Item label={CASH_LABELS.fields.notes}>
-              {data.notes || "—"}
-            </Descriptions.Item>
-          </Descriptions>
+        <Card className="cash-detail-summary" loading={account.isLoading}>
+          <div className="cash-detail-summary-layout">
+            <div className="cash-detail-balance">
+              <Text className="cash-detail-balance-label">
+                {CASH_LABELS.columns.balance}
+              </Text>
+              <div
+                className={`cash-detail-balance-value${
+                  isNegativeBalance(data.currentBalance) ? ' is-negative' : ''
+                }`}
+              >
+                {formatMoney(data.currentBalance)}
+              </div>
+            </div>
+
+            <div className="cash-detail-facts">
+              <div className="cash-detail-fact">
+                <span className="cash-detail-fact-icon">
+                  {phIcon(IdentificationCard, { size: ICON_SIZE.md })}
+                </span>
+                <div>
+                  <Text type="secondary">{CASH_LABELS.columns.code}</Text>
+                  <strong><CodeText value={data.code} /></strong>
+                </div>
+              </div>
+              <div className="cash-detail-fact">
+                <span className="cash-detail-fact-icon">
+                  {phIcon(User, { size: ICON_SIZE.md })}
+                </span>
+                <div>
+                  <Text type="secondary">
+                    {CASH_LABELS.columns.responsible}
+                  </Text>
+                  <strong>{data.responsibleUserName || '—'}</strong>
+                </div>
+              </div>
+              <div className="cash-detail-fact cash-detail-fact-notes">
+                <span className="cash-detail-fact-icon">
+                  {phIcon(NotePencil, { size: ICON_SIZE.md })}
+                </span>
+                <div>
+                  <Text type="secondary">{CASH_LABELS.fields.notes}</Text>
+                  <strong>{data.notes || '—'}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="cash-detail-actions">
+            <Button
+              type="primary"
+              disabled={!data.isActive}
+              icon={phIcon(ArrowDown, { size: ICON_SIZE.sm })}
+              onClick={() => setMovementMode({ kind: 'in' })}
+            >
+              {CASH_LABELS.cashIn}
+            </Button>
+            <Button
+              danger
+              disabled={!data.isActive}
+              icon={phIcon(ArrowUp, { size: ICON_SIZE.sm })}
+              onClick={() => setMovementMode({ kind: 'out' })}
+            >
+              {CASH_LABELS.cashOut}
+            </Button>
+            <Button
+              disabled={!data.isActive}
+              icon={phIcon(Receipt, { size: ICON_SIZE.sm })}
+              onClick={() => setMovementMode({ kind: 'expense' })}
+            >
+              {CASH_LABELS.expense}
+            </Button>
+            <Button
+              disabled={!data.isActive}
+              icon={phIcon(ArrowsLeftRight, { size: ICON_SIZE.sm })}
+              onClick={() => setMovementMode({ kind: 'transfer' })}
+            >
+              {CASH_LABELS.transfer}
+            </Button>
+          </div>
         </Card>
       ) : (
-        <Card loading style={{ marginBottom: 16 }} />
+        <Card className="cash-detail-summary" loading />
       )}
 
-      <Title level={5} style={{ marginTop: 0 }}>
-        {CASH_LABELS.historyTitle}
-      </Title>
+      <section className="cash-detail-history">
+        <div className="cash-detail-history-header">
+          <div className="cash-detail-history-heading">
+            <span className="cash-detail-history-icon" aria-hidden="true">
+              {phIcon(ClockCounterClockwise, { size: ICON_SIZE.md })}
+            </span>
+            <div>
+              <Title level={4}>{CASH_LABELS.historyTitle}</Title>
+              <Text type="secondary">
+                {CASH_LABELS.filters.txnStatus}
+              </Text>
+            </div>
+          </div>
+          <Tag className="cash-detail-result-count" color="blue">
+            {transactionTotal}
+          </Tag>
+        </div>
 
-      <FilterBar>
-        <FilterField label={CASH_LABELS.filters.txnStatus}>
-          <Select
-            value={statusFilter}
-            style={{ minWidth: 180 }}
-            onChange={(value: TxnStatusFilter) => {
-              setStatusFilter(value);
-              setPage(1);
-            }}
-            options={[
-              { value: "all", label: CASH_LABELS.filters.txnStatusAll },
-              {
-                value: "POSTED",
-                label: CASH_LABELS.statuses.POSTED,
-              },
-              {
-                value: "CANCELLED",
-                label: CASH_LABELS.statuses.CANCELLED,
-              },
-            ]}
+        <Card className="cash-detail-filter" size="small">
+          <label className="cash-detail-filter-field">
+            <Text strong>{CASH_LABELS.filters.txnStatus}</Text>
+            <Select
+              value={statusFilter}
+              onChange={(value: TxnStatusFilter) => {
+                setStatusFilter(value);
+                setPage(1);
+              }}
+              options={[
+                { value: 'all', label: CASH_LABELS.filters.txnStatusAll },
+                {
+                  value: 'POSTED',
+                  label: CASH_LABELS.statuses.POSTED,
+                },
+                {
+                  value: 'CANCELLED',
+                  label: CASH_LABELS.statuses.CANCELLED,
+                },
+              ]}
+            />
+          </label>
+        </Card>
+
+        {transactions.isError ? (
+          <Alert
+            className="cash-detail-alert"
+            type="error"
+            showIcon
+            message={mapApiError(transactions.error).userMessage}
+            action={
+              <Button size="small" onClick={() => void transactions.refetch()}>
+                {CASH_LABELS.retry}
+              </Button>
+            }
           />
-        </FilterField>
-      </FilterBar>
+        ) : null}
 
-      {transactions.isError ? (
-        <Alert
-          type="error"
-          showIcon
-          style={{ marginBottom: 16 }}
-          message={mapApiError(transactions.error).userMessage}
-          action={
-            <Button size="small" onClick={() => void transactions.refetch()}>
-              {CASH_LABELS.retry}
-            </Button>
-          }
-        />
-      ) : null}
-
-      {isDesktop ? (
-        <Table<CashTransaction>
-          rowKey="id"
-          loading={transactions.isLoading || account.isLoading}
-          columns={columns}
-          dataSource={txnRows}
-          pagination={false}
-          scroll={{ x: 1300 }}
-          size="middle"
-          locale={{ emptyText: CASH_LABELS.emptyTxns }}
-        />
-      ) : (
-        <Space direction="vertical" style={{ width: "100%" }} size={12}>
-          {transactions.isLoading ? <Card loading /> : null}
-          {!transactions.isLoading && txnRows.length === 0 ? (
-            <Empty description={CASH_LABELS.emptyTxns} />
-          ) : null}
-          {txnRows.map((row) => (
-            <Card
-              key={row.id}
-              size="small"
-              title={
-                <Space wrap>
-                  <CodeText value={row.transactionNumber} />
-                  <Tag
-                    color={row.status === "CANCELLED" ? "default" : "success"}
-                  >
+        {isDesktop ? (
+          <div className="cash-detail-table-shell">
+            <Table<CashTransaction>
+              className="cash-detail-table"
+              rowKey="id"
+              loading={transactions.isLoading || account.isLoading}
+              columns={columns}
+              dataSource={txnRows}
+              pagination={false}
+              scroll={{ x: 1300 }}
+              size="middle"
+              locale={{ emptyText: CASH_LABELS.emptyTxns }}
+            />
+          </div>
+        ) : (
+          <div className="cash-detail-mobile-list">
+            {transactions.isLoading ? (
+              <Card className="cash-transaction-card" loading />
+            ) : null}
+            {!transactions.isLoading && txnRows.length === 0 ? (
+              <Card className="cash-detail-empty">
+                <Empty description={CASH_LABELS.emptyTxns} />
+              </Card>
+            ) : null}
+            {txnRows.map((row) => (
+              <Card
+                key={row.id}
+                className={`cash-transaction-card${
+                  row.status === 'CANCELLED' ? ' is-cancelled' : ''
+                }`}
+                size="small"
+              >
+                <div className="cash-transaction-topline">
+                  <div className="cash-transaction-identity">
+                    <CodeText value={row.transactionNumber} />
+                    <Text strong>{typeLabel(row.type)}</Text>
+                  </div>
+                  <Tag color={row.status === 'CANCELLED' ? 'default' : 'success'}>
                     {statusLabel(row.status)}
                   </Tag>
-                </Space>
-              }
-              extra={formatDateTime(row.transactionDate)}
-            >
-              <Space direction="vertical" size={6} style={{ width: "100%" }}>
-                <Text>{typeLabel(row.type)}</Text>
-                {row.partnerName ? (
+                </div>
+
+                <Text type="secondary" className="cash-transaction-date">
+                  {formatDateTime(row.transactionDate)}
+                </Text>
+
+                <div
+                  className={`cash-transaction-amount${
+                    row.direction === 'IN' ? ' is-incoming' : ' is-outgoing'
+                  }`}
+                >
                   <Text type="secondary">
-                    {CASH_LABELS.columns.partner}: {row.partnerName}
+                    {row.direction === 'IN'
+                      ? CASH_LABELS.cashIn
+                      : CASH_LABELS.cashOut}
                   </Text>
-                ) : null}
-                <Text>
-                  {row.direction === "IN"
-                    ? CASH_LABELS.cashIn
-                    : CASH_LABELS.cashOut}
-                  : <Text strong> {formatMoney(row.amount)}</Text>
-                </Text>
-                <Text type="secondary">
-                  {CASH_LABELS.columns.balanceAfter}:{" "}
-                  {formatMoney(row.balanceAfter)}
-                </Text>
-                {row.notes ? <Text type="secondary">{row.notes}</Text> : null}
-                {row.status === "POSTED" && row.type !== "REVERSAL" ? (
+                  <strong>
+                    {row.direction === 'IN' ? '+' : '−'}
+                    {formatMoney(row.amount)}
+                  </strong>
+                </div>
+
+                <div className="cash-transaction-details">
+                  <div>
+                    <Text type="secondary">{CASH_LABELS.columns.partner}</Text>
+                    <strong>{row.partnerName || '—'}</strong>
+                  </div>
+                  <div>
+                    <Text type="secondary">
+                      {CASH_LABELS.columns.balanceAfter}
+                    </Text>
+                    <strong>{formatMoney(row.balanceAfter)}</strong>
+                  </div>
+                  {row.notes ? (
+                    <div className="cash-transaction-note">
+                      <Text type="secondary">{CASH_LABELS.columns.notes}</Text>
+                      <strong>{row.notes}</strong>
+                    </div>
+                  ) : null}
+                </div>
+
+                {row.status === 'POSTED' && row.type !== 'REVERSAL' ? (
                   <Button
+                    className="cash-transaction-cancel"
                     danger
-                    size="small"
                     icon={phIcon(Prohibit, { size: ICON_SIZE.sm })}
                     onClick={() => confirmCancel(row)}
                   >
                     {CASH_LABELS.cancelTxn}
                   </Button>
                 ) : null}
-              </Space>
-            </Card>
-          ))}
-        </Space>
-      )}
+              </Card>
+            ))}
+          </div>
+        )}
 
-      <Pagination
-        style={{ marginTop: 16, textAlign: "right" }}
-        current={page}
-        pageSize={pageSize}
-        total={transactions.data?.meta.total ?? 0}
-        showSizeChanger
-        onChange={(nextPage, nextSize) => {
-          setPage(nextPage);
-          setPageSize(nextSize);
-        }}
-      />
+        {transactionTotal > 0 ? (
+          <div className="cash-detail-pagination">
+            <Pagination
+              current={page}
+              pageSize={pageSize}
+              total={transactionTotal}
+              showSizeChanger
+              responsive
+              onChange={(nextPage, nextSize) => {
+                setPage(nextPage);
+                setPageSize(nextSize);
+              }}
+            />
+          </div>
+        ) : null}
+      </section>
 
       <CashAccountFormModal
         open={editOpen}
@@ -659,52 +759,52 @@ export function CashAccountDetailPage() {
       />
 
       <CashInFormModal
-        open={movementMode.kind === "in"}
+        open={movementMode.kind === 'in'}
         account={(data as CashAccount | undefined) ?? null}
         submitting={cashInMutation.isPending}
         error={movementError}
         onCancel={() => {
-          setMovementMode({ kind: "closed" });
+          setMovementMode({ kind: 'closed' });
           setMovementError(undefined);
         }}
         onSubmit={handleCashIn}
       />
 
       <CashOutFormModal
-        open={movementMode.kind === "out"}
+        open={movementMode.kind === 'out'}
         account={(data as CashAccount | undefined) ?? null}
         submitting={cashOutMutation.isPending}
         error={movementError}
         onCancel={() => {
-          setMovementMode({ kind: "closed" });
+          setMovementMode({ kind: 'closed' });
           setMovementError(undefined);
         }}
         onSubmit={handleCashOut}
       />
 
       <ExpenseFormModal
-        open={movementMode.kind === "expense"}
+        open={movementMode.kind === 'expense'}
         account={(data as CashAccount | undefined) ?? null}
         submitting={expenseMutation.isPending}
         error={movementError}
         onCancel={() => {
-          setMovementMode({ kind: "closed" });
+          setMovementMode({ kind: 'closed' });
           setMovementError(undefined);
         }}
         onSubmit={handleExpense}
       />
 
       <TransferFormModal
-        open={movementMode.kind === "transfer"}
+        open={movementMode.kind === 'transfer'}
         sourceAccount={(data as CashAccount | undefined) ?? null}
         submitting={transferMutation.isPending}
         error={movementError}
         onCancel={() => {
-          setMovementMode({ kind: "closed" });
+          setMovementMode({ kind: 'closed' });
           setMovementError(undefined);
         }}
         onSubmit={handleTransfer}
       />
-    </>
+    </div>
   );
 }

@@ -31,6 +31,7 @@ import {
   ArrowCounterClockwise,
   CalendarBlank,
   CheckCircle,
+  DotsThreeVertical,
   Eye,
   Funnel,
   Package,
@@ -54,16 +55,9 @@ import {
 import { useBusinessPartnersList } from '../../master-data/api/business-partners.hooks';
 import { useProductsList } from '../../master-data/api/products.hooks';
 import { DecimalInput } from '../../master-data/ui/decimal-input';
-import {
-  FilterBar,
-  FilterField,
-} from '../../master-data/ui/list-toolbar';
+import { FilterBar, FilterField } from '../../master-data/ui/list-toolbar';
 import { PageHeader } from '../../master-data/ui/page-header';
-import type {
-  SaleListItem,
-  SaleSortBy,
-  SaleStatus,
-} from '../api/sales.api';
+import type { SaleListItem, SaleSortBy, SaleStatus } from '../api/sales.api';
 import {
   useCancelSale,
   usePostSale,
@@ -75,6 +69,7 @@ import { SaleFormModal } from '../ui/sale-form-modal';
 import { SALES_LABELS, saleStatusLabel } from '../ui/labels';
 import { computeQuantityShortages } from '../ui/quantity-shortage';
 import { SalePostConfirmModal } from '../ui/sale-post-confirm-modal';
+import '../../../shared/ui/commercial-documents.css';
 
 const { Text } = Typography;
 
@@ -91,7 +86,11 @@ function createdByName(record: SaleListItem) {
 }
 
 function statusColor(status: SaleStatus) {
-  return status === 'POSTED' ? 'success' : status === 'CANCELLED' ? 'error' : 'warning';
+  return status === 'POSTED'
+    ? 'success'
+    : status === 'CANCELLED'
+      ? 'error'
+      : 'warning';
 }
 
 function StatusBadge({ status }: { status: SaleStatus }) {
@@ -205,6 +204,7 @@ export function SalesPage() {
 
   function confirmRemove(record: SaleListItem) {
     Modal.confirm({
+      className: 'app-mobile-modal',
       title: SALES_LABELS.remove.title,
       content: SALES_LABELS.remove.text,
       okText: SALES_LABELS.actions.remove,
@@ -238,8 +238,7 @@ export function SalesPage() {
           key: 'edit',
           icon: phIcon(PencilSimple, { size: ICON_SIZE.sm }),
           label: SALES_LABELS.actions.edit,
-          onClick: () =>
-            setFormMode({ kind: 'edit', saleId: record.id }),
+          onClick: () => setFormMode({ kind: 'edit', saleId: record.id }),
         },
         {
           key: 'post',
@@ -289,9 +288,7 @@ export function SalesPage() {
                 size="small"
                 icon={phIcon(PencilSimple, { size: ICON_SIZE.sm })}
                 aria-label={SALES_LABELS.actions.edit}
-                onClick={() =>
-                  setFormMode({ kind: 'edit', saleId: record.id })
-                }
+                onClick={() => setFormMode({ kind: 'edit', saleId: record.id })}
               />
             </Tooltip>
             <Tooltip title={SALES_LABELS.actions.post}>
@@ -307,9 +304,16 @@ export function SalesPage() {
           </>
         ) : null}
         <Dropdown menu={{ items: actionMenu(record) }} trigger={['click']}>
-          <Button type="text" size="small">
-            •••
-          </Button>
+          <Button
+            className="commercial-row-menu"
+            type="text"
+            size="small"
+            icon={phIcon(DotsThreeVertical, {
+              size: ICON_SIZE.md,
+              weight: 'bold',
+            })}
+            aria-label={SALES_LABELS.columns.actions}
+          />
         </Dropdown>
       </Space>
     );
@@ -419,7 +423,7 @@ export function SalesPage() {
   };
 
   return (
-    <div>
+    <div className="ui-page ui-list-page ui-document-list-page commercial-documents-page sales-page">
       <PageHeader
         title={SALES_LABELS.title}
         description={SALES_LABELS.description}
@@ -436,6 +440,7 @@ export function SalesPage() {
       />
 
       <Card
+        className="ui-filter-card commercial-filter-card"
         size="small"
         style={{ marginBottom: 16 }}
         title={
@@ -482,12 +487,12 @@ export function SalesPage() {
               allowClear
               value={status}
               placeholder={SALES_LABELS.filters.all}
-              options={(
-                Object.keys(SALES_LABELS.statuses) as SaleStatus[]
-              ).map((value) => ({
-                value,
-                label: saleStatusLabel(value),
-              }))}
+              options={(Object.keys(SALES_LABELS.statuses) as SaleStatus[]).map(
+                (value) => ({
+                  value,
+                  label: saleStatusLabel(value),
+                }),
+              )}
               onChange={(value) => {
                 setStatus(value);
                 setPage(1);
@@ -567,27 +572,33 @@ export function SalesPage() {
       ) : null}
 
       {isDesktop ? (
-        <Table
-          rowKey="id"
-          size="middle"
-          loading={list.isLoading}
-          dataSource={list.data?.data ?? []}
-          columns={columns}
-          pagination={false}
-          locale={{ emptyText: SALES_LABELS.messages.empty }}
-          scroll={{ x: 1180 }}
-          onChange={handleTableChange}
-        />
+        <div className="commercial-table-shell">
+          <Table
+            className="commercial-documents-table"
+            rowKey="id"
+            size="middle"
+            loading={list.isLoading}
+            dataSource={list.data?.data ?? []}
+            columns={columns}
+            pagination={false}
+            locale={{ emptyText: SALES_LABELS.messages.empty }}
+            scroll={{ x: 1180 }}
+            onChange={handleTableChange}
+          />
+        </div>
       ) : (
-        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-          {list.isLoading ? (
-            <Text>{SALES_LABELS.messages.loading}</Text>
-          ) : null}
+        <Space
+          className="ui-mobile-list commercial-mobile-list"
+          direction="vertical"
+          size="middle"
+        >
+          {list.isLoading ? <Text>{SALES_LABELS.messages.loading}</Text> : null}
           {!list.isLoading && !list.data?.data.length ? (
             <Text type="secondary">{SALES_LABELS.messages.empty}</Text>
           ) : null}
           {(list.data?.data ?? []).map((record) => (
             <Card
+              className="ui-mobile-card ui-document-card commercial-document-card"
               key={record.id}
               size="small"
               title={
@@ -605,12 +616,17 @@ export function SalesPage() {
                 />
                 <Space wrap size={[12, 4]}>
                   <Text type="secondary">
-                    {phIcon(CalendarBlank, { size: 12 })} {formatDateTime(record.businessDate)}
+                    {phIcon(CalendarBlank, { size: 12 })}{' '}
+                    {formatDateTime(record.businessDate)}
                   </Text>
                   <Popover content={`${record.itemCount} sətir`}>
                     <Space size={4}>
                       {phIcon(Package, { size: 12 })}
-                      <Badge count={record.itemCount} showZero color="#1677ff" />
+                      <Badge
+                        count={record.itemCount}
+                        showZero
+                        color="#1677ff"
+                      />
                     </Space>
                   </Popover>
                 </Space>
@@ -625,12 +641,12 @@ export function SalesPage() {
       )}
 
       <Pagination
+        className="commercial-pagination"
         current={page}
         pageSize={pageSize}
         total={list.data?.meta.total ?? 0}
         showSizeChanger
         showTotal={(total) => `Cəmi ${total}`}
-        style={{ marginTop: 16, textAlign: 'right' }}
         onChange={(nextPage, nextPageSize) => {
           setPage(nextPage);
           setPageSize(nextPageSize);
@@ -638,6 +654,9 @@ export function SalesPage() {
       />
 
       <Modal
+        className="ui-confirm-modal ui-cancel-confirm-modal commercial-confirm-modal"
+        wrapClassName="commercial-modal-wrap"
+        centered
         open={Boolean(cancelTarget)}
         title={
           <Space>
@@ -702,7 +721,9 @@ export function SalesPage() {
           (Boolean(postTarget) && postTargetDetail.isLoading)
         }
         shortages={postShortages}
-        documentTotal={postTargetDetail.data?.totalAmount ?? postTarget?.totalAmount}
+        documentTotal={
+          postTargetDetail.data?.totalAmount ?? postTarget?.totalAmount
+        }
         partnerDebtBalance={
           postTargetDetail.data?.partner.currentDebtBalance ??
           postTarget?.partner?.currentDebtBalance
@@ -726,14 +747,10 @@ export function SalesPage() {
 
       <SaleFormModal
         key={
-          formMode.kind === 'edit'
-            ? `edit-${formMode.saleId}`
-            : formMode.kind
+          formMode.kind === 'edit' ? `edit-${formMode.saleId}` : formMode.kind
         }
         open={formMode.kind !== 'closed'}
-        saleId={
-          formMode.kind === 'edit' ? formMode.saleId : undefined
-        }
+        saleId={formMode.kind === 'edit' ? formMode.saleId : undefined}
         onCancel={() => setFormMode({ kind: 'closed' })}
         onSaved={() => setFormMode({ kind: 'closed' })}
       />

@@ -4,11 +4,13 @@ import {
   Button,
   Card,
   Dropdown,
+  Empty,
   Grid,
   Input,
   Modal,
   Pagination,
   Select,
+  Skeleton,
   Space,
   Table,
   Tag,
@@ -19,6 +21,9 @@ import {
 import type { ColumnsType } from 'antd/es/table';
 import type { MenuProps } from 'antd';
 import {
+  Barcode,
+  DotsThreeVertical,
+  FunnelSimple,
   Package,
   PencilSimple,
   Plus,
@@ -52,13 +57,12 @@ import { MASTER_DATA_LABELS, productTypeLabel } from '../ui/labels';
 import { ActiveStatusFilter, FilterBar, FilterField } from '../ui/list-toolbar';
 import { PageHeader } from '../ui/page-header';
 import { ProductFormModal } from '../ui/product-form-modal';
+import './products-page.css';
 
 const { Text } = Typography;
 
 type FormMode =
-  | { kind: 'closed' }
-  | { kind: 'create' }
-  | { kind: 'edit'; product: Product };
+  { kind: 'closed' } | { kind: 'create' } | { kind: 'edit'; product: Product };
 
 type TypeFilterValue = 'all' | ProductType;
 
@@ -122,7 +126,7 @@ export function ProductsPage() {
       render: (isActive: boolean) => <ActiveStatusTag isActive={isActive} />,
     },
     {
-      title: common.code,
+      title: labels.productCode,
       dataIndex: 'code',
       key: 'code',
       width: 110,
@@ -130,7 +134,7 @@ export function ProductsPage() {
       render: (value: string) => <CodeText value={value} />,
     },
     {
-      title: common.name,
+      title: labels.productName,
       dataIndex: 'name',
       key: 'name',
       sorter: true,
@@ -184,6 +188,25 @@ export function ProductsPage() {
       ),
     },
     {
+      title: labels.latestPurchasePrice,
+      dataIndex: 'latestPurchasePrice',
+      key: 'latestPurchasePrice',
+      width: 130,
+      align: 'right',
+      render: (value: string | null) => (
+        <MoneyCell value={value} format={formatMoney} />
+      ),
+    },
+    {
+      title: labels.criticalStockThreshold,
+      dataIndex: 'criticalStockThreshold',
+      key: 'criticalStockThreshold',
+      width: 135,
+      align: 'right',
+      render: (value: string | null) =>
+        value ? formatQuantity(value) : '—',
+    },
+    {
       title: common.actions,
       key: 'actions',
       fixed: 'right',
@@ -224,9 +247,16 @@ export function ProductsPage() {
               />
             </Tooltip>
             <Dropdown menu={{ items: menuItems }} trigger={['click']}>
-              <Button type="text" size="small">
-                •••
-              </Button>
+              <Button
+                className="products-row-menu"
+                type="text"
+                size="small"
+                icon={phIcon(DotsThreeVertical, {
+                  size: ICON_SIZE.md,
+                  weight: 'bold',
+                })}
+                aria-label={common.actions}
+              />
             </Dropdown>
           </Space>
         );
@@ -294,7 +324,15 @@ export function ProductsPage() {
 
   function confirmDeactivate(product: Product) {
     Modal.confirm({
+      className: 'app-mobile-modal products-confirm-modal',
+      centered: true,
       title: labels.deactivateConfirm,
+      content: (
+        <div className="products-confirm-product">
+          <CodeText value={product.code} />
+          <Text strong>{product.name}</Text>
+        </div>
+      ),
       okText: common.confirm,
       cancelText: common.cancel,
       okButtonProps: { danger: true },
@@ -312,7 +350,15 @@ export function ProductsPage() {
 
   function confirmActivate(product: Product) {
     Modal.confirm({
+      className: 'app-mobile-modal products-confirm-modal',
+      centered: true,
       title: labels.activateConfirm,
+      content: (
+        <div className="products-confirm-product">
+          <CodeText value={product.code} />
+          <Text strong>{product.name}</Text>
+        </div>
+      ),
       okText: common.confirm,
       cancelText: common.cancel,
       onOk: async () => {
@@ -339,8 +385,7 @@ export function ProductsPage() {
           unitId: formMode.product.unitId,
           standardSalePrice: formMode.product.standardSalePrice ?? '',
           latestPurchasePrice: formMode.product.latestPurchasePrice ?? '',
-          criticalStockThreshold:
-            formMode.product.criticalStockThreshold ?? '',
+          criticalStockThreshold: formMode.product.criticalStockThreshold ?? '',
           barcode: formMode.product.barcode ?? '',
           notes: formMode.product.notes ?? '',
         }
@@ -377,9 +422,11 @@ export function ProductsPage() {
       label: category.name,
     })),
   ];
+  const products = list.data?.data ?? [];
+  const productTotal = list.data?.meta.total ?? 0;
 
   return (
-    <div>
+    <div className="products-page">
       <PageHeader
         title={labels.title}
         description={labels.description}
@@ -395,57 +442,66 @@ export function ProductsPage() {
         }
       />
 
-      <FilterBar>
-        <FilterField label={common.search}>
-          <Input.Search
-            allowClear
-            placeholder={common.searchPlaceholder}
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
-            onSearch={(value) => {
-              setSearch(value.trim());
+      <Card className="products-filter-card" size="small">
+        <div className="products-filter-heading">
+          <div>
+            <span className="products-filter-icon">
+              {phIcon(FunnelSimple, { size: ICON_SIZE.sm, weight: 'bold' })}
+            </span>
+            <Text strong>{common.search}</Text>
+          </div>
+          <Tag color="blue">{productTotal}</Tag>
+        </div>
+        <FilterBar>
+          <FilterField label={common.search}>
+            <Input.Search
+              allowClear
+              placeholder={common.searchPlaceholder}
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              onSearch={(value) => {
+                setSearch(value.trim());
+                setPage(1);
+              }}
+            />
+          </FilterField>
+          <ActiveStatusFilter
+            value={activeFilter}
+            onChange={(value) => {
+              setActiveFilter(value);
               setPage(1);
             }}
-            style={{ minWidth: 220, maxWidth: 320 }}
           />
-        </FilterField>
-        <ActiveStatusFilter
-          value={activeFilter}
-          onChange={(value) => {
-            setActiveFilter(value);
-            setPage(1);
-          }}
-        />
-        <FilterField label={labels.filterType}>
-          <Select
-            value={typeFilter}
-            onChange={(value: TypeFilterValue) => {
-              setTypeFilter(value);
-              setPage(1);
-            }}
-            style={{ minWidth: 180 }}
-            aria-label={labels.filterType}
-            options={typeFilterOptions}
-          />
-        </FilterField>
-        <FilterField label={labels.filterCategory}>
-          <Select
-            value={categoryFilter}
-            onChange={(value: string) => {
-              setCategoryFilter(value);
-              setPage(1);
-            }}
-            style={{ minWidth: 180 }}
-            showSearch
-            optionFilterProp="label"
-            aria-label={labels.filterCategory}
-            options={categoryFilterOptions}
-          />
-        </FilterField>
-      </FilterBar>
+          <FilterField label={labels.filterType}>
+            <Select
+              value={typeFilter}
+              onChange={(value: TypeFilterValue) => {
+                setTypeFilter(value);
+                setPage(1);
+              }}
+              aria-label={labels.filterType}
+              options={typeFilterOptions}
+            />
+          </FilterField>
+          <FilterField label={labels.filterCategory}>
+            <Select
+              value={categoryFilter}
+              onChange={(value: string) => {
+                setCategoryFilter(value);
+                setPage(1);
+              }}
+              showSearch
+              optionFilterProp="label"
+              aria-label={labels.filterCategory}
+              options={categoryFilterOptions}
+            />
+          </FilterField>
+        </FilterBar>
+      </Card>
 
       {list.isError ? (
         <Alert
+          className="products-alert"
           type="error"
           showIcon
           message={mapApiError(list.error).userMessage || common.loadError}
@@ -454,80 +510,148 @@ export function ProductsPage() {
               {common.retry}
             </Button>
           }
-          style={{ marginBottom: 16 }}
         />
       ) : null}
 
       {isDesktop ? (
-        <Table<Product>
-          rowKey="id"
-          loading={list.isLoading}
-          columns={columns}
-          dataSource={list.data?.data ?? []}
-          pagination={false}
-          locale={{ emptyText: labels.empty }}
-          scroll={{ x: true }}
-        />
+        <div className="products-table-shell">
+          <Table<Product>
+            className="products-table"
+            rowKey="id"
+            loading={list.isLoading}
+            columns={columns}
+            dataSource={products}
+            pagination={false}
+            locale={{ emptyText: labels.empty }}
+            scroll={{ x: 1240 }}
+          />
+        </div>
       ) : (
-        <Space direction="vertical" style={{ width: '100%' }} size="middle">
-          {list.isLoading ? <Text type="secondary">{common.loading}</Text> : null}
-          {!list.isLoading && (list.data?.data.length ?? 0) === 0 ? (
-            <Text type="secondary">{labels.empty}</Text>
+        <div className="products-mobile-list">
+          {list.isLoading ? (
+            <Card className="product-mobile-card">
+              <Skeleton active paragraph={{ rows: 4 }} />
+            </Card>
           ) : null}
-          {(list.data?.data ?? []).map((product) => (
-            <Card key={product.id} size="small">
-              <Space direction="vertical" style={{ width: '100%' }}>
-                <Text strong>
-                  {product.code} — {product.name}
-                </Text>
-                <Text type="secondary">
-                  {labels.type}: {productTypeLabel(product.type)}
-                </Text>
-                <Text type="secondary">
-                  {labels.unit}: {product.unit.code} — {product.unit.name}
-                </Text>
-                <Text type="secondary">
-                  {labels.category}: {product.category?.name ?? '—'}
-                </Text>
-                <Text type="secondary">
-                  {labels.currentQuantity}: {product.currentQuantity}
-                </Text>
-                <Text type="secondary">
-                  {labels.standardSalePrice}:{' '}
-                  {product.standardSalePrice ?? '—'}
-                </Text>
+          {!list.isLoading && products.length === 0 ? (
+            <Card className="products-empty-card">
+              <Empty description={labels.empty} />
+            </Card>
+          ) : null}
+          {products.map((product) => (
+            <Card
+              className={`product-mobile-card${
+                product.isActive ? '' : ' is-inactive'
+              }`}
+              key={product.id}
+              size="small"
+            >
+              <div className="product-mobile-topline">
+                <div className="product-mobile-identity">
+                  <div className="product-mobile-identity-field">
+                    <Text type="secondary">{labels.productCode}</Text>
+                    <CodeText value={product.code} />
+                  </div>
+                  <div className="product-mobile-identity-field">
+                    <Text type="secondary">{labels.productName}</Text>
+                    <Text strong className="product-mobile-name">
+                      {product.name}
+                    </Text>
+                  </div>
+                </div>
                 <ActiveStatusTag isActive={product.isActive} />
-                <Space wrap>
-                  <Button onClick={() => openEdit(product)}>
-                    {common.edit}
+              </div>
+
+              <div className="product-mobile-tags">
+                <Tag color="blue">{productTypeLabel(product.type)}</Tag>
+                {product.category ? <Tag>{product.category.name}</Tag> : null}
+              </div>
+
+              <div className="product-mobile-primary">
+                <div>
+                  <Text type="secondary">{labels.currentQuantity}</Text>
+                  <strong>{formatQuantity(product.currentQuantity)}</strong>
+                </div>
+                <div>
+                  <Text type="secondary">{labels.standardSalePrice}</Text>
+                  <strong>{formatMoney(product.standardSalePrice)}</strong>
+                </div>
+              </div>
+
+              <div className="product-mobile-details">
+                <div>
+                  <Text type="secondary">{labels.unit}</Text>
+                  <strong>
+                    {product.unit.code} — {product.unit.name}
+                  </strong>
+                </div>
+                <div>
+                  <Text type="secondary">{labels.latestPurchasePrice}</Text>
+                  <strong>{formatMoney(product.latestPurchasePrice)}</strong>
+                </div>
+                <div>
+                  <Text type="secondary">{labels.criticalStockThreshold}</Text>
+                  <strong>
+                    {product.criticalStockThreshold
+                      ? formatQuantity(product.criticalStockThreshold)
+                      : '—'}
+                  </strong>
+                </div>
+                {product.barcode ? (
+                  <div>
+                    <Text type="secondary">{labels.barcode}</Text>
+                    <strong className="product-mobile-barcode">
+                      {phIcon(Barcode, { size: ICON_SIZE.sm })}
+                      {product.barcode}
+                    </strong>
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="product-mobile-actions">
+                <Button
+                  icon={phIcon(PencilSimple, { size: ICON_SIZE.sm })}
+                  onClick={() => openEdit(product)}
+                >
+                  {common.edit}
+                </Button>
+                {product.isActive ? (
+                  <Button
+                    danger
+                    icon={phIcon(Prohibit, { size: ICON_SIZE.sm })}
+                    onClick={() => confirmDeactivate(product)}
+                  >
+                    {common.deactivate}
                   </Button>
-                  {product.isActive ? (
-                    <Button danger onClick={() => confirmDeactivate(product)}>
-                      {common.deactivate}
-                    </Button>
-                  ) : (
-                    <Button onClick={() => confirmActivate(product)}>
-                      {common.activate}
-                    </Button>
-                  )}
-                </Space>
-              </Space>
+                ) : (
+                  <Button
+                    icon={phIcon(Power, { size: ICON_SIZE.sm })}
+                    onClick={() => confirmActivate(product)}
+                  >
+                    {common.activate}
+                  </Button>
+                )}
+              </div>
             </Card>
           ))}
-        </Space>
+        </div>
       )}
 
-      <Pagination
-        style={{ marginTop: 16, textAlign: 'right' }}
-        current={page}
-        pageSize={pageSize}
-        total={list.data?.meta.total ?? 0}
-        showSizeChanger
-        onChange={(nextPage, nextPageSize) => {
-          setPage(nextPage);
-          setPageSize(nextPageSize);
-        }}
-      />
+      {productTotal > 0 ? (
+        <div className="products-pagination">
+          <Pagination
+            current={page}
+            pageSize={pageSize}
+            total={productTotal}
+            showSizeChanger
+            responsive
+            onChange={(nextPage, nextPageSize) => {
+              setPage(nextPage);
+              setPageSize(nextPageSize);
+            }}
+          />
+        </div>
+      ) : null}
 
       <ProductFormModal
         open={formMode.kind !== 'closed'}
