@@ -608,7 +608,11 @@ export function ProductsPage() {
                 </div>
                 <div>
                   <Text type="secondary">{labels.standardSalePrice}</Text>
-                  <strong>{formatMoney(product.standardSalePrice)}</strong>
+                  <strong>
+                    {product.standardSalePrice
+                      ? formatMoney(product.standardSalePrice)
+                      : "—"}
+                  </strong>
                 </div>
               </div>
 
@@ -621,7 +625,11 @@ export function ProductsPage() {
                 </div>
                 <div>
                   <Text type="secondary">{labels.latestPurchasePrice}</Text>
-                  <strong>{formatMoney(product.latestPurchasePrice)}</strong>
+                  <strong>
+                    {product.latestPurchasePrice
+                      ? formatMoney(product.latestPurchasePrice)
+                      : "—"}
+                  </strong>
                 </div>
                 <div>
                   <Text type="secondary">{labels.criticalStockThreshold}</Text>
