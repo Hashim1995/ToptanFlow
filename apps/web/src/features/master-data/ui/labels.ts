@@ -31,6 +31,8 @@ export const MASTER_DATA_LABELS = {
       'Məhsul kataloqu, cari miqdar, tip, kateqoriya və qiymət məlumatları.',
     create: 'Yeni məhsul',
     edit: 'Məhsulu redaktə et',
+    productCode: 'Məhsul kodu',
+    productName: 'Məhsul adı',
     empty: 'Heç bir məhsul tapılmadı.',
     deactivateConfirm: 'Bu məhsulu deaktiv etmək istəyirsiniz?',
     activateConfirm: 'Bu məhsulu yenidən aktiv etmək istəyirsiniz?',
@@ -66,6 +68,8 @@ export const MASTER_DATA_LABELS = {
     description: 'Müştəri və təchizatçı qeydləri.',
     create: 'Yeni tərəfdaş',
     edit: 'Tərəfdaşı redaktə et',
+    partnerCode: 'Tərəfdaş kodu',
+    partnerName: 'Tərəfdaş adı',
     empty: 'Heç bir tərəfdaş tapılmadı.',
     deactivateConfirm: 'Bu tərəfdaşı deaktiv etmək istəyirsiniz?',
     activateConfirm: 'Bu tərəfdaşı yenidən aktiv etmək istəyirsiniz?',
@@ -93,6 +97,9 @@ export const MASTER_DATA_LABELS = {
     duplicateIntro:
       'Eyni ad, telefon və ya vergi nömrəsinə oxşayan mövcud qeydlər var. Davam etmək üçün açıq şəkildə təsdiqləyin.',
     duplicateAcknowledge: 'Buna baxmayaraq yadda saxla',
+    movementReport: {
+      action: 'Hərəkət reportu',
+    },
     matchedFields: 'Uyğun sahələr',
     matched: {
       name: 'Ad',

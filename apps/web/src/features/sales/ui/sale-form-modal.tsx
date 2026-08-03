@@ -16,19 +16,16 @@ import {
   Typography,
   message,
 } from 'antd';
+import { appRequiredMark } from '../../../shared/ui/form-required-mark';
+import { CheckCircle, Plus, ShoppingBag, Trash } from '@phosphor-icons/react';
 import {
-  CheckCircle,
-  Plus,
-  ShoppingBag,
-  Trash,
-} from '@phosphor-icons/react';
-import dayjs from 'dayjs';
-import {
-  Controller,
-  useFieldArray,
-  useForm,
-  useWatch,
-} from 'react-hook-form';
+  DATE_DISPLAY_FORMAT,
+  bakuTodayDateOnly,
+  dateOnlyPickerToApi,
+  dateOnlyPickerValue,
+  toDateOnlyApi,
+} from '../../../shared/datetime';
+import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { mapApiError } from '../../../api/map-api-error';
 import { formatMoney } from '../../../shared/money/format-money';
 import { formatQuantity } from '../../../shared/ui/format';
@@ -52,6 +49,12 @@ import {
 import { SALES_LABELS } from './labels';
 import { computeQuantityShortages } from './quantity-shortage';
 import { SalePostConfirmModal } from './sale-post-confirm-modal';
+import {
+  emptySaleImmediatePayment,
+  isSaleImmediatePaymentValid,
+  type SaleImmediatePaymentState,
+} from './sale-immediate-payment';
+import { SaleImmediatePaymentSection } from './sale-immediate-payment-section';
 
 const { Text } = Typography;
 
@@ -65,7 +68,7 @@ const emptyLine = {
 
 const emptyForm: SaleFormValues = {
   partnerId: '',
-  businessDate: dayjs().format('YYYY-MM-DD'),
+  businessDate: bakuTodayDateOnly(),
   notes: '',
   discountAmount: '',
   items: [emptyLine],
@@ -91,7 +94,7 @@ function toInput(values: SaleFormValues): SaleInput {
 function toFormValues(sale: Sale): SaleFormValues {
   return {
     partnerId: sale.partner.id,
-    businessDate: sale.businessDate.slice(0, 10),
+    businessDate: toDateOnlyApi(sale.businessDate) ?? '',
     notes: sale.notes ?? '',
     discountAmount: sale.discountAmount ?? '',
     items: sale.items.map((item) => ({
@@ -126,6 +129,9 @@ export function SaleFormModal({
   const [submitError, setSubmitError] = useState<string>();
   const [postConfirmOpen, setPostConfirmOpen] = useState(false);
   const [pendingPostSale, setPendingPostSale] = useState<Sale>();
+  const [immediatePayment, setImmediatePayment] =
+    useState<SaleImmediatePaymentState>(() => emptySaleImmediatePayment());
+  const [paymentDocumentTotal, setPaymentDocumentTotal] = useState('');
 
   const {
     control,
@@ -157,14 +163,12 @@ export function SaleFormModal({
   useEffect(() => {
     if (!open) {
       initializedId.current = undefined;
-      setPostConfirmOpen(false);
-      setPendingPostSale(undefined);
       return;
     }
     if (!isEdit) {
       reset({
         ...emptyForm,
-        businessDate: dayjs().format('YYYY-MM-DD'),
+        businessDate: bakuTodayDateOnly(),
         items: [emptyLine],
       });
       return;
@@ -234,8 +238,33 @@ export function SaleFormModal({
     [values],
   );
 
-  const draftBlocked =
-    isEdit && sale.data && sale.data.status !== 'DRAFT';
+  const documentTotalAmount = totals.total.toFixed(2);
+
+  const selectedPartnerDebt = useMemo(() => {
+    const fromList = partners.data?.data.find(
+      (partner) => partner.id === values.partnerId,
+    )?.currentDebtBalance;
+    if (fromList) return fromList;
+    const saleData = sale.data;
+    if (saleData !== undefined && saleData.partner.id === values.partnerId) {
+      return saleData.partner.currentDebtBalance;
+    }
+    return '0';
+  }, [partners.data?.data, values.partnerId, sale.data]);
+
+  if (paymentDocumentTotal !== documentTotalAmount) {
+    setPaymentDocumentTotal(documentTotalAmount);
+    if (immediatePayment.enabled) {
+      setImmediatePayment((previous) => ({
+        ...previous,
+        amount: documentTotalAmount,
+      }));
+    }
+  }
+
+  const paymentValid = isSaleImmediatePaymentValid(immediatePayment);
+
+  const draftBlocked = isEdit && sale.data && sale.data.status !== 'DRAFT';
   const displayError = draftBlocked
     ? SALES_LABELS.messages.draftOnly
     : submitError;
@@ -243,6 +272,11 @@ export function SaleFormModal({
     createMutation.isPending ||
     updateMutation.isPending ||
     postMutation.isPending;
+
+  function resetImmediatePayment() {
+    setImmediatePayment(emptySaleImmediatePayment());
+    setPaymentDocumentTotal('');
+  }
 
   async function save(formValues: SaleFormValues, shouldPost: boolean) {
     setSubmitError(undefined);
@@ -260,6 +294,7 @@ export function SaleFormModal({
       );
 
       if (!shouldPost) {
+        resetImmediatePayment();
         onSaved(saved);
         return;
       }
@@ -271,18 +306,24 @@ export function SaleFormModal({
     }
   }
 
-  async function handlePostConfirm(negativeQuantityReason?: string) {
+  async function handlePostConfirm(payload: {
+    negativeQuantityReason?: string;
+    immediatePayment?: {
+      cashAccountId: string;
+      amount: string;
+      notes?: string;
+    };
+  }) {
     if (!pendingPostSale) return;
     try {
       const posted = await postMutation.mutateAsync({
         id: pendingPostSale.id,
-        input: negativeQuantityReason
-          ? { negativeQuantityReason }
-          : undefined,
+        input: payload,
       });
       message.success(SALES_LABELS.post.success);
       setPostConfirmOpen(false);
       setPendingPostSale(undefined);
+      resetImmediatePayment();
       onSaved(posted);
     } catch (error) {
       message.error(mapApiError(error).userMessage);
@@ -296,24 +337,43 @@ export function SaleFormModal({
   return (
     <>
       <Modal
+        className="ui-form-modal ui-document-form-modal commercial-document-modal sale-form-modal"
+        wrapClassName="commercial-modal-wrap"
+        centered
         title={
           <Space>
             {phIcon(ShoppingBag, { size: ICON_SIZE.lg, weight: 'duotone' })}
             {isEdit ? SALES_LABELS.edit : SALES_LABELS.create}
           </Space>
         }
-        open={open}
-        onCancel={onCancel}
+        open={open && !postConfirmOpen}
+        afterOpenChange={(visible) => {
+          if (!visible && !open) resetImmediatePayment();
+        }}
+        onCancel={() => {
+          setPostConfirmOpen(false);
+          setPendingPostSale(undefined);
+          resetImmediatePayment();
+          onCancel();
+        }}
         width={960}
         destroyOnHidden
         forceRender
-        styles={{ body: { maxHeight: '75vh', overflowY: 'auto', paddingTop: 12 } }}
         footer={
           <Space wrap style={{ width: '100%', justifyContent: 'flex-end' }}>
-            <Button onClick={onCancel}>{SALES_LABELS.actions.back}</Button>
+            <Button
+              onClick={() => {
+                setPostConfirmOpen(false);
+                setPendingPostSale(undefined);
+                resetImmediatePayment();
+                onCancel();
+              }}
+            >
+              {SALES_LABELS.actions.back}
+            </Button>
             <Button
               loading={submitting}
-              disabled={loadingEdit || Boolean(loadError)}
+              disabled={loadingEdit || Boolean(loadError) || !paymentValid}
               icon={phIcon(CheckCircle, { size: ICON_SIZE.sm })}
               onClick={() =>
                 void handleSubmit((formValues) => save(formValues, true))()
@@ -354,7 +414,11 @@ export function SaleFormModal({
         ) : null}
 
         {!loadingEdit && !loadError ? (
-          <Form layout="vertical" requiredMark size="small">
+          <Form
+            className="ui-document-form commercial-document-form"
+            layout="vertical"
+            requiredMark={appRequiredMark}
+          >
             {displayError ? (
               <Alert
                 type="error"
@@ -364,7 +428,7 @@ export function SaleFormModal({
               />
             ) : null}
 
-            <Row gutter={[12, 0]}>
+            <Row className="commercial-document-meta-grid" gutter={[12, 0]}>
               <Col xs={24} sm={12} md={8}>
                 <Controller
                   control={control}
@@ -402,11 +466,11 @@ export function SaleFormModal({
                       style={{ marginBottom: 12 }}
                     >
                       <DatePicker
-                        value={field.value ? dayjs(field.value) : null}
-                        format="DD.MM.YYYY"
+                        value={dateOnlyPickerValue(field.value)}
+                        format={DATE_DISPLAY_FORMAT}
                         style={{ width: '100%' }}
                         onChange={(date) =>
-                          field.onChange(date?.format('YYYY-MM-DD') ?? '')
+                          field.onChange(dateOnlyPickerToApi(date))
                         }
                       />
                     </Form.Item>
@@ -454,23 +518,10 @@ export function SaleFormModal({
 
             <Divider style={{ margin: '8px 0 12px' }} />
 
-            <Space
-              style={{
-                width: '100%',
-                justifyContent: 'space-between',
-                marginBottom: 8,
-              }}
-            >
+            <div className="commercial-lines-heading">
               <Text strong>{SALES_LABELS.fields.items}</Text>
-              <Button
-                type="dashed"
-                size="small"
-                icon={phIcon(Plus, { size: ICON_SIZE.sm, weight: 'bold' })}
-                onClick={() => append(emptyLine)}
-              >
-                {SALES_LABELS.actions.addLine}
-              </Button>
-            </Space>
+              <Text type="secondary">{fields.length}</Text>
+            </div>
 
             {errors.items?.root?.message ||
             (typeof errors.items?.message === 'string'
@@ -488,7 +539,7 @@ export function SaleFormModal({
               />
             ) : null}
 
-            <Space direction="vertical" size={8} style={{ width: '100%' }}>
+            <Space className="ui-document-lines" direction="vertical" size={10}>
               {fields.map((field, index) => {
                 const watchedLine = values.items?.[index];
                 const line = {
@@ -504,6 +555,7 @@ export function SaleFormModal({
                   : undefined;
                 return (
                   <div
+                    className="ui-document-line-card commercial-line-card"
                     key={field.id}
                     style={{
                       border: '1px solid #f0f0f0',
@@ -513,7 +565,7 @@ export function SaleFormModal({
                     }}
                   >
                     <Row gutter={[8, 0]} align="top">
-                      <Col xs={24} md={8}>
+                      <Col className="commercial-line-product" xs={24} md={8}>
                         <Controller
                           control={control}
                           name={`items.${index}.productId`}
@@ -562,7 +614,7 @@ export function SaleFormModal({
                           </Text>
                         ) : null}
                       </Col>
-                      <Col xs={8} md={3}>
+                      <Col className="commercial-line-quantity" xs={12} md={3}>
                         <Controller
                           control={control}
                           name={`items.${index}.quantity`}
@@ -581,7 +633,7 @@ export function SaleFormModal({
                           )}
                         />
                       </Col>
-                      <Col xs={8} md={3}>
+                      <Col className="commercial-line-price" xs={12} md={3}>
                         <Controller
                           control={control}
                           name={`items.${index}.unitPrice`}
@@ -600,7 +652,7 @@ export function SaleFormModal({
                           )}
                         />
                       </Col>
-                      <Col xs={8} md={3}>
+                      <Col className="commercial-line-discount" xs={12} md={3}>
                         <Controller
                           control={control}
                           name={`items.${index}.discountAmount`}
@@ -618,8 +670,9 @@ export function SaleFormModal({
                           )}
                         />
                       </Col>
-                      <Col xs={16} md={4}>
+                      <Col className="commercial-line-total" xs={12} md={4}>
                         <Form.Item
+                          className="ui-form-field-readonly"
                           label={SALES_LABELS.fields.lineTotal}
                           style={{ marginBottom: 4 }}
                         >
@@ -635,13 +688,15 @@ export function SaleFormModal({
                           />
                         </Form.Item>
                       </Col>
-                      <Col xs={8} md={3}>
+                      <Col className="commercial-line-remove" xs={24} md={3}>
                         <Form.Item
+                          className="commercial-line-remove-item"
                           label=" "
                           colon={false}
                           style={{ marginBottom: 4 }}
                         >
                           <Button
+                            className="commercial-remove-line-button"
                             danger
                             type="text"
                             icon={phIcon(Trash, { size: ICON_SIZE.sm })}
@@ -649,10 +704,12 @@ export function SaleFormModal({
                             aria-label={SALES_LABELS.actions.removeLine}
                             onClick={() => remove(index)}
                             style={{ width: '100%' }}
-                          />
+                          >
+                            <span>{SALES_LABELS.actions.removeLine}</span>
+                          </Button>
                         </Form.Item>
                       </Col>
-                      <Col xs={24} md={24}>
+                      <Col className="commercial-line-notes" xs={24} md={24}>
                         <Controller
                           control={control}
                           name={`items.${index}.notes`}
@@ -666,7 +723,6 @@ export function SaleFormModal({
                             >
                               <Input
                                 {...itemField}
-                                size="small"
                                 placeholder={
                                   SALES_LABELS.fields.lineNotesPlaceholder
                                 }
@@ -681,7 +737,26 @@ export function SaleFormModal({
               })}
             </Space>
 
+            <Button
+              className="commercial-add-line-button"
+              type="dashed"
+              icon={phIcon(Plus, { size: ICON_SIZE.sm, weight: 'bold' })}
+              onClick={() => append(emptyLine)}
+            >
+              {SALES_LABELS.actions.addLine}
+            </Button>
+
+            <div className="commercial-payment-section">
+              <SaleImmediatePaymentSection
+                value={immediatePayment}
+                onChange={setImmediatePayment}
+                documentTotal={documentTotalAmount}
+                partnerDebtBalance={selectedPartnerDebt}
+              />
+            </div>
+
             <div
+              className="commercial-form-totals"
               style={{
                 marginTop: 12,
                 padding: '10px 12px',
@@ -718,11 +793,15 @@ export function SaleFormModal({
               )
             : []
         }
+        documentTotal={pendingPostSale?.totalAmount}
+        partnerDebtBalance={pendingPostSale?.partner.currentDebtBalance}
+        initialPayment={immediatePayment}
         onCancel={() => {
           setPostConfirmOpen(false);
           if (pendingPostSale) {
             onSaved(pendingPostSale);
           }
+          resetImmediatePayment();
           setPendingPostSale(undefined);
         }}
         onConfirm={handlePostConfirm}

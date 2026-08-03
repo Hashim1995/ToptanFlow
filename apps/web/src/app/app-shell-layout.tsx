@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   Avatar,
@@ -8,11 +8,15 @@ import {
   Layout,
   Menu,
   Space,
+  Tooltip,
   Typography,
   theme,
 } from 'antd';
 import type { MenuProps } from 'antd';
 import {
+  ChartLine,
+  CaretLeft,
+  CaretRight,
   House,
   List,
   Package,
@@ -21,24 +25,31 @@ import {
   ShoppingCart,
   SignOut,
   SquaresFour,
+  UserCircle,
   UsersThree,
+  Wallet,
+  Receipt,
+  ArrowsDownUp,
 } from '@phosphor-icons/react';
 import { MASTER_DATA_LABELS } from '../features/master-data/ui/labels';
 import { AUTH_LABELS } from '../features/auth/ui/labels';
 import { useAuth } from '../features/auth/use-auth';
+import { CASH_LABELS } from '../features/cash/ui/labels';
 import { PURCHASE_LABELS } from '../features/purchases/ui/labels';
 import { SALES_LABELS } from '../features/sales/ui/labels';
+import { USERS_LABELS } from '../features/users/ui/labels';
+import { BrandLogo } from '../shared/ui/brand-logo';
 import { ICON_SIZE, phIcon } from '../shared/ui/ph-icon';
+import './app-shell-layout.css';
 
 const { Header, Sider, Content } = Layout;
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 type MenuItem = Required<MenuProps>['items'][number];
 
-function navLabel(icon: ReactNode, text: string, to: string) {
+function navLabel(text: string, to: string) {
   return (
-    <Link to={to} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      {icon}
+    <Link to={to} className="app-nav-link">
       <span>{text}</span>
     </Link>
   );
@@ -52,56 +63,37 @@ const NAV_ITEMS: MenuItem[] = [
     children: [
       {
         key: '/',
-        label: navLabel(
-          phIcon(House, { size: ICON_SIZE.md }),
-          'Ana səhifə',
-          '/',
-        ),
+        icon: phIcon(House, { size: ICON_SIZE.md }),
+        label: navLabel('Ana səhifə', '/'),
       },
     ],
   },
   {
-    key: 'group-products',
+    key: 'group-cash',
     type: 'group',
-    label: 'Məhsullar',
+    label: CASH_LABELS.nav,
     children: [
       {
-        key: '/products',
-        label: navLabel(
-          phIcon(Package, { size: ICON_SIZE.md }),
-          MASTER_DATA_LABELS.products.nav,
-          '/products',
-        ),
+        key: '/cash/accounts',
+        icon: phIcon(Wallet, { size: ICON_SIZE.md }),
+        label: navLabel(CASH_LABELS.navAccounts, '/cash/accounts'),
       },
       {
-        key: '/product-categories',
-        label: navLabel(
-          phIcon(SquaresFour, { size: ICON_SIZE.md }),
-          MASTER_DATA_LABELS.categories.nav,
-          '/product-categories',
-        ),
+        key: '/cash/transactions',
+        icon: phIcon(ArrowsDownUp, { size: ICON_SIZE.md }),
+        label: navLabel(CASH_LABELS.navTransactions, '/cash/transactions'),
       },
       {
-        key: '/units',
-        label: navLabel(
-          phIcon(Ruler, { size: ICON_SIZE.md }),
-          MASTER_DATA_LABELS.units.nav,
-          '/units',
-        ),
+        key: '/cash/reports',
+        icon: phIcon(ChartLine, { size: ICON_SIZE.md }),
+        label: navLabel(CASH_LABELS.navReports, '/cash/reports'),
       },
-    ],
-  },
-  {
-    key: 'group-partners',
-    type: 'group',
-    label: 'Tərəfdaşlar',
-    children: [
       {
-        key: '/business-partners',
+        key: '/cash/expense-categories',
+        icon: phIcon(Receipt, { size: ICON_SIZE.md }),
         label: navLabel(
-          phIcon(UsersThree, { size: ICON_SIZE.md }),
-          MASTER_DATA_LABELS.partners.nav,
-          '/business-partners',
+          CASH_LABELS.expenseCategories,
+          '/cash/expense-categories',
         ),
       },
     ],
@@ -113,11 +105,8 @@ const NAV_ITEMS: MenuItem[] = [
     children: [
       {
         key: '/purchases',
-        label: navLabel(
-          phIcon(ShoppingCart, { size: ICON_SIZE.md }),
-          PURCHASE_LABELS.nav,
-          '/purchases',
-        ),
+        icon: phIcon(ShoppingCart, { size: ICON_SIZE.md }),
+        label: navLabel(PURCHASE_LABELS.nav, '/purchases'),
       },
     ],
   },
@@ -128,15 +117,70 @@ const NAV_ITEMS: MenuItem[] = [
     children: [
       {
         key: '/sales',
+        icon: phIcon(ShoppingBag, { size: ICON_SIZE.md }),
+        label: navLabel(SALES_LABELS.nav, '/sales'),
+      },
+    ],
+  },
+  {
+    key: 'group-products',
+    type: 'group',
+    label: 'Məhsullar',
+    children: [
+      {
+        key: '/products',
+        icon: phIcon(Package, { size: ICON_SIZE.md }),
+        label: navLabel(MASTER_DATA_LABELS.products.nav, '/products'),
+      },
+      {
+        key: '/product-categories',
+        icon: phIcon(SquaresFour, { size: ICON_SIZE.md }),
         label: navLabel(
-          phIcon(ShoppingBag, { size: ICON_SIZE.md }),
-          SALES_LABELS.nav,
-          '/sales',
+          MASTER_DATA_LABELS.categories.nav,
+          '/product-categories',
         ),
+      },
+      {
+        key: '/units',
+        icon: phIcon(Ruler, { size: ICON_SIZE.md }),
+        label: navLabel(MASTER_DATA_LABELS.units.nav, '/units'),
+      },
+    ],
+  },
+  {
+    key: 'group-partners',
+    type: 'group',
+    label: 'Tərəfdaşlar',
+    children: [
+      {
+        key: '/business-partners',
+        icon: phIcon(UsersThree, { size: ICON_SIZE.md }),
+        label: navLabel(MASTER_DATA_LABELS.partners.nav, '/business-partners'),
       },
     ],
   },
 ];
+
+function buildNavItems(isSuperAdmin: boolean): MenuItem[] {
+  if (!isSuperAdmin) {
+    return NAV_ITEMS;
+  }
+  return [
+    ...NAV_ITEMS,
+    {
+      key: 'group-users',
+      type: 'group',
+      label: USERS_LABELS.nav,
+      children: [
+        {
+          key: '/users',
+          icon: phIcon(UserCircle, { size: ICON_SIZE.md }),
+          label: navLabel(USERS_LABELS.nav, '/users'),
+        },
+      ],
+    },
+  ];
+}
 
 /**
  * Responsive app chrome (US-037 / TASK-037-03; uplifted CHANGE-001 / US-042).
@@ -149,6 +193,7 @@ export function AppShellLayout() {
   const screens = Grid.useBreakpoint();
   const isDesktop = Boolean(screens.md);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const { token } = theme.useToken();
 
@@ -159,7 +204,17 @@ export function AppShellLayout() {
         ? '/purchases'
         : location.pathname.startsWith('/sales')
           ? '/sales'
-          : location.pathname,
+          : location.pathname.startsWith('/cash/expense-categories')
+            ? '/cash/expense-categories'
+            : location.pathname.startsWith('/cash/transactions')
+              ? '/cash/transactions'
+            : location.pathname.startsWith('/cash/reports')
+              ? '/cash/reports'
+              : location.pathname.startsWith('/cash')
+                ? '/cash/accounts'
+                : location.pathname.startsWith('/users')
+                  ? '/users'
+                  : location.pathname,
   ];
 
   async function handleLogout() {
@@ -172,56 +227,107 @@ export function AppShellLayout() {
     }
   }
 
-  const menu = (
+  const renderMenu = (collapsed = false) => (
     <Menu
+      className="app-sidebar-menu"
       mode="inline"
+      inlineCollapsed={collapsed}
       selectedKeys={selectedKeys}
-      items={NAV_ITEMS}
+      items={buildNavItems(Boolean(auth.user?.isSuperAdmin))}
       onClick={() => setDrawerOpen(false)}
-      style={{ borderInlineEnd: 'none' }}
     />
   );
 
-  const displayName = auth.user?.fullName ?? auth.user?.username ?? 'İstifadəçi';
+  const displayName =
+    auth.user?.fullName ?? auth.user?.username ?? 'İstifadəçi';
+  const displayInitial = displayName
+    .trim()
+    .charAt(0)
+    .toLocaleUpperCase('az-AZ');
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <Layout className="app-shell">
       {isDesktop ? (
         <Sider
-          width={248}
-          style={{
-            background: token.colorBgContainer,
-            borderInlineEnd: `1px solid ${token.colorBorderSecondary}`,
-          }}
+          className={`app-sidebar${sidebarCollapsed ? ' is-collapsed' : ''}`}
+          width={264}
+          collapsedWidth={84}
+          collapsed={sidebarCollapsed}
+          trigger={null}
+          theme="light"
         >
-          <div style={{ padding: '16px 16px 8px' }}>
-            <Space align="center" size={10}>
-              <Avatar
-                shape="square"
-                style={{
-                  background: token.colorPrimary,
-                  borderRadius: 8,
-                  fontWeight: 700,
-                }}
-              >
-                TF
-              </Avatar>
-              <div>
-                <Title level={4} style={{ margin: 0, lineHeight: 1.2 }}>
-                  TOPTANFLOW
-                </Title>
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  İdarə paneli
-                </Text>
+          <div className="app-sidebar-inner">
+            <div className="app-brand">
+              <div className="app-brand-identity">
+                <BrandLogo
+                  className="app-sidebar-logo"
+                  compact={sidebarCollapsed}
+                />
               </div>
-            </Space>
+              <Tooltip
+                title={sidebarCollapsed ? 'Menyunu genişləndir' : 'Menyunu yığ'}
+                placement="right"
+              >
+                <Button
+                  className="app-sidebar-toggle"
+                  type="text"
+                  aria-label={
+                    sidebarCollapsed ? 'Menyunu genişləndir' : 'Menyunu yığ'
+                  }
+                  icon={phIcon(sidebarCollapsed ? CaretRight : CaretLeft, {
+                    size: ICON_SIZE.sm,
+                    weight: 'bold',
+                  })}
+                  onClick={() => setSidebarCollapsed((value) => !value)}
+                />
+              </Tooltip>
+            </div>
+
+            <nav className="app-sidebar-navigation" aria-label="Əsas menyu">
+              {renderMenu(sidebarCollapsed)}
+            </nav>
+
+            <div className="app-sidebar-user">
+              <Tooltip
+                title={sidebarCollapsed ? displayName : undefined}
+                placement="right"
+              >
+                <div className="app-user-identity">
+                  <Avatar className="app-user-avatar">{displayInitial}</Avatar>
+                  {!sidebarCollapsed ? (
+                    <div className="app-user-copy">
+                      <Text strong ellipsis>
+                        {displayName}
+                      </Text>
+                      <Text type="secondary">İstifadəçi</Text>
+                    </div>
+                  ) : null}
+                </div>
+              </Tooltip>
+              <Tooltip
+                title={sidebarCollapsed ? AUTH_LABELS.logout : undefined}
+                placement="right"
+              >
+                <Button
+                  className="app-sidebar-logout"
+                  danger
+                  block={!sidebarCollapsed}
+                  icon={phIcon(SignOut, { size: ICON_SIZE.md })}
+                  loading={loggingOut}
+                  aria-label={AUTH_LABELS.logout}
+                  onClick={() => void handleLogout()}
+                >
+                  {!sidebarCollapsed ? AUTH_LABELS.logout : null}
+                </Button>
+              </Tooltip>
+            </div>
           </div>
-          {menu}
         </Sider>
       ) : null}
 
       <Layout>
         <Header
+          className="app-topbar"
           style={{
             background: token.colorBgContainer,
             borderBottom: `1px solid ${token.colorBorderSecondary}`,
@@ -243,49 +349,52 @@ export function AppShellLayout() {
                 onClick={() => setDrawerOpen(true)}
               />
             ) : null}
-            {!isDesktop ? (
-              <Title level={5} style={{ margin: 0 }}>
-                TOPTANFLOW
-              </Title>
-            ) : (
-              <Text type="secondary" style={{ fontSize: 13 }}>
-                {displayName}
-              </Text>
-            )}
+            {!isDesktop ? <BrandLogo className="app-topbar-logo" /> : null}
           </Space>
-          <Space size={8}>
-            {!isDesktop ? (
+          {!isDesktop ? (
+            <Space size={8}>
               <Text type="secondary" style={{ fontSize: 12 }}>
                 {displayName}
               </Text>
-            ) : null}
-            <Button
-              icon={phIcon(SignOut, { size: ICON_SIZE.md })}
-              loading={loggingOut}
-              onClick={() => void handleLogout()}
-            >
-              {AUTH_LABELS.logout}
-            </Button>
-          </Space>
+              <Button
+                icon={phIcon(SignOut, { size: ICON_SIZE.md })}
+                loading={loggingOut}
+                aria-label={AUTH_LABELS.logout}
+                onClick={() => void handleLogout()}
+              >
+                {AUTH_LABELS.logout}
+              </Button>
+            </Space>
+          ) : null}
         </Header>
-        <Content style={{ padding: isDesktop ? 24 : 16 }}>
-          <Outlet />
+        <Content
+          className="app-content"
+          style={{ padding: isDesktop ? 24 : 16 }}
+        >
+          <div className="app-content-inner">
+            <Outlet />
+          </div>
         </Content>
       </Layout>
 
       <Drawer
-        title={
-          <Space>
-            {phIcon(List, { size: ICON_SIZE.md })}
-            Menyu
-          </Space>
-        }
+        className="app-nav-drawer"
+        title={<BrandLogo className="app-drawer-logo" />}
         placement="left"
+        width={320}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        styles={{ body: { padding: 0 } }}
       >
-        {menu}
+        <div className="app-drawer-navigation">{renderMenu()}</div>
+        <div className="app-drawer-user">
+          <Avatar className="app-user-avatar">{displayInitial}</Avatar>
+          <div className="app-user-copy">
+            <Text strong ellipsis>
+              {displayName}
+            </Text>
+            <Text type="secondary">İstifadəçi</Text>
+          </div>
+        </div>
       </Drawer>
     </Layout>
   );

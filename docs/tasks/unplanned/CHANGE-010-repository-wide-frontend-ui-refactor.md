@@ -1,0 +1,39 @@
+# CHANGE-010: Repository-wide frontend UI refactor
+
+- **ID:** CHANGE-010
+- **Type:** CHANGE
+- **Title:** Repository-wide frontend UI refactor
+- **Status:** Done
+- **Trigger:** Owner requested the same professional, modern, readable, mobile-first UI treatment across every delivered frontend module, page, subpage, filter section, component, and modal.
+- **Urgency:** High
+- **Affected epics / stories / tasks:** Delivered frontend surfaces under US-037, US-038, US-022, US-023, US-024, US-025, US-043, US-044, US-045, US-046, US-049, and US-051.
+- **Why not in the original plan:** Delivered workflows are functionally complete but were implemented incrementally and do not yet share one polished responsive presentation system.
+- **Scope:** Frontend-only UI/UX refactoring of the application shell, login, home, Master Data, Purchases, Sales, Cash reports/remaining Cash surfaces, Users, shared page headers, toolbars, filters, cards, tables/mobile data views, detail pages, forms, and confirmation modals under `apps/web/src/**`.
+- **Out of scope:** Backend files; API contracts or calls; hooks and queries; schemas and validation rules; calculations; permissions; route behavior; state transitions; form defaults; payloads; mutations; business terminology changes; new business capabilities.
+- **Risks:** Hiding business data or actions at small widths; modal action clipping; inconsistent terminology; visual changes accidentally altering event or form behavior; dense tables becoming unreadable.
+- **Acceptance criteria:**
+  - Every delivered route uses a consistent professional visual hierarchy and Azerbaijani-first presentation.
+  - Layouts are designed from mobile upward and remain useful on tablet, laptop, desktop, and large desktop screens.
+  - All data, totals, statuses, warnings, validation messages, and available actions remain visible, readable, and reachable at every supported viewport.
+  - Filter sections are compact, clearly grouped, responsive, and easy to reset or apply without changing filter behavior.
+  - Dense data uses readable mobile cards or safe horizontal scrolling while desktop tables continue to use available space.
+  - All form and confirmation modals are viewport-bounded; only their content regions scroll and action footers remain visible above mobile safe areas.
+  - Required and optional form fields have consistent visual markers derived from their existing validation requirements.
+  - Touch targets, button hierarchy, spacing, typography, colors, focus states, loading/error/empty states, and destructive actions are consistent and accessible.
+  - No frontend business logic or backend code is changed.
+  - Focused lint, TypeScript checking, production bundling, and existing web tests pass.
+- **Impact on current work:** Standalone owner-directed presentation program; no active story is paused. Existing Review stories must not regress.
+- **Roadmap impact:** None; presentation hardening of already delivered frontend workflows.
+- **Result:** Module-level responsive markup and presentation refinements remain across delivered screens, but the broad `index.css` override layer and custom Ant theme were fully rolled back after they caused application-wide flicker and popup regressions. `apps/web/src/index.css` and `apps/web/src/app/providers.tsx` now match the repository baseline. Mobile full-screen behavior is isolated in `apps/web/src/shared/ui/mobile-modal.css`, activates only on explicitly marked modal classes, and targets Ant Design 6's actual `.ant-modal-container` structure. Regular modal headers and footers remain outside the scrollable body; static confirmation actions remain outside their scrollable content. Ant Design native Select/Dropdown portal and z-index behavior is untouched. No route behavior, controller, hook, API, schema, validation rule, calculation, mutation, permission, or backend file changed.
+- **Follow-up actions:** Obtain owner visual acceptance and register any narrowly scoped visual adjustment separately.
+- **Evidence:**
+  - Global rollback evidence: `apps/web/src/index.css` and `apps/web/src/app/providers.tsx` have no diff from `HEAD`.
+  - Scoped Ant Design 6 mobile modal rules: `apps/web/src/shared/ui/mobile-modal.css`, imported once from `apps/web/src/main.tsx`.
+  - Application shell, login, home, shared page header/filter toolbar, and delivered module page/form components under `apps/web/src/app/**`, `apps/web/src/pages/**`, and `apps/web/src/features/**/{pages,ui}/**`.
+  - `yarn workspace web tsc --noEmit` — passed.
+  - Focused ESLint across the shell, shared presentation components, all affected pages, Master Data/User forms, and confirmation modals — passed. A broader lint probe also reported pre-existing React hook/Fast Refresh violations in Purchase/Sale immediate-payment logic; those logic files were not altered to resolve lint under this UI-only scope.
+  - `yarn workspace web vite build` — passed (existing bundle-size warning only).
+  - `yarn workspace web test --run` — 16 files / 50 tests passed.
+  - Mobile full-screen modal/popup follow-up: TypeScript, focused provider/test lint, Vite build, and 17 files / 51 tests passed.
+  - `apps/web/src/shared/ui/mobile-modal-select.test.tsx` — regression coverage verifies a Select opens and an option remains interactive inside a modal; full suite now 17 files / 51 tests passed.
+  - Scope audit — no backend, API, hook, schema, validation, calculation, or mutation file changed. A concurrent `apps/web/package.json` modification remains outside CHANGE-010.

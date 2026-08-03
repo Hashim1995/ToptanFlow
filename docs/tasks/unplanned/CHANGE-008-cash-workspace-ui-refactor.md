@@ -1,0 +1,33 @@
+# CHANGE-008: Cash workspace UI refactor
+
+- **ID:** CHANGE-008
+- **Type:** CHANGE
+- **Title:** Cash workspace UI refactor
+- **Status:** Done
+- **Trigger:** Owner requested a more professional, modern, useful, and mobile-first Cash main page.
+- **Urgency:** High
+- **Affected epics / stories / tasks:** EPIC-011, US-043, TASK-024-04
+- **Why not in the original plan:** The delivered Cash workspace met its functional acceptance criteria, but the owner requested a focused visual and usability uplift after reviewing the implemented screen.
+- **Scope:** Refactor `apps/web/src/features/cash/pages/cash-accounts-page.tsx` and page-scoped presentation styles; improve action hierarchy, summary readability, account cards, responsive layout, touch targets, loading/error/empty states, and account-history discoverability.
+- **Out of scope:** Cash APIs, schema, calculations, permissions, lifecycle behavior, forms, Cash detail page, reports, expense-category screens, and application-wide theme or shell changes.
+- **Risks:** Hiding a primary Cash action at a responsive breakpoint; obscuring negative balances; presenting incomplete workspace data as zero; introducing inconsistent Azerbaijani terminology.
+- **Acceptance criteria:**
+  - The four primary actions — `Mədaxil`, `Məxaric`, `Xərc`, `Transfer` — remain prominent and reachable on mobile, tablet, desktop, and large desktop.
+  - Total Company Cash, active-account count, per-account current balance, responsible person, today totals, recent activity, active/inactive status, and negative-balance warning remain legible at every supported viewport.
+  - Account cards use an explicit details/history path and preserve create/edit/deactivate/reactivate actions.
+  - Workspace-summary failure is visible and retryable; unavailable summary values are not presented as real zero values.
+  - Azerbaijani labels and canonical Cash terminology remain consistent with ADR-005, ADR-038, and `docs/business/terminology.md`.
+  - The refactor uses the existing Ant Design and Phosphor stack without changing business behavior.
+  - Focused web lint, tests, and build pass.
+- **Impact on current work:** Standalone owner-directed change; no active story is paused.
+- **Roadmap impact:** None; presentation hardening of completed US-043.
+- **Result:** The Cash main page now uses a balance-led responsive workspace with four prominent primary actions, clearer account summaries, honest overview loading/error states, explicit history access, larger touch targets, and single-/two-/three-column account layouts matched to usable content width. No Cash API, schema, calculation, form, permission, or lifecycle behavior changed.
+- **Follow-up actions:** Continue module-by-module UI review only when separately requested. Repository-wide ESLint still reports pre-existing errors in Sale/Purchase immediate-payment files; they are outside this change.
+- **Evidence:**
+  - `apps/web/src/features/cash/pages/cash-accounts-page.tsx`
+  - `apps/web/src/features/cash/pages/cash-accounts-page.css`
+  - `apps/web/src/features/cash/ui/labels.ts`
+  - `yarn workspace web eslint src/features/cash/pages/cash-accounts-page.tsx src/features/cash/ui/labels.ts` — passed.
+  - `yarn workspace web tsc -p tsconfig.app.json --noEmit --incremental false --pretty false` — passed.
+  - `yarn workspace web vite build` — passed (existing bundle-size warning only).
+  - `yarn workspace web test` — 16 files / 50 tests passed.

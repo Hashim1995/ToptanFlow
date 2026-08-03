@@ -24,6 +24,7 @@ describe('AuthService', () => {
     fullName: 'Əli Məmmədov',
     passwordHash: 'stored-hash',
     isActive: true,
+    isSuperAdmin: false,
   };
 
   const prisma = {
@@ -110,6 +111,7 @@ describe('AuthService', () => {
           id: userId,
           username: 'ali',
           fullName: 'Əli Məmmədov',
+          isSuperAdmin: false,
         },
       });
       expect(JSON.stringify(result)).not.toMatch(/password|stored-hash/i);

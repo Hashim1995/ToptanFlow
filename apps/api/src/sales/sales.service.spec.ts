@@ -55,6 +55,9 @@ describe('SalesService', () => {
   const partnerDebt = {
     applyChange: jest.fn().mockResolvedValue({}),
   };
+  const cashBalance = {
+    applyPostedTransaction: jest.fn().mockResolvedValue({ id: 'cash-1' }),
+  };
 
   const partner = {
     id: 'partner-1',
@@ -108,6 +111,7 @@ describe('SalesService', () => {
     items: [item],
     productQuantityHistory: [],
     partnerDebtMovements: [],
+    cashTransactions: [],
   };
 
   const prisma: Record<string, any> = {
@@ -127,7 +131,10 @@ describe('SalesService', () => {
     product: { findMany: jest.fn(), findUnique: jest.fn() },
     saleItem: { update: jest.fn() },
     businessPartnerDebtMovement: { findFirst: jest.fn() },
-    cashTransaction: { create: jest.fn() },
+    cashTransaction: {
+      create: jest.fn(),
+      count: jest.fn().mockResolvedValue(0),
+    },
   };
 
   beforeEach(() => {
@@ -136,6 +143,9 @@ describe('SalesService', () => {
       Promise.resolve(fn(prisma)),
     );
     numberSequences.nextCode.mockResolvedValue('0000001');
+    productQuantity.applyChange.mockResolvedValue({});
+    partnerDebt.applyChange.mockResolvedValue({});
+    cashBalance.applyPostedTransaction.mockResolvedValue({ id: 'cash-1' });
     prisma.businessPartner.findUnique.mockResolvedValue({
       isActive: true,
       isCustomer: true,
@@ -161,12 +171,14 @@ describe('SalesService', () => {
     prisma.businessPartnerDebtMovement.findFirst.mockResolvedValue({
       id: 'dm-1',
     });
+    prisma.cashTransaction.count.mockResolvedValue(0);
 
     service = new SalesService(
       prisma as never,
       numberSequences as unknown as NumberSequencesService,
       productQuantity as unknown as ProductQuantityService,
       partnerDebt as unknown as PartnerDebtBalanceService,
+      cashBalance as never,
     );
   });
 
@@ -208,6 +220,7 @@ describe('SalesService', () => {
       {
         ...detail,
         _count: { items: 1 },
+        cashTransactions: [],
       },
     ]);
     prisma.sale.count.mockResolvedValue(1);
@@ -222,6 +235,7 @@ describe('SalesService', () => {
     });
     expect(result.meta.total).toBe(1);
     expect(result.data[0].itemCount).toBe(1);
+    expect(result.data[0].hasLinkedCashOperation).toBe(false);
     expect(result.data[0].partner.name).toBe('Müştəri');
     expect(result.data[0].partner.isCustomer).toBe(true);
   });
@@ -232,9 +246,9 @@ describe('SalesService', () => {
       status: DocumentStatusApi.POSTED,
       items: [item],
     });
-    await expect(service.update('sale-1', { notes: 'x' })).rejects.toBeInstanceOf(
-      ConflictException,
-    );
+    await expect(
+      service.update('sale-1', { notes: 'x' }),
+    ).rejects.toBeInstanceOf(ConflictException);
     await expect(service.remove('sale-1')).rejects.toBeInstanceOf(
       ConflictException,
     );
@@ -267,6 +281,81 @@ describe('SalesService', () => {
     const signed = partnerDebt.applyChange.mock.calls[0][1].signedAmount;
     expect(new Decimal(signed.toString()).toFixed(4)).toBe('1000.0000');
     expect(prisma.cashTransaction.create).not.toHaveBeenCalled();
+    expect(cashBalance.applyPostedTransaction).not.toHaveBeenCalled();
+  });
+
+  it('posts with partial immediate payment: separate cash + receipt debt', async () => {
+    await service.post('sale-1', 'user-1', {
+      immediatePayment: {
+        cashAccountId: 'cash-acc-1',
+        amount: '400.00',
+      },
+    });
+    expect(partnerDebt.applyChange).toHaveBeenCalledTimes(2);
+    expect(partnerDebt.applyChange).toHaveBeenNthCalledWith(
+      1,
+      expect.anything(),
+      expect.objectContaining({ kind: PartnerDebtMovementKind.SALE }),
+    );
+    expect(partnerDebt.applyChange).toHaveBeenNthCalledWith(
+      2,
+      expect.anything(),
+      expect.objectContaining({
+        kind: PartnerDebtMovementKind.CASH_RECEIPT,
+        cashTransactionId: 'cash-1',
+        saleId: 'sale-1',
+      }),
+    );
+    const receiptSigned = partnerDebt.applyChange.mock.calls[1][1].signedAmount;
+    expect(new Decimal(receiptSigned.toString()).toFixed(4)).toBe('-400.0000');
+    expect(cashBalance.applyPostedTransaction).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        cashAccountId: 'cash-acc-1',
+        amount: '400.00',
+        saleId: 'sale-1',
+        partnerId: 'partner-1',
+      }),
+    );
+  });
+
+  it('posts with overpayment immediate payment', async () => {
+    await service.post('sale-1', 'user-1', {
+      immediatePayment: {
+        cashAccountId: 'cash-acc-1',
+        amount: '1500.00',
+      },
+    });
+    const receiptSigned = partnerDebt.applyChange.mock.calls[1][1].signedAmount;
+    expect(new Decimal(receiptSigned.toString()).toFixed(4)).toBe('-1500.0000');
+  });
+
+  it('rolls back post when immediate cash fails', async () => {
+    cashBalance.applyPostedTransaction.mockRejectedValue(
+      new BadRequestException('cash fail'),
+    );
+    await expect(
+      service.post('sale-1', 'user-1', {
+        immediatePayment: {
+          cashAccountId: 'cash-acc-1',
+          amount: '100.00',
+        },
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('blocks cancel when linked posted cash exists', async () => {
+    prisma.sale.findUnique.mockResolvedValue({
+      ...detail,
+      status: DocumentStatusApi.POSTED,
+      items: [item],
+    });
+    prisma.cashTransaction.count.mockResolvedValue(1);
+    await expect(
+      service.cancel('sale-1', 'user-1', { reason: 'Səhv' }),
+    ).rejects.toBeInstanceOf(ConflictException);
+    expect(productQuantity.applyChange).not.toHaveBeenCalled();
+    expect(partnerDebt.applyChange).not.toHaveBeenCalled();
   });
 
   it('rejects post without reason when insufficient quantity', async () => {
@@ -349,8 +438,59 @@ describe('SalesService', () => {
     ).rejects.toBeInstanceOf(ConflictException);
   });
 
+  it('sale cancel does not mutate cash', async () => {
+    prisma.sale.findUnique
+      .mockResolvedValueOnce({
+        ...detail,
+        status: DocumentStatusApi.POSTED,
+        items: [item],
+      })
+      .mockResolvedValue({
+        ...detail,
+        status: DocumentStatusApi.CANCELLED,
+        cancelReason: 'Səhv',
+      });
+    await service.cancel('sale-1', 'user-1', { reason: 'Səhv' });
+    expect(cashBalance.applyPostedTransaction).not.toHaveBeenCalled();
+    expect(productQuantity.applyChange).toHaveBeenCalled();
+    expect(partnerDebt.applyChange).toHaveBeenCalled();
+  });
+
+  it('blocks posting a cancelled sale again', async () => {
+    prisma.sale.findUnique.mockResolvedValue({
+      ...detail,
+      status: DocumentStatusApi.CANCELLED,
+      items: [item],
+    });
+    prisma.sale.updateMany.mockResolvedValue({ count: 0 });
+    await expect(service.post('sale-1', 'user-1')).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+    expect(productQuantity.applyChange).not.toHaveBeenCalled();
+    expect(partnerDebt.applyChange).not.toHaveBeenCalled();
+  });
+
+  it('allows draft sale update', async () => {
+    prisma.sale.findUnique
+      .mockResolvedValueOnce({
+        ...detail,
+        status: DocumentStatusApi.DRAFT,
+        items: [item],
+      })
+      .mockResolvedValue({
+        ...detail,
+        status: DocumentStatusApi.DRAFT,
+        notes: 'Yenilənmiş',
+        items: [item],
+      });
+    await service.update('sale-1', { notes: 'Yenilənmiş' });
+    expect(prisma.sale.update).toHaveBeenCalled();
+  });
+
   it('returns not found', async () => {
     prisma.sale.findUnique.mockResolvedValue(null);
-    await expect(service.findOne('x')).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.findOne('x')).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
   });
 });

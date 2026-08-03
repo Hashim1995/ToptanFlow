@@ -43,6 +43,7 @@ export type SaleListItem = {
   createdBy?: SaleUser;
   createdAt: string;
   updatedAt: string;
+  hasLinkedCashOperation?: boolean;
 };
 
 export type SaleUser = {
@@ -100,6 +101,19 @@ export type SaleDebtMovement = {
   createdByUserId?: string;
 };
 
+export type SaleLinkedCashTransaction = {
+  id: string;
+  transactionNumber: string;
+  cashAccountId: string;
+  cashAccountName: string;
+  cashAccountCode: string;
+  direction: string;
+  type: string;
+  status: string;
+  amount: string;
+  transactionDate: string;
+};
+
 export type Sale = {
   id: string;
   documentNumber: string;
@@ -126,6 +140,7 @@ export type Sale = {
   items: SaleItem[];
   productQuantityHistory: SaleQuantityHistory[];
   partnerDebtMovements: SaleDebtMovement[];
+  cashTransactions: SaleLinkedCashTransaction[];
 };
 
 export type SaleItemInput = {
@@ -146,6 +161,14 @@ export type SaleInput = {
 
 export type PostSaleInput = {
   negativeQuantityReason?: string;
+  immediatePayment?: ImmediatePaymentInput;
+};
+
+export type ImmediatePaymentInput = {
+  cashAccountId: string;
+  amount: string;
+  notes?: string;
+  negativeBalanceOverrideReason?: string;
 };
 
 function cleanQuery(query: SaleListQuery) {
@@ -190,10 +213,17 @@ export async function postSale(
   id: string,
   input: PostSaleInput = {},
 ): Promise<Sale> {
-  const body = input.negativeQuantityReason
-    ? { negativeQuantityReason: input.negativeQuantityReason }
-    : undefined;
-  const { data } = await httpClient.post<Sale>(`/sales/${id}/post`, body);
+  const body: PostSaleInput = {};
+  if (input.negativeQuantityReason) {
+    body.negativeQuantityReason = input.negativeQuantityReason;
+  }
+  if (input.immediatePayment) {
+    body.immediatePayment = input.immediatePayment;
+  }
+  const { data } = await httpClient.post<Sale>(
+    `/sales/${id}/post`,
+    Object.keys(body).length > 0 ? body : undefined,
+  );
   return data;
 }
 

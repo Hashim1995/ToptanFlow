@@ -13,6 +13,12 @@ export class UserResponseDto {
   @ApiProperty({ example: true })
   isActive: boolean;
 
+  @ApiProperty({
+    example: false,
+    description: 'Users-module Super Admin (ADR-039). Never set via create API.',
+  })
+  isSuperAdmin: boolean;
+
   @ApiProperty({ example: '2026-07-29T00:00:00.000Z' })
   createdAt: Date;
 

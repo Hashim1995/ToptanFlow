@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { cashQueryKeys } from '../../cash/api/cash-query-keys';
 import { masterDataQueryKeys } from '../../master-data/api/master-data-query-keys';
 import {
   cancelSale,
@@ -14,10 +15,14 @@ import {
 } from './sales.api';
 import { salesQueryKeys } from './sales-query-keys';
 
-export function useSalesList(query: SaleListQuery) {
+export function useSalesList(
+  query: SaleListQuery,
+  options?: { enabled?: boolean },
+) {
   return useQuery({
     queryKey: salesQueryKeys.list(query),
     queryFn: () => listSales(query),
+    enabled: options?.enabled ?? true,
   });
 }
 
@@ -43,6 +48,7 @@ function useSaleInvalidation() {
         queryClient.invalidateQueries({
           queryKey: masterDataQueryKeys.businessPartners.all,
         }),
+        queryClient.invalidateQueries({ queryKey: cashQueryKeys.all }),
       );
     }
     await Promise.all(invalidations);

@@ -1,68 +1,112 @@
-# US-024: Money accounts and cash movements
+# US-024: Manage Cash Accounts and foundation Cash movements
 
 - **ID:** US-024
-- **Title:** Money accounts and cash movements
+- **Title:** Manage Cash Accounts and foundation Cash movements
 - **Parent Epic:** [EPIC-011](../epics/EPIC-011-cash-expenses.md)
-- **Status:** Planned
+- **Status:** Review
 - **Priority:** High
-- **Business actor:** Cashier
+- **Business actor:** Cashier / Manager
+- **Change:** [CHANGE-004](../unplanned/CHANGE-004-multi-cash-account-domain.md)
 
 ## Statement
 
-As a cashier, I want money accounts and posted cash movements, so that cash is
-tracked per account without silent cross-account effects, and so that sale and
-purchase settlement never embeds cash inside those documents.
+As a cashier, I want multiple named Cash Accounts with opening balances and
+posted Cash In / Cash Out (non-partner foundation types), so that cash custody
+is tracked per account without silent cross-account effects and without embedding
+cash inside Sale/Purchase documents.
 
 ## Business value
 
-Cash discipline.
+Financial core foundation for daily cash operations.
 
 ## High-level scope
 
-Accounts; receipts/payments/transfers/adjustments; closing later. Cash In /
-Cash Out are the only operational mutations of money-account balances for
-customer/supplier settlement ([ADR-028](../../decisions/ADR-028-sale-purchase-cash-separation.md)).
-May be recorded from Cash screens or optionally created as separate records
-from Sale/Purchase UI. Unlinked movements allowed; optional link for later
-allocation (US-026).
+**Stage 1–2 (this story):**
+
+- Cash Account CRUD-ish: create, update metadata, deactivate/reactivate; unique
+  name/code per approved rules; responsible user; notes.
+- Opening balance as `OPENING_BALANCE` movement (ADR-033).
+- Transactional `currentBalance`; no direct overwrite.
+- Foundation Cash In types: OTHER_INCOME, OWNER_DEPOSIT (and opening/adjustment
+  as authorized).
+- Foundation Cash Out types: OWNER_WITHDRAWAL, MANUAL_ADJUSTMENT (negative).
+- List/detail APIs + UI for accounts; fast Cash In/Out forms for foundation types.
+- AZN only (ADR-031). Immediate partner settlement → US-045. Expenses → US-025.
+  Transfers → US-044. Cancel details → US-046 (may share tasks).
 
 ## High-level acceptance criteria
 
-- Posted Cash In / Cash Out change the selected money account; they are
-  distinct records with their own audit trail (ADR-028).
-- Unlinked cash transactions are allowed.
-- Optional linkage to Sale/Purchase documents is supported for traceability;
-  allocation rules live primarily in US-026 / EPIC-012.
-- Must not resolve unrelated Open Decisions silently (e.g. BRD-OD-03/05).
+- Multiple Cash Accounts exist as data; no hardcoded person modules (ADR-032).
+- Opening balance creates auditable movement; balance reconciles to movements
+  (ADR-033).
+- Cash In increases / Cash Out decreases selected account with before/after.
+- Inactive accounts reject new normal postings; history remains visible.
+- Sale/Purchase posting still does not mutate cash (ADR-028).
+- Ordinary create completes as Posted (ADR-036); Decimal-safe (ADR-023).
+- Must not resolve AD-07/AD-08 or full BRD-OD-05 case lifecycle.
+
+## Business effects
+
+| Operation | Cash Account | Partner debt |
+| --- | --- | --- |
+| Opening balance | += amount | none |
+| Other income / owner deposit | += | none |
+| Owner withdrawal / manual − adjustment | −= | none |
+
+## Permissions (v1)
+
+Authenticated active user (ADR-025). Capability catalog: US-050. Reasons
+required for adjustments and negative override (US-047).
+
+## UI requirements
+
+- Azerbaijani labels (ADR-005); never expose enum keys.
+- Account list with balances; detail with history; confirmation previews for
+  postings (`docs/technical/ui-requirements.md`).
+
+## Backend requirements
+
+- Nest modules + Prisma `CashAccount` / `CashTransaction` redesign.
+- Atomic posting; concurrency-safe balance updates.
+- Number sequences for transaction numbers.
+
+## Audit requirements
+
+Actor, timestamps, amounts, before/after, reasons on account create/update/
+deactivate, opening balance, cash in/out, adjustments.
+
+## Test scenarios (minimum)
+
+Account create/duplicate rules; opening movement; no direct balance overwrite;
+inactive block; cash in/out before/after; decimal 0.01; double-submit guard;
+Sale/Purchase unchanged re: cash.
 
 ## Dependencies
 
-BRD-OD-03/05; coordinates with US-022/US-023 for optional same-flow creation.
+ADR-032–037; Partners/Users exist; Purchases/Sales not required for Stage 1–2.
 
 ## Related domain rules
 
-invariants Cash; ADR-028.
-
-## Related ADRs / docs
-
-cash workflows; ADR-028.
+invariants Cash; workflows 10–11 (foundation types); ADR-028, 031–037.
 
 ## Known risks
 
-Deferred detail until activation.
+Schema rename MoneyAccount → CashAccount; concurrent outflows.
 
 ## Open questions
 
-See epic open questions; do not invent requirements. Sale/purchase cash
-separation is decided.
+None blocking Stage 1–2. Seed account names are ops.
 
 ## Readiness checklist
 
-- [ ] Business behavior approved / traceable for this slice
-- [ ] No unresolved Open Decision that this story would silently resolve
-- [ ] Dependencies satisfied or explicitly accepted
-- [ ] Acceptance criteria sufficient to implement
+- [x] Business behavior approved / traceable for this slice
+- [x] No unresolved Open Decision that this story would silently resolve
+- [x] Dependencies satisfied or explicitly accepted
+- [x] Acceptance criteria sufficient to implement
 
 ## Task elaboration
 
-Deferred until activation
+- [TASK-024-01](../tasks/TASK-024-01-cash-schema-migration.md) — Prisma/schema
+- [TASK-024-02](../tasks/TASK-024-02-cash-account-apis.md) — Cash Account APIs
+- [TASK-024-03](../tasks/TASK-024-03-cash-in-out-foundation-apis.md) — Cash In/Out foundation APIs
+- [TASK-024-04](../tasks/TASK-024-04-cash-accounts-ui.md) — Accounts + foundation forms UI

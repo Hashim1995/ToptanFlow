@@ -3,9 +3,8 @@
  * Never accept these values from HTTP request bodies or query parameters.
  *
  * Source: ADR-024 — Product / BusinessPartner.
- * PURCHASE document numbers: Approved Human Decision EPIC-009 / US-022 (2026-07-31)
- * using the same NumberSequence allocation pattern (document numbering was
- * deliberately excluded from ADR-024’s Product/BusinessPartner scope).
+ * PURCHASE / SALE document numbers: Approved Human Decisions EPIC-009 / EPIC-010.
+ * CASH_ACCOUNT / CASH_TRANSACTION / CASH_TRANSFER: CHANGE-004 / EPIC-011.
  * Warehouse sequence removed under ADR-029 / CHANGE-002.
  */
 export const BusinessCodeSequenceKey = {
@@ -13,6 +12,9 @@ export const BusinessCodeSequenceKey = {
   BUSINESS_PARTNER: 'BUSINESS_PARTNER',
   PURCHASE: 'PURCHASE',
   SALE: 'SALE',
+  CASH_ACCOUNT: 'CASH_ACCOUNT',
+  CASH_TRANSACTION: 'CASH_TRANSACTION',
+  CASH_TRANSFER: 'CASH_TRANSFER',
 } as const;
 
 export type BusinessCodeSequenceKey =

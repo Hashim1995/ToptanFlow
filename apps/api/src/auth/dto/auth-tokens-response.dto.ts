@@ -9,6 +9,12 @@ export class AuthUserDto {
 
   @ApiProperty({ example: 'Əli Məmmədov' })
   fullName: string;
+
+  @ApiProperty({
+    example: false,
+    description: 'Users-module Super Admin (ADR-039).',
+  })
+  isSuperAdmin: boolean;
 }
 
 export class AuthTokensResponseDto {

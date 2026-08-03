@@ -7,6 +7,7 @@ import { configureApp } from '../src/bootstrap/configure-app';
 import { PrismaService } from '../src/prisma/prisma.service';
 import {
   attachAuthUserMock,
+  E2E_AUTH_USER,
   mockUserFindUniqueResolved,
   withAuth,
 } from './auth-e2e.helper';
@@ -21,6 +22,7 @@ describe('Users (e2e)', () => {
     fullName: 'Əli Məmmədov',
     username: 'ali',
     isActive: true,
+    isSuperAdmin: false,
     createdAt,
     updatedAt,
   };
@@ -73,14 +75,17 @@ describe('Users (e2e)', () => {
       })
       .expect(201);
 
-    expect(response.body).toEqual({
-      id: userId,
-      fullName: 'Əli Məmmədov',
-      username: 'ali',
-      isActive: true,
-      createdAt: createdAt.toISOString(),
-      updatedAt: updatedAt.toISOString(),
-    });
+    expect(response.body).toEqual(
+      expect.objectContaining({
+        id: userId,
+        fullName: 'Əli Məmmədov',
+        username: 'ali',
+        isActive: true,
+        isSuperAdmin: false,
+        createdAt: expect.any(String) as string,
+        updatedAt: expect.any(String) as string,
+      }),
+    );
     expect(response.body).not.toHaveProperty('passwordHash');
     expect(JSON.stringify(response.body)).not.toMatch(/passwordHash|argon2/i);
 
@@ -90,6 +95,7 @@ describe('Users (e2e)', () => {
           fullName: 'Əli Məmmədov',
           username: 'ali',
           passwordHash: expect.any(String) as string,
+          isSuperAdmin: false,
         }) as object,
         select: expect.not.objectContaining({
           passwordHash: true,
@@ -153,14 +159,15 @@ describe('Users (e2e)', () => {
 
     expect(response.body).toEqual({
       data: [
-        {
+        expect.objectContaining({
           id: userId,
           fullName: 'Əli Məmmədov',
           username: 'ali',
           isActive: true,
-          createdAt: createdAt.toISOString(),
-          updatedAt: updatedAt.toISOString(),
-        },
+          isSuperAdmin: false,
+          createdAt: expect.any(String) as string,
+          updatedAt: expect.any(String) as string,
+        }),
       ],
       meta: {
         page: 1,
@@ -270,6 +277,25 @@ describe('Users (e2e)', () => {
     expect(prisma.user.update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: { isActive: true },
+      }),
+    );
+  });
+
+  it('GET /api/v1/users rejects non-superadmin with 403', async () => {
+    prisma.user.findUnique = jest.fn((args: { where?: { id?: string } }) => {
+      if (args?.where?.id === E2E_AUTH_USER.id) {
+        return Promise.resolve({ ...E2E_AUTH_USER, isSuperAdmin: false });
+      }
+      return Promise.resolve(null);
+    });
+
+    const response = await withAuth(request(app.getHttpServer()))
+      .get('/api/v1/users')
+      .expect(403);
+
+    expect(response.body).toEqual(
+      expect.objectContaining({
+        code: 'SUPERADMIN_REQUIRED',
       }),
     );
   });

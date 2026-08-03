@@ -3,54 +3,36 @@
 - **ID:** US-025
 - **Title:** Expense recording
 - **Parent Epic:** [EPIC-011](../epics/EPIC-011-cash-expenses.md)
-- **Status:** Planned
-- **Priority:** Medium
+- **Status:** Done
+- **Priority:** High
 - **Business actor:** Cashier / Manager
 
 ## Statement
 
-As a cashier, I want to record expenses against the correct money account, so that operating spend is auditable.
+As a cashier, I want to record expenses against a Cash Account with an Expense
+Category, so that operating spend is auditable in Cash history and expense
+reports without a disconnected balance ledger.
 
 ## Business value
 
-Expense visibility.
+Expense visibility with correct cash custody.
 
 ## High-level scope
 
-Expense payment posting; categories later as needed.
+Expense Category manage (simple); Expense as Cash Out type; list/filter; no
+partner debt effect; AD-07/AD-08 deferred (cash-paid from Cash Account only).
 
 ## High-level acceptance criteria
 
-- High-level criteria to be refined at activation
-- Must not resolve Open Decisions silently
+- Expense requires category; decreases selected Cash Account; posts as Cash
+  Transaction (invariants Expenses; ADR-033).
+- Cancel via reversal (US-046).
+- Must not resolve AD-07/AD-08.
 
 ## Dependencies
 
 US-024.
 
-## Related domain rules
-
-invariants Expenses.
-
-## Related ADRs / docs
-
-Expense workflow.
-
-## Known risks
-
-Deferred detail until activation.
-
-## Open questions
-
-See epic open questions; do not invent requirements.
-
-## Readiness checklist
-
-- [ ] Business behavior approved / traceable for this slice
-- [ ] No unresolved Open Decision that this story would silently resolve
-- [ ] Dependencies satisfied or explicitly accepted
-- [ ] Acceptance criteria sufficient to implement
-
 ## Task elaboration
 
-Deferred until activation
+Deferred until activation (Stage 3).

@@ -1,0 +1,36 @@
+# CHANGE-009: Cash modal UI refactor
+
+- **ID:** CHANGE-009
+- **Type:** CHANGE
+- **Title:** Cash modal UI refactor
+- **Status:** Done
+- **Trigger:** Owner requested a professional, modern, useful, and mobile-first redesign of every modal in the Cash frontend module.
+- **Urgency:** High
+- **Affected epics / stories / tasks:** EPIC-011, US-024, US-025, US-043, US-044, US-045, US-046
+- **Why not in the original plan:** Delivered Cash modals satisfy their functional workflows, but their visual hierarchy and responsive presentation require an owner-directed uplift.
+- **Scope:** Frontend-only visual and UX presentation changes to Cash Account, Cash In, Cash Out, Expense, Transfer, Expense Category, posting-confirmation, activation/deactivation, and cancellation modals under `apps/web/src/features/cash/**`.
+- **Out of scope:** Backend files; API calls; hooks; query behavior; schemas; validation rules; preview calculations; form defaults; submit payloads; mutation behavior; permissions; Cash lifecycle or business rules; non-Cash modules.
+- **Risks:** Responsive modal content clipping; reducing visibility of validation or negative-balance warnings; accidentally changing form behavior while reorganizing presentation.
+- **Acceptance criteria:**
+  - All Cash form and confirmation modals use a consistent professional visual hierarchy with Azerbaijani titles, descriptions, and actions.
+  - Mobile layouts are single-column, fit the viewport, keep close and primary actions reachable, and use practical touch targets.
+  - Wider layouts use available space without changing field order, values, validation, or submission behavior.
+  - Balance/debt previews and negative-cash warnings remain fully visible and are easier to scan.
+  - No Cash frontend logic or backend file changes are introduced.
+  - Long modal content scrolls inside the viewport on mobile without moving the header, close control, or action footer off-screen.
+  - Every form field displays either a required asterisk or an Azerbaijani optional marker consistent with its existing schema; optional Sale/Purchase links are not marked required.
+  - Focused frontend lint, TypeScript checking, production bundling, and existing web tests pass.
+- **Impact on current work:** Standalone owner-directed presentation change; no active story is paused.
+- **Roadmap impact:** None; presentation hardening of delivered EPIC-011 workflows.
+- **Result:** All six Cash form modals and eight Cash posting/state/cancellation confirmation dialogs now share a mobile-first presentation system. On mobile, form shells use an explicit dynamic-viewport height instead of allowing intrinsic form height to grow past the screen; only the zero-basis body scrolls, while headers, close controls, confirmation buttons, and form footers remain non-shrinking and visible above safe areas. Every editable field now shows either an accessible required asterisk or `İstəyə bağlı`; read-only code fields remain unmarked, and optional Sale/Purchase links are no longer visually marked required. Existing controllers, watchers, schemas, calculations, defaults, validation, payloads, mutations, and backend behavior are unchanged.
+- **Follow-up actions:** Continue with another Cash frontend surface only when separately requested.
+- **Evidence:**
+  - `apps/web/src/features/cash/ui/cash-form-modals.tsx`
+  - `apps/web/src/features/cash/ui/cash-modals.css`
+  - `apps/web/src/features/cash/ui/labels.ts`
+  - Cash confirmation presentation hooks in `cash-accounts-page.tsx`, `cash-account-detail-page.tsx`, and `expense-categories-page.tsx`.
+  - `yarn workspace web eslint src/features/cash/ui/cash-form-modals.tsx src/features/cash/ui/labels.ts src/features/cash/pages/cash-accounts-page.tsx src/features/cash/pages/cash-account-detail-page.tsx src/features/cash/pages/expense-categories-page.tsx` — passed.
+  - Isolated TypeScript check for `cash-form-modals.tsx` and its dependency graph — passed. The full project command intermittently stalls without diagnostics in the synced OneDrive workspace.
+  - `yarn workspace web vite build` — passed (existing bundle-size warning only).
+  - `yarn workspace web test` — 16 files / 50 tests passed.
+  - Scope audit — no backend, API, hook, form-schema, or Cash calculation file changed. A concurrent `apps/web/package.json` change is present but is not part of CHANGE-009.

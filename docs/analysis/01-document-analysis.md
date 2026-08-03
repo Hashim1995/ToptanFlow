@@ -21,6 +21,14 @@
 > currency selection remain **historical BRD/SRS analysis** and must not be
 > implemented as written. Prefer `docs/business/invariants.md` (post ADR-030 /
 > ADR-031) for current business rules.
+>
+> **Active product override (2026-08-03):** Approved Human Decision
+> [ADR-040](../decisions/ADR-040-cash-account-ownership-and-user-default.md) /
+> [CHANGE-019](../tasks/unplanned/CHANGE-019-cash-account-ownership-defaults.md)
+> makes Cash Account responsibility required and one-to-one. Only a Super Admin
+> creates Cash Accounts or changes ownership. Responsibility supplies the
+> logged-in user's editable Cash-operation default; it does not restrict account
+> selection or replace authenticated-operator attribution.
 
 **Analyzed sources**
 
@@ -1335,9 +1343,9 @@ The BRD open-decision table has topics but no decision IDs. This analysis assign
 ### BRD-OD-03 — Initial Cash Accounts
 
 - **Question:** Which cash, vehicle cash, and manually tracked bank accounts exist at go-live?
-- **Current recommendation/safe default:** At least one main cash account plus additional required accounts.
+- **Status (2026-08-01):** **Resolved** by Approved Human Decision [ADR-032](../decisions/ADR-032-multiple-cash-accounts.md) / [CHANGE-004](../tasks/unplanned/CHANGE-004-multi-cash-account-domain.md): any number of named Cash Accounts as data within one Cash domain; no hardcoded per-person modules; exact seed list is an operational choice.
 - **Business impact:** Cash custody, reconciliation, trip operation, and owner-fund separation.
-- **Technical impact:** Account types, opening balances, transfer rules, access control.
+- **Technical impact:** Account master data, opening balances, transfer rules; per-account ACL deferred under ADR-025.
 - **Decision deadline:** Before money-account setup and opening cash. [BRD §28]
 
 ### BRD-OD-04 — Negative Inventory Scope and Limits
@@ -1352,10 +1360,10 @@ The BRD open-decision table has topics but no decision IDs. This analysis assign
 ### BRD-OD-05 — Negative Cash Scope and Limits
 
 - **Question:** Which accounts/users, maximum deficit, and maximum age are allowed?
-- **Current recommendation/safe default:** Authorized users only, mandatory reason, daily management review.
+- **Partial resolution (2026-08-01 → [ADR-037](../decisions/ADR-037-controlled-negative-cash.md)):** Default block insufficient balance; override with mandatory reason + stored before/after (v1 capability under ADR-025 = authenticated user providing reason). **Still open:** maximum deficit, maximum age, formal case lifecycle, mandatory management review queues.
 - **Business impact:** Continuity versus concealed cash/personal-funding risk.
-- **Technical impact:** posting guard, exception case, approval, alert, clearance linkage.
-- **Decision deadline:** Before cash posting and trip cash. [BRD §28]
+- **Technical impact:** posting guard, exception reason persistence, alerts/reports for negative balances; full case engine deferred.
+- **Decision deadline:** Before cash posting and trip cash. [BRD §28] — hard block + reason resolved; remaining controls still needed for full exception behavior.
 
 ### BRD-OD-06 — Inventory Costing Method
 
@@ -1538,9 +1546,10 @@ The BRD open-decision table has topics but no decision IDs. This analysis assign
 ### OD-08 — Negative Stock/Cash Activation
 
 - **Question:** Are negative exceptions enabled, and under which explicit flags and permissions?
-- **Current recommendation/safe default:** Globally disabled; enable explicitly.
+- **Partial resolution:** Product negative quantity — ADR-027/029 + reason. Cash negative — ADR-037 + reason. Role/Permission flags remain absent under ADR-025 (v1 flat users).
+- **Still open:** Explicit feature flags for disabling override globally; amount/age case machinery.
 - **Business impact:** operational continuity versus control.
-- **Technical impact:** feature flags, guards, case lifecycles, tests.
+- **Technical impact:** guards, tests; case lifecycles deferred.
 - **Decision deadline:** Before transactional posting. [SRS Appendix B]
 
 ### OD-09 — WhatsApp Integration

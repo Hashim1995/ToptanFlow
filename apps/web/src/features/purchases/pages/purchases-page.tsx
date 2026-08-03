@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState } from "react";
 import {
   Alert,
   Badge,
@@ -10,7 +10,6 @@ import {
   Input,
   Modal,
   Pagination,
-  Popover,
   Select,
   Space,
   Table,
@@ -18,15 +17,20 @@ import {
   Tooltip,
   Typography,
   message,
-} from 'antd';
-import type { MenuProps, TableProps } from 'antd';
-import type { ColumnsType } from 'antd/es/table';
-import type { Dayjs } from 'dayjs';
-import { useNavigate } from 'react-router-dom';
+} from "antd";
+import type { MenuProps, TableProps } from "antd";
+import type { ColumnsType } from "antd/es/table";
+import dayjs, { type Dayjs } from "dayjs";
+import {
+  DATE_DISPLAY_FORMAT,
+  dateOnlyPickerToApi,
+} from "../../../shared/datetime";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowCounterClockwise,
   CalendarBlank,
   CheckCircle,
+  DotsThreeVertical,
   Eye,
   Funnel,
   Package,
@@ -37,54 +41,58 @@ import {
   User,
   WarningCircle,
   XCircle,
-} from '@phosphor-icons/react';
-import { mapApiError } from '../../../api/map-api-error';
-import { formatMoney } from '../../../shared/money/format-money';
-import { formatDate } from '../../../shared/ui/format';
-import { phIcon, ICON_SIZE } from '../../../shared/ui/ph-icon';
+} from "@phosphor-icons/react";
+import { mapApiError } from "../../../api/map-api-error";
+import { formatMoney } from "../../../shared/money/format-money";
+import { formatDateTime } from "../../../shared/ui/format";
+import { phIcon, ICON_SIZE } from "../../../shared/ui/ph-icon";
 import {
   CodeText,
   EntityCell,
   MoneyCell,
-} from '../../../shared/ui/table-cells';
-import { useBusinessPartnersList } from '../../master-data/api/business-partners.hooks';
-import { useProductsList } from '../../master-data/api/products.hooks';
-import { DecimalInput } from '../../master-data/ui/decimal-input';
-import {
-  FilterBar,
-  FilterField,
-} from '../../master-data/ui/list-toolbar';
-import { PageHeader } from '../../master-data/ui/page-header';
+} from "../../../shared/ui/table-cells";
+import { useBusinessPartnersList } from "../../master-data/api/business-partners.hooks";
+import { useProductsList } from "../../master-data/api/products.hooks";
+import { DecimalInput } from "../../master-data/ui/decimal-input";
+import { FilterBar, FilterField } from "../../master-data/ui/list-toolbar";
+import { PageHeader } from "../../master-data/ui/page-header";
 import type {
   PurchaseListItem,
   PurchaseSortBy,
   PurchaseStatus,
-} from '../api/purchases.api';
+} from "../api/purchases.api";
 import {
   useCancelPurchase,
   usePostPurchase,
+  usePurchase,
   usePurchasesList,
   useRemovePurchase,
-} from '../api/purchases.hooks';
-import { PURCHASE_LABELS, purchaseStatusLabel } from '../ui/labels';
-import { PurchaseFormModal } from '../ui/purchase-form-modal';
+} from "../api/purchases.hooks";
+import { PURCHASE_LABELS, purchaseStatusLabel } from "../ui/labels";
+import { PurchaseFormModal } from "../ui/purchase-form-modal";
+import { PurchasePostConfirmModal } from "../ui/purchase-post-confirm-modal";
+import "../../../shared/ui/commercial-documents.css";
 
 const { Text } = Typography;
 
 function partnerName(record: PurchaseListItem) {
-  return record.partnerName ?? record.partner?.name ?? '—';
+  return record.partnerName ?? record.partner?.name ?? "—";
 }
 
 function partnerCode(record: PurchaseListItem) {
-  return record.partnerCode ?? record.partner?.code ?? '';
+  return record.partnerCode ?? record.partner?.code ?? "";
 }
 
 function createdByName(record: PurchaseListItem) {
-  return record.createdByName ?? record.createdBy?.fullName ?? '—';
+  return record.createdByName ?? record.createdBy?.fullName ?? "—";
 }
 
 function statusColor(status: PurchaseStatus) {
-  return status === 'POSTED' ? 'success' : status === 'CANCELLED' ? 'error' : 'warning';
+  return status === "POSTED"
+    ? "success"
+    : status === "CANCELLED"
+      ? "error"
+      : "warning";
 }
 
 function StatusBadge({ status }: { status: PurchaseStatus }) {
@@ -97,25 +105,33 @@ function StatusBadge({ status }: { status: PurchaseStatus }) {
 
 export function PurchasesPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const screens = Grid.useBreakpoint();
   const isDesktop = Boolean(screens.md);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [documentInput, setDocumentInput] = useState('');
-  const [documentNumber, setDocumentNumber] = useState('');
+  const [documentInput, setDocumentInput] = useState("");
+  const [documentNumber, setDocumentNumber] = useState("");
   const [partnerId, setPartnerId] = useState<string>();
   const [status, setStatus] = useState<PurchaseStatus>();
   const [dateRange, setDateRange] = useState<[string, string]>();
   const [productId, setProductId] = useState<string>();
-  const [minTotal, setMinTotal] = useState('');
-  const [maxTotal, setMaxTotal] = useState('');
-  const [sortBy, setSortBy] = useState<PurchaseSortBy>('createdAt');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [minTotal, setMinTotal] = useState("");
+  const [maxTotal, setMaxTotal] = useState("");
+  const [sortBy, setSortBy] = useState<PurchaseSortBy>("createdAt");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [cancelTarget, setCancelTarget] = useState<PurchaseListItem>();
-  const [cancelReason, setCancelReason] = useState('');
+  const [cancelReason, setCancelReason] = useState("");
+  const [postTarget, setPostTarget] = useState<PurchaseListItem>();
   const [formMode, setFormMode] = useState<
-    { kind: 'closed' } | { kind: 'create' } | { kind: 'edit'; purchaseId: string }
-  >({ kind: 'closed' });
+    | { kind: "closed" }
+    | { kind: "create" }
+    | { kind: "edit"; purchaseId: string }
+  >(() =>
+    searchParams.get("action") === "create"
+      ? { kind: "create" }
+      : { kind: "closed" },
+  );
 
   const query = useMemo(
     () => ({
@@ -150,18 +166,19 @@ export function PurchasesPage() {
   const partners = useBusinessPartnersList({
     pageSize: 100,
     isSupplier: true,
-    sortBy: 'name',
-    sortOrder: 'asc',
+    sortBy: "name",
+    sortOrder: "asc",
   });
   const products = useProductsList({
     pageSize: 100,
     isActive: true,
-    sortBy: 'name',
-    sortOrder: 'asc',
+    sortBy: "name",
+    sortOrder: "asc",
   });
   const postMutation = usePostPurchase();
   const removeMutation = useRemovePurchase();
   const cancelMutation = useCancelPurchase();
+  const postTargetDetail = usePurchase(postTarget?.id);
 
   const partnerOptions = (partners.data?.data ?? [])
     .filter((partner) => partner.isSupplier)
@@ -185,32 +202,18 @@ export function PurchasesPage() {
   ].filter(Boolean).length;
 
   function confirmPost(record: PurchaseListItem) {
-    Modal.confirm({
-      title: PURCHASE_LABELS.post.title,
-      content: PURCHASE_LABELS.post.text,
-      okText: PURCHASE_LABELS.actions.post,
-      cancelText: PURCHASE_LABELS.actions.back,
-      icon: phIcon(CheckCircle, { size: ICON_SIZE.xl, weight: 'fill' }),
-      onOk: async () => {
-        try {
-          await postMutation.mutateAsync(record.id);
-          message.success(PURCHASE_LABELS.post.success);
-        } catch (error) {
-          message.error(mapApiError(error).userMessage);
-          throw error;
-        }
-      },
-    });
+    setPostTarget(record);
   }
 
   function confirmRemove(record: PurchaseListItem) {
     Modal.confirm({
+      className: "app-mobile-modal",
       title: PURCHASE_LABELS.remove.title,
       content: PURCHASE_LABELS.remove.text,
       okText: PURCHASE_LABELS.actions.remove,
       cancelText: PURCHASE_LABELS.actions.back,
       okButtonProps: { danger: true },
-      icon: phIcon(WarningCircle, { size: ICON_SIZE.xl, weight: 'fill' }),
+      icon: phIcon(WarningCircle, { size: ICON_SIZE.xl, weight: "fill" }),
       onOk: async () => {
         try {
           await removeMutation.mutateAsync(record.id);
@@ -223,33 +226,32 @@ export function PurchasesPage() {
     });
   }
 
-  function actionMenu(record: PurchaseListItem): MenuProps['items'] {
-    const items: MenuProps['items'] = [
+  function actionMenu(record: PurchaseListItem): MenuProps["items"] {
+    const items: MenuProps["items"] = [
       {
-        key: 'view',
+        key: "view",
         icon: phIcon(Eye, { size: ICON_SIZE.sm }),
         label: PURCHASE_LABELS.actions.view,
         onClick: () => navigate(`/purchases/${record.id}`),
       },
     ];
-    if (record.status === 'DRAFT') {
+    if (record.status === "DRAFT") {
       items.push(
         {
-          key: 'edit',
+          key: "edit",
           icon: phIcon(PencilSimple, { size: ICON_SIZE.sm }),
           label: PURCHASE_LABELS.actions.edit,
-          onClick: () =>
-            setFormMode({ kind: 'edit', purchaseId: record.id }),
+          onClick: () => setFormMode({ kind: "edit", purchaseId: record.id }),
         },
         {
-          key: 'post',
+          key: "post",
           icon: phIcon(CheckCircle, { size: ICON_SIZE.sm }),
           label: PURCHASE_LABELS.actions.post,
           onClick: () => confirmPost(record),
         },
-        { type: 'divider' },
+        { type: "divider" },
         {
-          key: 'remove',
+          key: "remove",
           danger: true,
           icon: phIcon(Trash, { size: ICON_SIZE.sm }),
           label: PURCHASE_LABELS.actions.remove,
@@ -257,9 +259,9 @@ export function PurchasesPage() {
         },
       );
     }
-    if (record.status === 'POSTED') {
+    if (record.status === "POSTED") {
       items.push({
-        key: 'cancel',
+        key: "cancel",
         danger: true,
         icon: phIcon(XCircle, { size: ICON_SIZE.sm }),
         label: PURCHASE_LABELS.actions.cancel,
@@ -281,7 +283,7 @@ export function PurchasesPage() {
             onClick={() => navigate(`/purchases/${record.id}`)}
           />
         </Tooltip>
-        {record.status === 'DRAFT' ? (
+        {record.status === "DRAFT" ? (
           <>
             <Tooltip title={PURCHASE_LABELS.actions.edit}>
               <Button
@@ -290,7 +292,7 @@ export function PurchasesPage() {
                 icon={phIcon(PencilSimple, { size: ICON_SIZE.sm })}
                 aria-label={PURCHASE_LABELS.actions.edit}
                 onClick={() =>
-                  setFormMode({ kind: 'edit', purchaseId: record.id })
+                  setFormMode({ kind: "edit", purchaseId: record.id })
                 }
               />
             </Tooltip>
@@ -306,47 +308,113 @@ export function PurchasesPage() {
             </Tooltip>
           </>
         ) : null}
-        <Dropdown menu={{ items: actionMenu(record) }} trigger={['click']}>
-          <Button type="text" size="small">
-            •••
-          </Button>
+        <Dropdown menu={{ items: actionMenu(record) }} trigger={["click"]}>
+          <Button
+            className="commercial-row-menu"
+            type="text"
+            size="small"
+            icon={phIcon(DotsThreeVertical, {
+              size: ICON_SIZE.md,
+              weight: "bold",
+            })}
+            aria-label={PURCHASE_LABELS.columns.actions}
+          />
         </Dropdown>
       </Space>
+    );
+  }
+
+  function mobileActions(record: PurchaseListItem) {
+    if (record.status !== "DRAFT") return null;
+    return (
+      <div className="commercial-mobile-actions">
+        <Button
+          type="text"
+          icon={phIcon(Eye, { size: ICON_SIZE.md })}
+          aria-label={PURCHASE_LABELS.actions.view}
+          onClick={() => navigate(`/purchases/${record.id}`)}
+        />
+        <>
+          <Button
+            type="text"
+            icon={phIcon(PencilSimple, { size: ICON_SIZE.md })}
+            aria-label={PURCHASE_LABELS.actions.edit}
+            onClick={() => setFormMode({ kind: "edit", purchaseId: record.id })}
+          />
+          <Button
+            type="text"
+            className="is-confirm"
+            icon={phIcon(CheckCircle, { size: ICON_SIZE.md })}
+            aria-label={PURCHASE_LABELS.actions.post}
+            onClick={() => confirmPost(record)}
+          />
+          <Button
+            type="text"
+            danger
+            icon={phIcon(Trash, { size: ICON_SIZE.md })}
+            aria-label={PURCHASE_LABELS.actions.remove}
+            onClick={() => confirmRemove(record)}
+          />
+        </>
+      </div>
+    );
+  }
+
+  function mobileHeaderActions(record: PurchaseListItem) {
+    if (record.status === "DRAFT") return undefined;
+    return (
+      <div className="commercial-mobile-header-actions">
+        <Button
+          type="text"
+          icon={phIcon(Eye, { size: ICON_SIZE.sm })}
+          aria-label={PURCHASE_LABELS.actions.view}
+          onClick={() => navigate(`/purchases/${record.id}`)}
+        />
+        {record.status === "POSTED" ? (
+          <Button
+            type="text"
+            danger
+            icon={phIcon(XCircle, { size: ICON_SIZE.sm })}
+            aria-label={PURCHASE_LABELS.actions.cancel}
+            onClick={() => setCancelTarget(record)}
+          />
+        ) : null}
+      </div>
     );
   }
 
   const columns: ColumnsType<PurchaseListItem> = [
     {
       title: PURCHASE_LABELS.columns.status,
-      dataIndex: 'status',
-      key: 'status',
+      dataIndex: "status",
+      key: "status",
       width: 120,
       render: (value: PurchaseStatus) => <StatusBadge status={value} />,
     },
     {
       title: PURCHASE_LABELS.columns.documentNumber,
-      dataIndex: 'documentNumber',
-      key: 'documentNumber',
+      dataIndex: "documentNumber",
+      key: "documentNumber",
       width: 140,
       sorter: true,
       render: (value: string) => <CodeText value={value} strong />,
     },
     {
       title: PURCHASE_LABELS.columns.businessDate,
-      dataIndex: 'businessDate',
-      key: 'businessDate',
+      dataIndex: "businessDate",
+      key: "businessDate",
       width: 130,
       sorter: true,
       render: (value: string) => (
         <Space size={6}>
           {phIcon(CalendarBlank, { size: ICON_SIZE.sm })}
-          <Text>{formatDate(value)}</Text>
+          <Text>{formatDateTime(value)}</Text>
         </Space>
       ),
     },
     {
       title: PURCHASE_LABELS.columns.partner,
-      key: 'partner',
+      key: "partner",
       ellipsis: true,
       render: (_, record) => (
         <EntityCell code={partnerCode(record)} name={partnerName(record)} />
@@ -354,34 +422,34 @@ export function PurchasesPage() {
     },
     {
       title: PURCHASE_LABELS.columns.itemCount,
-      dataIndex: 'itemCount',
-      key: 'itemCount',
+      dataIndex: "itemCount",
+      key: "itemCount",
       width: 100,
-      align: 'center',
+      align: "center",
       render: (value: number) => (
         <Badge
           count={value}
           showZero
           color="#1677ff"
           overflowCount={999}
-          style={{ backgroundColor: '#1677ff' }}
+          style={{ backgroundColor: "#1677ff" }}
         />
       ),
     },
     {
       title: PURCHASE_LABELS.columns.total,
-      dataIndex: 'totalAmount',
-      key: 'totalAmount',
+      dataIndex: "totalAmount",
+      key: "totalAmount",
       width: 140,
       sorter: true,
-      align: 'right',
+      align: "right",
       render: (value: string) => (
         <MoneyCell value={value} format={formatMoney} emphasize />
       ),
     },
     {
       title: PURCHASE_LABELS.columns.createdBy,
-      key: 'createdBy',
+      key: "createdBy",
       width: 140,
       ellipsis: true,
       render: (_, record) => (
@@ -395,40 +463,40 @@ export function PurchasesPage() {
     },
     {
       title: PURCHASE_LABELS.columns.actions,
-      key: 'actions',
-      fixed: 'right',
+      key: "actions",
+      fixed: "right",
       width: 140,
       render: (_, record) => actions(record),
     },
   ];
 
-  const handleTableChange: TableProps<PurchaseListItem>['onChange'] = (
+  const handleTableChange: TableProps<PurchaseListItem>["onChange"] = (
     _pagination,
     _filters,
     sorter,
   ) => {
     if (
       !Array.isArray(sorter) &&
-      typeof sorter.field === 'string' &&
+      typeof sorter.field === "string" &&
       sorter.order
     ) {
       setSortBy(sorter.field as PurchaseSortBy);
-      setSortOrder(sorter.order === 'ascend' ? 'asc' : 'desc');
+      setSortOrder(sorter.order === "ascend" ? "asc" : "desc");
       setPage(1);
     }
   };
 
   return (
-    <div>
+    <div className="ui-page ui-list-page ui-document-list-page commercial-documents-page purchases-page">
       <PageHeader
         title={PURCHASE_LABELS.title}
         description={PURCHASE_LABELS.description}
-        icon={phIcon(ShoppingCart, { size: ICON_SIZE.xl, weight: 'duotone' })}
+        icon={phIcon(ShoppingCart, { size: ICON_SIZE.xl, weight: "duotone" })}
         extra={
           <Button
             type="primary"
-            icon={phIcon(Plus, { size: ICON_SIZE.md, weight: 'bold' })}
-            onClick={() => setFormMode({ kind: 'create' })}
+            icon={phIcon(Plus, { size: ICON_SIZE.md, weight: "bold" })}
+            onClick={() => setFormMode({ kind: "create" })}
           >
             {PURCHASE_LABELS.create}
           </Button>
@@ -436,6 +504,7 @@ export function PurchasesPage() {
       />
 
       <Card
+        className="ui-filter-card commercial-filter-card"
         size="small"
         style={{ marginBottom: 16 }}
         title={
@@ -448,15 +517,31 @@ export function PurchasesPage() {
           </Space>
         }
       >
-        <FilterBar>
+        <FilterBar
+          onSearch={() => {
+            setDocumentNumber(documentInput.trim());
+            setPage(1);
+          }}
+          onReset={() => {
+            setDocumentInput("");
+            setDocumentNumber("");
+            setPartnerId(undefined);
+            setStatus(undefined);
+            setDateRange(undefined);
+            setProductId(undefined);
+            setMinTotal("");
+            setMaxTotal("");
+            setPage(1);
+          }}
+        >
           <FilterField label={PURCHASE_LABELS.filters.documentNumber}>
-            <Input.Search
+            <Input
               allowClear
               value={documentInput}
               placeholder={PURCHASE_LABELS.filters.documentNumberPlaceholder}
               onChange={(event) => setDocumentInput(event.target.value)}
-              onSearch={(value) => {
-                setDocumentNumber(value.trim());
+              onPressEnter={() => {
+                setDocumentNumber(documentInput.trim());
                 setPage(1);
               }}
               style={{ width: 220 }}
@@ -497,13 +582,16 @@ export function PurchasesPage() {
           </FilterField>
           <FilterField label={PURCHASE_LABELS.filters.dateRange}>
             <DatePicker.RangePicker
-              format="DD.MM.YYYY"
+              format={DATE_DISPLAY_FORMAT}
+              value={
+                dateRange ? [dayjs(dateRange[0]), dayjs(dateRange[1])] : null
+              }
               onChange={(values: null | [Dayjs | null, Dayjs | null]) => {
                 setDateRange(
                   values?.[0] && values[1]
                     ? [
-                        values[0].format('YYYY-MM-DD'),
-                        values[1].format('YYYY-MM-DD'),
+                        dateOnlyPickerToApi(values[0]),
+                        dateOnlyPickerToApi(values[1]),
                       ]
                     : undefined,
                 );
@@ -551,7 +639,7 @@ export function PurchasesPage() {
         <Alert
           type="error"
           showIcon
-          icon={phIcon(WarningCircle, { weight: 'fill' })}
+          icon={phIcon(WarningCircle, { weight: "fill" })}
           message={mapApiError(list.error).userMessage}
           action={
             <Button
@@ -567,19 +655,26 @@ export function PurchasesPage() {
       ) : null}
 
       {isDesktop ? (
-        <Table
-          rowKey="id"
-          size="middle"
-          loading={list.isLoading}
-          dataSource={list.data?.data ?? []}
-          columns={columns}
-          pagination={false}
-          locale={{ emptyText: PURCHASE_LABELS.messages.empty }}
-          scroll={{ x: 1180 }}
-          onChange={handleTableChange}
-        />
+        <div className="commercial-table-shell">
+          <Table
+            className="commercial-documents-table"
+            rowKey="id"
+            size="middle"
+            loading={list.isLoading}
+            dataSource={list.data?.data ?? []}
+            columns={columns}
+            pagination={false}
+            locale={{ emptyText: PURCHASE_LABELS.messages.empty }}
+            scroll={{ x: 1180 }}
+            onChange={handleTableChange}
+          />
+        </div>
       ) : (
-        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+        <Space
+          className="ui-mobile-list commercial-mobile-list"
+          direction="vertical"
+          size="middle"
+        >
           {list.isLoading ? (
             <Text>{PURCHASE_LABELS.messages.loading}</Text>
           ) : null}
@@ -588,6 +683,7 @@ export function PurchasesPage() {
           ) : null}
           {(list.data?.data ?? []).map((record) => (
             <Card
+              className="ui-mobile-card ui-document-card commercial-document-card"
               key={record.id}
               size="small"
               title={
@@ -596,41 +692,46 @@ export function PurchasesPage() {
                   <StatusBadge status={record.status} />
                 </Space>
               }
-              extra={actions(record)}
+              extra={mobileHeaderActions(record)}
             >
-              <Space direction="vertical" size={8} style={{ width: '100%' }}>
-                <EntityCell
-                  code={partnerCode(record)}
-                  name={partnerName(record)}
-                />
-                <Space wrap size={[12, 4]}>
-                  <Text type="secondary">
-                    {phIcon(CalendarBlank, { size: 12 })} {formatDate(record.businessDate)}
+              <div className="commercial-mobile-document-body">
+                <div className="commercial-mobile-partner">
+                  <EntityCell
+                    code={partnerCode(record)}
+                    name={partnerName(record)}
+                  />
+                  <Text className="commercial-mobile-total" strong>
+                    {formatMoney(record.totalAmount)}
                   </Text>
-                  <Popover content={`${record.itemCount} sətir`}>
-                    <Space size={4}>
-                      {phIcon(Package, { size: 12 })}
-                      <Badge count={record.itemCount} showZero color="#1677ff" />
-                    </Space>
-                  </Popover>
-                </Space>
-                <Text strong>{formatMoney(record.totalAmount)}</Text>
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  {PURCHASE_LABELS.columns.createdBy}: {createdByName(record)}
-                </Text>
-              </Space>
+                </div>
+                <div className="commercial-mobile-meta">
+                  <span>
+                    {phIcon(CalendarBlank, { size: 13 })}
+                    {formatDateTime(record.businessDate)}
+                  </span>
+                  <span>
+                    {phIcon(Package, { size: 13 })}
+                    {record.itemCount} sətir
+                  </span>
+                  <span>
+                    {phIcon(User, { size: 13 })}
+                    {createdByName(record)}
+                  </span>
+                </div>
+                {mobileActions(record)}
+              </div>
             </Card>
           ))}
         </Space>
       )}
 
       <Pagination
+        className="commercial-pagination"
         current={page}
         pageSize={pageSize}
         total={list.data?.meta.total ?? 0}
         showSizeChanger
         showTotal={(total) => `Cəmi ${total}`}
-        style={{ marginTop: 16, textAlign: 'right' }}
         onChange={(nextPage, nextPageSize) => {
           setPage(nextPage);
           setPageSize(nextPageSize);
@@ -638,10 +739,13 @@ export function PurchasesPage() {
       />
 
       <Modal
+        className="ui-confirm-modal ui-cancel-confirm-modal commercial-confirm-modal"
+        wrapClassName="commercial-modal-wrap"
+        centered
         open={Boolean(cancelTarget)}
         title={
           <Space>
-            {phIcon(XCircle, { weight: 'fill', size: ICON_SIZE.lg })}
+            {phIcon(XCircle, { weight: "fill", size: ICON_SIZE.lg })}
             {PURCHASE_LABELS.cancel.title}
           </Space>
         }
@@ -651,7 +755,7 @@ export function PurchasesPage() {
         confirmLoading={cancelMutation.isPending}
         onCancel={() => {
           setCancelTarget(undefined);
-          setCancelReason('');
+          setCancelReason("");
         }}
         onOk={async () => {
           if (!cancelTarget || !cancelReason.trim()) return;
@@ -662,38 +766,82 @@ export function PurchasesPage() {
             });
             message.success(PURCHASE_LABELS.cancel.success);
             setCancelTarget(undefined);
-            setCancelReason('');
+            setCancelReason("");
           } catch (error) {
             message.error(mapApiError(error).userMessage);
           }
         }}
       >
-        <Text>{PURCHASE_LABELS.cancel.text}</Text>
-        <div style={{ marginTop: 16 }}>
-          <Text strong>{PURCHASE_LABELS.cancel.reason}</Text>
-          <Input.TextArea
-            value={cancelReason}
-            onChange={(event) => setCancelReason(event.target.value)}
-            placeholder={PURCHASE_LABELS.cancel.reasonPlaceholder}
-            rows={3}
-            maxLength={1000}
-            showCount
-          />
-        </div>
+        <Space direction="vertical" size={12} style={{ width: "100%" }}>
+          <Text>{PURCHASE_LABELS.cancel.text}</Text>
+          <div>
+            <Text strong>{PURCHASE_LABELS.cancel.effectsTitle}</Text>
+            <ul style={{ margin: "8px 0 0", paddingLeft: 20 }}>
+              {PURCHASE_LABELS.cancel.effects.map((effect) => (
+                <li key={effect}>
+                  <Text type="secondary">{effect}</Text>
+                </li>
+              ))}
+            </ul>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              {PURCHASE_LABELS.cancel.insufficientQuantityHint}
+            </Text>
+          </div>
+          <div>
+            <Text strong>{PURCHASE_LABELS.cancel.reason}</Text>
+            <Input.TextArea
+              value={cancelReason}
+              onChange={(event) => setCancelReason(event.target.value)}
+              placeholder={PURCHASE_LABELS.cancel.reasonPlaceholder}
+              rows={3}
+              maxLength={1000}
+              showCount
+              style={{ marginTop: 8 }}
+            />
+          </div>
+        </Space>
       </Modal>
+
+      <PurchasePostConfirmModal
+        open={Boolean(postTarget)}
+        confirmLoading={
+          postMutation.isPending ||
+          (Boolean(postTarget) && postTargetDetail.isLoading)
+        }
+        documentTotal={
+          postTargetDetail.data?.totalAmount ?? postTarget?.totalAmount
+        }
+        partnerDebtBalance={
+          postTargetDetail.data?.partner.currentDebtBalance ??
+          postTarget?.partner?.currentDebtBalance
+        }
+        onCancel={() => setPostTarget(undefined)}
+        onConfirm={async (payload) => {
+          if (!postTarget) return;
+          try {
+            await postMutation.mutateAsync({
+              id: postTarget.id,
+              input: payload,
+            });
+            message.success(PURCHASE_LABELS.post.success);
+            setPostTarget(undefined);
+          } catch (error) {
+            message.error(mapApiError(error).userMessage);
+            throw error;
+          }
+        }}
+      />
 
       <PurchaseFormModal
         key={
-          formMode.kind === 'edit'
+          formMode.kind === "edit"
             ? `edit-${formMode.purchaseId}`
             : formMode.kind
         }
-        open={formMode.kind !== 'closed'}
-        purchaseId={
-          formMode.kind === 'edit' ? formMode.purchaseId : undefined
-        }
-        onCancel={() => setFormMode({ kind: 'closed' })}
-        onSaved={() => setFormMode({ kind: 'closed' })}
+        open={formMode.kind !== "closed"}
+        purchaseId={formMode.kind === "edit" ? formMode.purchaseId : undefined}
+        onCancel={() => setFormMode({ kind: "closed" })}
+        onSaved={() => setFormMode({ kind: "closed" })}
       />
     </div>
   );

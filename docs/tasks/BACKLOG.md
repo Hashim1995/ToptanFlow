@@ -46,7 +46,7 @@ Priority: **H** High · **M** Medium · **L** Low
 | — | Signed partner debt + AZN | CHANGE-003 | H | **Active** — ADR-030 / ADR-031 |
 | [US-022](stories/US-022-purchase-draft-post.md) | Purchase draft→post | EPIC-009 | H | Partners + product quantity + signed debt; AZN-only; **no** warehouseId |
 | [US-023](stories/US-023-sale-draft-post.md) | Sale draft→post | EPIC-010 | H | Partners + product quantity + signed debt; AZN-only; **no** warehouseId |
-| [US-024](stories/US-024-money-accounts-cash-movements.md) | Money accounts & cash | EPIC-011 | H | BRD-OD-03/05; future Currency ownership (ADR-031) |
+| [US-024](stories/US-024-money-accounts-cash-movements.md) | Cash Accounts & foundation movements | EPIC-011 | H | **Ready** — CHANGE-004 / ADR-032–037; TASK-024-01..04 |
 | [US-025](stories/US-025-expense-recording.md) | Expense recording | EPIC-011 | M | US-024 |
 | [US-026](stories/US-026-payment-allocation-advances.md) | Allocations & advances | EPIC-012 | H | Posted documents + cash; **retargeted** signed balance (ADR-030) |
 | [US-027](stories/US-027-inventory-costing-method.md) | Costing method | EPIC-013 | H | **Blocked** — BRD-OD-06 / conflict |

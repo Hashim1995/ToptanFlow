@@ -4,6 +4,7 @@ export type AuthUser = {
   id: string;
   username: string;
   fullName: string;
+  isSuperAdmin: boolean;
 };
 
 export type AuthTokensResponse = {

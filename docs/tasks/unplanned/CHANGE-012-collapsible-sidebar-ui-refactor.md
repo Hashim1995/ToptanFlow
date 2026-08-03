@@ -1,0 +1,34 @@
+# CHANGE-012: Collapsible sidebar UI refactor
+
+- **ID:** CHANGE-012
+- **Type:** CHANGE
+- **Title:** Collapsible sidebar UI refactor
+- **Status:** Done
+- **Trigger:** Owner requested a professional inner-sidebar presentation and a desktop collapse toggle.
+- **Urgency:** High
+- **Affected epics / stories / tasks:** US-037 application shell presentation; follow-up to CHANGE-010.
+- **Why not in the original plan:** The application shell navigation remained functional after the global CSS rollback, but its sidebar class names no longer had a dedicated visual layer and it had no compact desktop mode.
+- **Scope:** Frontend-only UI/UX refactor of the application sidebar, navigation menu presentation, desktop collapsed rail, brand area, user/logout footer, mobile navigation drawer, top bar, and content background under `apps/web/src/app/**`.
+- **Out of scope:** Routes; navigation destinations; authentication behavior; logout logic; permissions; module visibility rules; backend files; APIs; business logic; global Ant Design popup/modal/select overrides.
+- **Risks:** Making routes unreachable in collapsed mode; clipping long navigation on short displays; applying desktop collapse behavior to the mobile drawer; reintroducing broad CSS regressions.
+- **Acceptance criteria:**
+  - Desktop sidebar can toggle between a readable expanded state and an icon-led compact rail.
+  - Every existing navigation destination remains available in both states, with tooltips/accessible labels where visible text is absent.
+  - Brand, navigation, and user/logout zones remain usable independently; long navigation scrolls without pushing user actions out of reach.
+  - Mobile continues to use an expanded touch-friendly drawer and does not inherit desktop collapsed styling.
+  - Selected, hover, and focus states are clear and consistent with the Cash workspace presentation.
+  - Styling is component-scoped and does not modify global popup, Select, Dropdown, modal, or page-scroll behavior.
+  - No route, permission, authentication, API, backend, or business logic is changed.
+  - Focused lint, TypeScript checking, production bundling, and existing web tests pass.
+- **Impact on current work:** Standalone owner-directed presentation improvement; no active story is paused.
+- **Roadmap impact:** None; presentation hardening of the delivered application shell.
+- **Result:** Added an Ant Design-native desktop collapsed sidebar with a dedicated toggle, icon-backed menu items, selected/hover states, a compact navigation area, and a persistent user/logout footer. Reduced row and section spacing so the delivered menu fits ordinary viewport heights without an unnecessary visible scrollbar; overflow remains available but visually unobtrusive on genuinely short screens. Refined the mobile drawer and top bar while keeping mobile navigation expanded. All existing routes, Super Admin visibility, selection mapping, logout behavior, and content rendering remain unchanged. Styling lives in a dedicated app-shell stylesheet and does not target global overlay components.
+- **Follow-up actions:** Owner visual acceptance, then continue the requested page-by-page frontend presentation refactor.
+- **Evidence:**
+  - `apps/web/src/app/app-shell-layout.tsx`
+  - `apps/web/src/app/app-shell-layout.css`
+  - `yarn workspace web tsc --noEmit` — passed.
+  - Focused ESLint for the changed TSX component — passed.
+  - `yarn workspace web vite build` — passed (existing bundle-size warning only).
+  - `yarn workspace web test --run` — 17 files / 51 tests passed.
+  - Scope audit — no route configuration, backend, API, permission, authentication implementation, or business-logic file changed.

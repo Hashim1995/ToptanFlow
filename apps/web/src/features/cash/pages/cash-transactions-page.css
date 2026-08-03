@@ -1,0 +1,230 @@
+.cash-transactions-page {
+  width: 100%;
+  max-width: 1680px;
+  margin: 0 auto;
+}
+
+.cash-transactions-filter-card.ant-card {
+  margin-bottom: 16px;
+  border: 1px solid #e3e9f1;
+  border-radius: 16px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+}
+
+.cash-transactions-filter-card > .ant-card-body {
+  padding: 14px;
+}
+
+.cash-transactions-filter-card .ui-filter-bar > .ant-space-item {
+  width: 100%;
+}
+
+.cash-transactions-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 11px;
+}
+
+.cash-transactions-filters .ant-input,
+.cash-transactions-filters .ant-select,
+.cash-transactions-filters .ant-picker {
+  width: 100%;
+  min-height: 40px;
+}
+
+.cash-transactions-alert.ant-alert {
+  margin-bottom: 14px;
+  border-radius: 12px;
+}
+
+.cash-transactions-table-shell {
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #e3e9f1;
+  border-radius: 16px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.055);
+}
+
+.cash-transactions-table-shell .ant-table-thead > tr > th {
+  color: #334155;
+  font-size: 12px;
+  font-weight: 750;
+  background: #f6f8fb;
+}
+
+.cash-transactions-money {
+  display: inline-flex;
+  justify-content: flex-end;
+  gap: 3px;
+  font-weight: 750;
+}
+
+.cash-transactions-money.is-incoming,
+.cash-transactions-mobile-amount.is-incoming {
+  color: #16803c;
+}
+
+.cash-transactions-money.is-outgoing,
+.cash-transactions-mobile-amount.is-outgoing {
+  color: #c2413a;
+}
+
+.cash-transactions-mobile-list {
+  display: grid;
+  gap: 8px;
+}
+
+.cash-transactions-mobile-card.ant-card,
+.cash-transactions-empty.ant-card {
+  border: 1px solid #e3e9f1;
+  border-radius: 11px;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.045);
+}
+
+.cash-transactions-mobile-card > .ant-card-body {
+  padding: 11px 12px;
+}
+
+.cash-transactions-mobile-card.is-cancelled {
+  background: #fafafa;
+  box-shadow: none;
+}
+
+.cash-transactions-mobile-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+
+.cash-transactions-mobile-type {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.cash-transactions-mobile-type > div,
+.cash-transactions-mobile-result {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cash-transactions-mobile-result {
+  flex: 0 0 auto;
+  align-items: flex-end;
+}
+
+.cash-transactions-direction-icon {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+}
+
+.cash-transactions-direction-icon.is-incoming {
+  color: #16803c;
+  background: #eef9f1;
+}
+
+.cash-transactions-direction-icon.is-outgoing {
+  color: #c2413a;
+  background: #fff1f0;
+}
+
+.cash-transactions-mobile-amount {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 780;
+  letter-spacing: -0.025em;
+}
+
+.cash-transactions-mobile-meta {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  padding-top: 9px;
+  color: #64748b;
+  font-size: 11px;
+  border-top: 1px solid #edf1f5;
+}
+
+.cash-transactions-mobile-meta > span,
+.cash-transactions-mobile-meta > a {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+}
+
+.cash-transactions-mobile-meta > a {
+  font-weight: 650;
+}
+
+.cash-transactions-mobile-meta .cash-transactions-mobile-partner {
+  padding: 3px 7px;
+  color: #0f4c8a;
+  background: #edf5ff;
+  border-radius: 6px;
+}
+
+.cash-transactions-mobile-partner strong {
+  font-weight: 750;
+}
+
+.cash-transactions-mobile-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 7px 8px;
+  color: #475569;
+  font-size: 12px;
+  background: #f7f9fc;
+  border-radius: 8px;
+}
+
+.cash-transactions-mobile-note svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.cash-transactions-pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 18px;
+}
+
+@media (min-width: 640px) {
+  .cash-transactions-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cash-transactions-filter-actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .cash-transactions-filter-actions .ant-btn {
+    min-width: 150px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .cash-transactions-filter-card > .ant-card-body {
+    padding: 16px 18px;
+  }
+
+  .cash-transactions-filters {
+    grid-template-columns:
+      minmax(220px, 1.3fr) minmax(190px, 1.15fr) repeat(3, minmax(145px, 0.8fr))
+      minmax(230px, 1fr);
+  }
+}

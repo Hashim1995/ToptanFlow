@@ -10,7 +10,16 @@ import {
   PartnerDebtBalanceService,
   PartnerDebtMovementKind,
 } from '../business-partners/partner-debt-balance.service';
+import {
+  CashBalanceService,
+  CashTransactionDirectionValue,
+  CashTransactionTypeValue,
+} from '../cash/cash-balance.service';
 import { SortOrder } from '../common/sorting/sort-order.enum';
+import {
+  businessDateFilterRange,
+  businessDateToUtc,
+} from '../common/datetime/index.js';
 import { BusinessCodeSequenceKey } from '../number-sequences/business-code-sequence-key';
 import { NumberSequencesService } from '../number-sequences/number-sequences.service';
 import {
@@ -165,6 +174,11 @@ const saleListSelect = {
   partner: { select: partnerSummarySelect },
   createdBy: { select: userSummarySelect },
   _count: { select: { items: true } },
+  cashTransactions: {
+    where: { status: 'POSTED' },
+    select: { id: true },
+    take: 1,
+  },
 } satisfies Prisma.SaleSelect;
 
 const saleDetailSelect = {
@@ -197,6 +211,20 @@ const saleDetailSelect = {
   partnerDebtMovements: {
     select: debtMovementSelect,
     orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+  },
+  cashTransactions: {
+    select: {
+      id: true,
+      transactionNumber: true,
+      cashAccountId: true,
+      direction: true,
+      type: true,
+      status: true,
+      amount: true,
+      transactionDate: true,
+      cashAccount: { select: { id: true, name: true, code: true } },
+    },
+    orderBy: [{ transactionDate: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }],
   },
 } satisfies Prisma.SaleSelect;
 
@@ -253,6 +281,18 @@ type DebtMovementRecord = {
   createdAt: Date;
 };
 
+type LinkedCashTransactionRecord = {
+  id: string;
+  transactionNumber: string;
+  cashAccountId: string;
+  direction: string;
+  type: string;
+  status: string;
+  amount: Decimal;
+  transactionDate: Date;
+  cashAccount: { id: string; name: string; code: string };
+};
+
 type SaleListRecord = {
   id: string;
   documentNumber: string;
@@ -266,6 +306,7 @@ type SaleListRecord = {
   partner: PartnerSummaryRecord;
   createdBy: UserSummaryRecord;
   _count: { items: number };
+  cashTransactions: Array<{ id: string }>;
 };
 
 type SaleDetailRecord = {
@@ -290,6 +331,7 @@ type SaleDetailRecord = {
   items: SaleItemRecord[];
   productQuantityHistory: QuantityHistoryRecord[];
   partnerDebtMovements: DebtMovementRecord[];
+  cashTransactions: LinkedCashTransactionRecord[];
 };
 
 function decimalString(value: Decimal | { toString(): string }): string {
@@ -303,6 +345,7 @@ export class SalesService {
     private readonly numberSequences: NumberSequencesService,
     private readonly productQuantity: ProductQuantityService,
     private readonly partnerDebt: PartnerDebtBalanceService,
+    private readonly cashBalance: CashBalanceService,
   ) {}
 
   async create(userId: string, dto: CreateSaleDto): Promise<SaleResponseDto> {
@@ -319,7 +362,7 @@ export class SalesService {
         data: {
           documentNumber: `SAL-${sequence}`,
           partnerId: dto.partnerId,
-          businessDate: new Date(dto.businessDate),
+          businessDate: businessDateToUtc(dto.businessDate),
           notes: normalizeOptionalText(dto.notes),
           subtotalAmount: calculated.subtotalAmount,
           discountAmount: calculated.discountAmount,
@@ -435,7 +478,7 @@ export class SalesService {
           businessDate:
             dto.businessDate === undefined
               ? undefined
-              : new Date(dto.businessDate),
+              : businessDateToUtc(dto.businessDate),
           notes:
             dto.notes === undefined
               ? undefined
@@ -561,7 +604,10 @@ export class SalesService {
         select: { id: true, latestPurchasePrice: true },
       });
       const costByProduct = new Map(
-        productCosts.map((product) => [product.id, product.latestPurchasePrice]),
+        productCosts.map((product) => [
+          product.id,
+          product.latestPurchasePrice,
+        ]),
       );
 
       for (let index = 0; index < sale.items.length; index += 1) {
@@ -599,6 +645,31 @@ export class SalesService {
         relatedDocumentType: 'Sale',
         relatedDocumentId: id,
       });
+
+      if (dto?.immediatePayment) {
+        const payment = dto.immediatePayment;
+        const cash = await this.cashBalance.applyPostedTransaction(tx, {
+          cashAccountId: payment.cashAccountId,
+          direction: CashTransactionDirectionValue.IN,
+          type: CashTransactionTypeValue.CUSTOMER_RECEIPT,
+          amount: payment.amount,
+          transactionDate: sale.businessDate,
+          notes: payment.notes,
+          createdByUserId: userId,
+          partnerId: sale.partnerId,
+          saleId: id,
+        });
+        await this.partnerDebt.applyChange(tx, {
+          partnerId: sale.partnerId,
+          signedAmount: new Decimal(payment.amount).negated(),
+          kind: PartnerDebtMovementKind.CASH_RECEIPT,
+          createdByUserId: userId,
+          cashTransactionId: cash.id,
+          saleId: id,
+          relatedDocumentType: 'Sale',
+          relatedDocumentId: id,
+        });
+      }
     });
     return this.findOne(id);
   }
@@ -620,6 +691,22 @@ export class SalesService {
       if (!sale) {
         throw new NotFoundException('Sale not found');
       }
+
+      const linkedCash = await tx.cashTransaction.count({
+        where: {
+          saleId: id,
+          status: 'POSTED',
+          type: { not: 'REVERSAL' },
+        },
+      });
+      if (linkedCash > 0) {
+        throw new ConflictException({
+          message:
+            'Cancel linked cash transactions before cancelling this sale',
+          code: 'SALE_HAS_LINKED_POSTED_CASH',
+        });
+      }
+
       const transitioned = await tx.sale.updateMany({
         where: { id, status: 'POSTED' },
         data: {
@@ -673,10 +760,7 @@ export class SalesService {
       productCodeSnapshot: string;
     }>,
   ): Promise<ProductShortage[]> {
-    const aggregated = new Map<
-      string,
-      { total: Decimal; code: string }
-    >();
+    const aggregated = new Map<string, { total: Decimal; code: string }>();
     for (const line of lines) {
       const existing = aggregated.get(line.productId);
       if (existing) {
@@ -733,9 +817,7 @@ export class SalesService {
       throw new NotFoundException('Business partner not found');
     }
     if (!partner.isActive || !partner.isCustomer) {
-      throw new BadRequestException(
-        'Sale partner must be an active customer',
-      );
+      throw new BadRequestException('Sale partner must be an active customer');
     }
   }
 
@@ -778,12 +860,10 @@ export class SalesService {
     if (query.createdByUserId) where.createdByUserId = query.createdByUserId;
     if (query.productId) where.items = { some: { productId: query.productId } };
     if (query.businessDateFrom || query.businessDateTo) {
-      where.businessDate = {
-        gte: query.businessDateFrom
-          ? new Date(query.businessDateFrom)
-          : undefined,
-        lte: query.businessDateTo ? new Date(query.businessDateTo) : undefined,
-      };
+      where.businessDate = businessDateFilterRange(
+        query.businessDateFrom,
+        query.businessDateTo,
+      );
     }
     if (query.minTotal || query.maxTotal) {
       where.totalAmount = {
@@ -813,6 +893,7 @@ export class SalesService {
       },
       createdBy: row.createdBy,
       itemCount: row._count.items,
+      hasLinkedCashOperation: row.cashTransactions.length > 0,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };
@@ -879,6 +960,18 @@ export class SalesService {
         reason: movement.reason,
         reversalOfId: movement.reversalOfId,
         createdAt: movement.createdAt,
+      })),
+      cashTransactions: row.cashTransactions.map((txn) => ({
+        id: txn.id,
+        transactionNumber: txn.transactionNumber,
+        cashAccountId: txn.cashAccountId,
+        cashAccountName: txn.cashAccount.name,
+        cashAccountCode: txn.cashAccount.code,
+        direction: txn.direction,
+        type: txn.type,
+        status: txn.status,
+        amount: new Decimal(txn.amount.toString()).toFixed(2),
+        transactionDate: txn.transactionDate,
       })),
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,

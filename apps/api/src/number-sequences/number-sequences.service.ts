@@ -60,7 +60,10 @@ export class NumberSequencesService {
       key === BusinessCodeSequenceKey.PRODUCT ||
       key === BusinessCodeSequenceKey.BUSINESS_PARTNER ||
       key === BusinessCodeSequenceKey.PURCHASE ||
-      key === BusinessCodeSequenceKey.SALE
+      key === BusinessCodeSequenceKey.SALE ||
+      key === BusinessCodeSequenceKey.CASH_ACCOUNT ||
+      key === BusinessCodeSequenceKey.CASH_TRANSACTION ||
+      key === BusinessCodeSequenceKey.CASH_TRANSFER
     );
   }
 }

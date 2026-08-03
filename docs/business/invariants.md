@@ -19,9 +19,11 @@
   recorded 2026-07-31 as ADR-028; refines the cash/settlement separation already
   stated in analysis §5.1 / §5.5. Partner debt balance effects: ADR-030.]
 - A document's stated total must match the total calculated from its own lines; a mismatched total is not accepted as authoritative.
-- Posted facts are not deleted or silently edited. Corrections happen only through a return, cancellation, reversal, reallocation, or an authorized adjustment.
+- Posted facts are not deleted or silently edited — including informational fields such as notes/description on completed Sale, Purchase, Cash Transaction, and Cash Transfer. Corrections happen only through a return, cancellation, reversal, reallocation, or an authorized adjustment. [CHANGE-006, recorded 2026-08-02.]
+- **Active/inactive (`isActive`) is for master data only** (Product, Business Partner, Cash Account, Expense Category). Completed financial/commercial operations use lifecycle statuses (`Draft` / `Posted` / `Cancelled`, or Cash `Posted` / `Cancelled`) — never soft-deactivate as a substitute for cancellation. [CHANGE-006, recorded 2026-08-02.]
 - A reversal always preserves and links back to the original record; a cancelled document's number is never reused.
 - Resubmitting the same action (for example after a network retry) must not create duplicate business effects.
+- Every completion or cancellation that affects multiple ledgers (quantity, partner debt, cash, transfer legs) commits as **one indivisible business action**: all effects apply together, or the whole action leaves state unchanged. [CHANGE-006, recorded 2026-08-02.]
 - Money and quantity values must be calculated without loss of precision; rounding must not silently change an official amount.
 
 ## Users & Permissions
@@ -35,7 +37,9 @@
 - Requiring the document creator and its approver to be different people is an optional business policy, not a mandatory rule by default.
 - **[Approved Human Decision — recorded 2026-07-29; see ADR-025.]** For v1, authentication uses JWT (access + refresh) with access-token lifetime 24 hours and refresh-token lifetime 30 days (rotating refresh). Passwords use Argon2id. Login uses `username`.
 - **[Approved Human Decision — recorded 2026-07-29; see ADR-025.]** For v1, the product is single-company; multi-company / membership isolation is not implemented.
-- **[Approved Human Decision — recorded 2026-07-29; see ADR-025.]** For v1, there are no role packages and no admin/user-type split: every authenticated **active** user may perform every available application action. Granular permissions and per-user overrides remain deferred until a future Approved Human Decision.
+- **[Approved Human Decision — recorded 2026-07-29; see ADR-025.]** For v1, there are no role packages: every authenticated **active** user may perform every available **business** application action (sales, purchases, cash, master data). Granular permission packages remain deferred.
+- **[Approved Human Decision — recorded 2026-08-02; see ADR-039 / CHANGE-007.]** User administration is an exception: only accounts with `isSuperAdmin = true` may create, list, update, deactivate, reactivate users, or set passwords. Ordinary users must not access the Users module. API-created users are never Super Admin. Super Admin accounts cannot be soft-deactivated (root operator). This is not a general RBAC system.
+- **[Approved Human Decision — recorded 2026-08-03; ADR-040 / CHANGE-019.]** The same narrow Super Admin boundary also governs Cash Account creation and responsible-user assignment/change. It does not restrict Cash operations: every active user may operate any active Cash Account, and the authenticated operator remains the recorded actor.
 
 ## Business Partners
 
@@ -72,7 +76,7 @@
 
 ## Sales
 
-- A sale is a list-based business document with lifecycle **Draft → Posted → Cancelled** (`DocumentStatus`). Drafts support normal create/read/update/delete. Posted and Cancelled documents are immutable (view/cancel-from-posted only); they are never edited or deleted in place. [US-023 activation.]
+- A sale is a list-based business document with lifecycle **Draft → Posted → Cancelled** (`DocumentStatus`). Drafts support normal create/read/update/delete. Posted and Cancelled documents are immutable (view/cancel-from-posted only) — partner, lines, quantities, prices, totals, dates, related cash links, and notes cannot be edited; they are never physically deleted and never soft-deactivated. A Cancelled sale cannot be posted again. [US-023 activation; CHANGE-006.]
 - Document numbers are allocated by the backend (`SAL-` + `NumberSequence` key `SALE`) at draft creation, are globally unique, and are never reused — including after cancellation. Clients must not supply or override document numbers. [Approved Human Decision — US-023 / EPIC-010, recorded 2026-08-01; uses ADR-024 allocation pattern.]
 - A sale records the delivery of goods to a business partner together with price, discounts, and total amount (AZN). Partner debt impact is on the partner's signed debt balance — not a cash balance stored on the sale.
 - Draft sales have no product-quantity, partner-debt, or cash effect. Totals stored on a draft are document values only.
@@ -85,11 +89,11 @@
 - A returned, resaleable product increases product quantity at the original sale cost; damaged goods are handled via write-off or quantity adjustment with reason — not by directing them to a damaged warehouse (warehouses are abolished under ADR-029).
 - A sale return or sale cancellation **decreases** the partner's debt balance by the reversed sale amount (ADR-030). Cash refunds, if any, are separate Cash Out facts (ADR-028).
 - After posting, a sale's prices and discounts are not directly edited; corrections use cancellation followed by a new document, or a return.
-- Cancelling a posted sale reverses its product-quantity and partner debt-balance effects via reversing quantity-history / balance-movement rows; any linked cash receipts are not silently deleted — they are unallocated, reversed, or otherwise resolved as separate cash/settlement actions. The original sale document is retained and marked cancelled, its number is never reused, and any replacement document keeps a reference to the original. Cancellation requires a non-empty reason and cannot be applied twice.
+- Cancelling a posted sale reverses its product-quantity and partner debt-balance effects via reversing quantity-history / balance-movement rows in the **same** atomic action. Sale cancellation **does not** mutate cash (ADR-028). **[Approved Human Decision — CHANGE-006 / US-048, recorded 2026-08-02.]** While any linked non-reversal Cash Transaction remains `POSTED`, Sale cancel is **blocked** (`SALE_HAS_LINKED_POSTED_CASH`); the operator must cancel those Cash In operations first (ADR-035). Cancelled cash rows may remain visibly linked for history but are not treated as active payments. The original sale is retained and marked cancelled, its number is never reused. Cancellation requires a non-empty reason and cannot be applied twice.
 
 ## Purchasing
 
-- A purchase is a list-based business document with lifecycle **Draft → Posted → Cancelled** (`DocumentStatus`). Drafts support normal create/read/update/delete. Posted and Cancelled documents are immutable (view/cancel-from-posted only); they are never edited or deleted in place. [US-022 activation.]
+- A purchase is a list-based business document with lifecycle **Draft → Posted → Cancelled** (`DocumentStatus`). Drafts support normal create/read/update/delete. Posted and Cancelled documents are immutable (view/cancel-from-posted only) — partner, lines, quantities, prices, totals, dates, related cash links, and notes cannot be edited; they are never physically deleted and never soft-deactivated. A Cancelled purchase cannot be posted again. [US-022 activation; CHANGE-006.]
 - Document numbers are allocated by the backend (`PUR-` + `NumberSequence` key `PURCHASE`) at draft creation, are globally unique, and are never reused — including after cancellation. Clients must not supply or override document numbers. [Approved Human Decision — US-022 / EPIC-009, recorded 2026-07-31; uses ADR-024 allocation pattern.]
 - A purchase records goods actually received from a supplier together with actual quantity, price, and total amount (AZN). Partner debt impact is on the partner's signed debt balance — not a cash balance stored on the purchase.
 - Draft purchases have no product-quantity, partner-debt, or cash effect. Totals stored on a draft are document values only.
@@ -101,8 +105,8 @@
 - Entering the same supplier invoice number more than once triggers a duplicate warning.
 - A purchase return references the original purchase wherever possible, cannot exceed the unreturned quantity, and requires sufficient available product quantity; if the goods have already been sold onward, a physical return is not possible without a separately defined settlement. Purchase return is a separate workflow from full-document cancellation (deferred relative to US-022 core draft/post/cancel).
 - A purchase return or purchase cancellation **increases** the partner's debt balance by the reversed purchase amount (ADR-030). Cash effects, if any, are separate Cash facts (ADR-028).
-- Cancelling a posted purchase reverses its product-quantity increase and partner debt-balance effect via reversing quantity-history / balance-movement rows; cancellation is blocked if available product quantity is insufficient to reverse the original receipt. Cancellation requires a non-empty reason and cannot be applied twice.
-- Payments already linked to a purchase being cancelled must be unallocated or otherwise resolved as separate cash/settlement actions — not by editing cash into the purchase row.
+- Cancelling a posted purchase reverses its product-quantity increase and partner debt-balance effect via reversing quantity-history / balance-movement rows in the **same** atomic action; cancellation is **blocked** if available product quantity is insufficient to reverse the original receipt (`PURCHASE_CANCEL_INSUFFICIENT_QUANTITY`). Cancellation requires a non-empty reason and cannot be applied twice. Purchase cancellation **does not** mutate cash (ADR-028).
+- **[Approved Human Decision — CHANGE-006 / US-048, recorded 2026-08-02.]** While any linked non-reversal Cash Transaction remains `POSTED`, Purchase cancel is **blocked** (`PURCHASE_HAS_LINKED_POSTED_CASH`); the operator must cancel those Cash Out operations first (ADR-035). Cancelled cash rows may remain visibly linked for history but are not treated as active payments. Cash is never edited into the purchase row.
 
 ## Product Quantity
 
@@ -127,25 +131,40 @@
 
 ## Cash
 
+> **[Approved Human Decision — ADR-032–038 / CHANGE-004 / CHANGE-005, recorded 2026-08-01.]** One Cash domain supports any number of named **Cash Accounts** as data (not hardcoded person modules). Balances change only through auditable Cash Transactions / Transfer movements. Current amounts are AZN (ADR-031). **Primary ordinary operations are exactly: Cash In, Cash Out, Expense, Transfer** (ADR-038).
+
 - Cash changes only when money actually moves, or through an approved opening entry or an approved adjustment — never as a side effect embedded inside a Sale or Purchase document. [Approved Human Decision — ADR-028, recorded 2026-07-31.]
+- **Cash Account balance cannot be manually overwritten.** Every change to `currentBalance` requires a completed Cash Transaction or Transfer-linked movement that stores balance before/after, actor, type, and reason/source as applicable (ADR-033).
 - Every money movement identifies the account, amount, date, movement type, actor, and business reason or source.
-- A cash transaction (Cash In / Cash Out / transfer / adjustment) is its own posted fact with its own audit trail. Optional linkage or allocation to one or more Sale/Purchase documents provides traceability, settlement, history, and reporting; unlinked cash transactions are allowed.
-- The main cash account, bank account, vehicle cash accounts, and personal funds are separate; a movement recorded in one account is never used to silently increase another.
-- A transfer between money accounts is a paired decrease/increase that does not change company-total cash.
-- An owner's capital contribution is not sales revenue; an owner's withdrawal is not an operating expense.
-- Negative cash is a visible, temporary exception requiring permission, a stated reason, an amount limit, and an age limit; it must never be concealed using a false receipt.
-- Money paid using an employee's or the owner's personal funds is tracked as a separate reimbursable amount, not as a business-cash outflow.
-- Cash closing compares the calculated (system) balance to the physically counted balance; any difference requires an investigated reason and, if it cannot be explained by a missing source document, an approved adjustment.
+- A cash transaction (Cash In / Cash Out / Expense / transfer) is its own posted fact with its own audit trail. Optional linkage to one Sale or Purchase provides traceability; unlinked partner Cash In/Out remain allowed. Ordinary Cash In/Out/Expense/Transfer complete in one step (no Draft effect) per ADR-036.
+- **Cash In (primary):** requires Business Partner; cash ↑; partner debt ↓; optional Sale link (ADR-038 / ADR-030).
+- **Cash Out (primary):** requires Business Partner; cash ↓; partner debt ↑; optional Purchase link; negative override per ADR-037 (ADR-038 / ADR-030).
+- **Expense (primary):** requires Expense Category and description; cash ↓; **no** partner; **no** partner debt (ADR-038).
+- **Multiple Cash Accounts** (e.g. named tills such as office cash or an employee’s operational cash) are separate custody pools; a movement recorded in one account is never used to silently increase another except via an explicit Internal Transfer (ADR-032, ADR-034). Person names appear only as account data — never as hardcoded modules or auth branches.
+- **Cash Account ownership is required and one-to-one:** every Cash Account has exactly one responsible active User; one User is responsible for at most one Cash Account. Only a Super Admin may create an account or assign/change this ownership (ADR-040).
+- A User responsible for a Cash Account cannot be deactivated until a Super Admin reassigns that account; ownership never silently becomes empty (ADR-040).
+- The logged-in user's responsible active Cash Account is the initial default in every Cash selector (Cash In, Cash Out, Expense, Transfer source, Sale collection, Purchase payment), including flows opened from another account's page. The default remains editable and never changes audit attribution: the authenticated operator is always the action actor (ADR-040).
+- **Total Company Cash** = sum of current balances of all **active** Cash Accounts. Inactive accounts remain visible in history but are excluded from that total for normal overview.
+- A transfer between Cash Accounts is one atomic business aggregate producing linked transfer-out and transfer-in movements; it does **not** change Total Company Cash; it is neither income nor expense; it does not affect partner debt (ADR-034).
+- **Opening balance** is posted as an auditable `OPENING_BALANCE` movement when an account starts with a non-zero balance; later corrections use reversal/adjustment, not silent field edit (ADR-033).
+- **Negative cash:** Cash Out / Expense / Transfer Out that would make balance &lt; 0 is blocked unless an authorized override supplies a mandatory reason; before/after balances and actor are stored. Amount/age limits and formal case lifecycle remain open (partial BRD-OD-05 — ADR-037). Negative cash must never be concealed using a false receipt.
+- Money paid using an employee's or the owner's personal funds is tracked as a separate reimbursable amount, not as a business-cash outflow (**AD-08 still open** — Deferred relative to Multi-Cash Stages 1–5; Stage 3 expenses are paid from a Cash Account).
+- Cash closing compares the calculated (system) balance to the physically counted balance; any difference requires an investigated reason and, if it cannot be explained by a missing source document, an approved adjustment. (Closing UI may follow core posting.)
+- Completed Cash Transactions/Transfers are not silently edited or deleted (including notes); they are never soft-deactivated. Cancellation requires a non-empty reason, cannot be applied twice, and posts reversing effects (ADR-035). Transfer cancel reverses **both** account effects atomically; Total Company Cash is unchanged by a successful transfer and is restored to the pre-transfer total after a successful transfer cancel.
+- **Cash In cancellation** is always allowed even when reversing the receipt would make the Cash Account balance negative. It must not be blocked for insufficient balance and must not require the ordinary ADR-037 negative-cash override. Cancel reason remains mandatory; cash and partner debt reverse together; original and reversal history are preserved. The resulting negative balance remains visible on the account and in history. This exception applies only to cancellation of Cash In — not to ordinary Cash Out, Expense, or Transfer **creation**. [CHANGE-006 correction, recorded 2026-08-02.]
+- Cash In / Cash Out cancel reverses cash and partner debt together; Expense cancel restores cash only and never changes partner debt; optional Sale/Purchase links are traceability only and never cause a second cash or debt mutation when created, changed, or left in place after cancel (ADR-038).
+- New normal operations are not created against an inactive Cash Account; historical transactions remain intact after deactivation. Deactivation does not alter balances or history.
+- Primary UX must not expose separate **Customer Receipt** / **Supplier Payment** features (ADR-038).
 
 ## Business Partner Debt Balance
 
 > **[Approved Human Decision — ADR-030, recorded 2026-07-31.]** Separate receivable and payable primary balances, and the prohibition against netting them, are **superseded**. Advances and overpayments are represented by the same signed balance (no separate customer/supplier advance primary balances).
 
 - Each Business Partner has exactly **one signed debt balance** in AZN. Sign convention: `balance > 0` means the partner owes the company; `balance < 0` means the company owes the partner; `balance = 0` means no outstanding debt.
-- Exact balance effects: Completed Sale `+=` sale amount; Customer Cash Receipt (Cash In from partner) `-=` received amount; Completed Purchase `-=` purchase amount; Supplier Cash Payment (Cash Out to partner) `+=` paid amount; sale return / sale cancellation decreases balance by the reversed sale amount; purchase return / purchase cancellation increases balance by the reversed purchase amount.
+- Exact balance effects: Completed Sale `+=` sale amount; **Cash In** from partner `-=` received amount; Completed Purchase `-=` purchase amount; **Cash Out** to partner `+=` paid amount; sale return / sale cancellation decreases balance by the reversed sale amount; purchase return / purchase cancellation increases balance by the reversed purchase amount.
 - Drafts have no debt-balance effect. Crossing zero is allowed. Sales and purchases with the same partner intentionally offset on this single balance.
 - Every change is recorded as an auditable **Business Partner balance movement**. Manually editing the balance without a movement is forbidden. Manual adjustment (if supported) requires permission, reason, a movement, and audit; reverse rather than delete.
-- Sale/Purchase documents never mutate money-account cash (ADR-028). Cash receipts and payments that affect partner debt are separate Cash In / Cash Out facts, optionally linked to documents for traceability.
+- Sale/Purchase documents never mutate money-account cash (ADR-028). Partner cash settlements are separate **Cash In / Cash Out** facts (ADR-038), optionally linked to documents for traceability.
 - Optional document linkage / allocation is for traceability, history, and reporting; it is optional — unlinked cash movements remain valid. A payment allocation can never exceed either the amount of the source payment or the open amount of the target document.
 - Cancelling a payment reverses its linkages/allocations and posts the corresponding reversing partner balance movement (and cash reversal as separate cash facts).
 
@@ -153,9 +172,13 @@
 
 - An expense is a business operating outflow and does not need to be linked to a sales or purchase document.
 - An expense does not increase sellable product quantity; acquiring a physical, sellable product must use a purchase document instead.
-- Every expense requires an expense category.
-- An expense paid from an employee's or owner's personal funds is not shown as a business cash-account outflow; the person whose funds were used is recorded separately as reimbursable.
-- Cancelling a posted expense creates a reversing entry rather than deleting the original.
+- Every expense requires an expense category **and a description** (ADR-038).
+- **Financial posting of an expense is a Cash Transaction** against a Cash Account; there is no disconnected balance-changing Expense ledger (CHANGE-004 / EPIC-011).
+- An expense paid from an employee's or owner's personal funds is not shown as a business cash-account outflow; the person whose funds were used is recorded separately as reimbursable (**AD-08 open** — Deferred; initial expense UX posts from business Cash Accounts only).
+- Unpaid / accrued expense obligation (**AD-07**) remains open — Deferred; initial scope is cash-paid expenses.
+- Cancelling a posted expense creates a reversing Cash entry rather than deleting the original (ADR-035). Expense Category on the original row is preserved for history; deactivating a category later does not rewrite posted expense amounts.
+- Expense does **not** change Business Partner debt and must not show a Business Partner field (ADR-038).
+- Expense Category is master data with soft-deactivate/reactivate; inactive categories cannot be selected for new expenses; historical expenses remain readable.
 
 ## Fixed Assets
 
@@ -220,3 +243,5 @@ The following business-relevant topics are referenced in the analysis but are ex
 **Resolved by Approved Human Decision (2026-07-31, ADR-030):** One signed Business Partner debt balance (AZN). Sign: `>0` partner owes us; `<0` we owe partner; `=0` none. Sale/Purchase/Cash/return/cancellation effects as stated in Business Partner Debt Balance; drafts no effect; auditable movements; crossing zero allowed; advances via the same signed balance. Separate receivable/payable primary balances and “never net” rules are superseded. See Business Partners, Sales, Purchasing, Business Partner Debt Balance, and Reporting sections above.
 
 **Resolved by Approved Human Decision (2026-07-31, ADR-031):** Current release is static AZN only; no Currency CRUD or currency selectors on Products, Business Partners, Purchases, or Sales. Currency is reserved for future Cash only. The 2026-07-28 optional multi-currency decision is superseded for the active product. Exchange-rate source/timing and non-AZN money-account balances remain undecided until future Cash work is activated — they are not open for current domains. See "## Currency" above.
+
+**Resolved by Approved Human Decision (2026-08-01, ADR-032–037 / CHANGE-004):** Multi-Cash-Account domain — any number of named Cash Accounts as data; balance only via transactions; atomic transfers preserving Total Company Cash; immutable cash with reversals; ordinary cash without Draft; controlled negative cash with mandatory reason (amount/age/case still open). BRD-OD-03 resolved. See "## Cash" and "## Expenses" above.

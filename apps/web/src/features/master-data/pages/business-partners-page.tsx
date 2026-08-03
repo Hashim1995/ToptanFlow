@@ -1,73 +1,80 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState } from "react";
 import {
   Alert,
   Button,
   Card,
   Dropdown,
+  Empty,
   Grid,
   Input,
   Modal,
   Pagination,
   Select,
+  Skeleton,
   Space,
   Table,
   Tag,
   Tooltip,
   Typography,
   message,
-} from 'antd';
-import type { MenuProps } from 'antd';
-import type { ColumnsType } from 'antd/es/table';
+} from "antd";
+import type { MenuProps } from "antd";
+import type { ColumnsType } from "antd/es/table";
 import {
+  DotsThreeVertical,
+  FileText,
+  FunnelSimple,
   PencilSimple,
   Phone,
   Plus,
   Power,
   Prohibit,
   UsersThree,
-} from '@phosphor-icons/react';
-import { mapApiError } from '../../../api/map-api-error';
-import { debtBalanceSignLabel } from '../../../shared/money/debt-balance-label';
-import { formatMoney } from '../../../shared/money/format-money';
-import { ICON_SIZE, phIcon } from '../../../shared/ui/ph-icon';
-import { CodeText, MoneyCell } from '../../../shared/ui/table-cells';
+} from "@phosphor-icons/react";
+import { mapApiError } from "../../../api/map-api-error";
+import { debtBalanceSignLabel } from "../../../shared/money/debt-balance-label";
+import { formatMoney } from "../../../shared/money/format-money";
+import { ICON_SIZE, phIcon } from "../../../shared/ui/ph-icon";
+import { CodeText, MoneyCell } from "../../../shared/ui/table-cells";
 import type {
   BusinessPartner,
   CreateBusinessPartnerInput,
   UpdateBusinessPartnerInput,
-} from '../api/business-partners.api';
+} from "../api/business-partners.api";
 import {
   useBusinessPartnersList,
   useCreateBusinessPartner,
   useDeactivateBusinessPartner,
   useUpdateBusinessPartner,
-} from '../api/business-partners.hooks';
-import type { BusinessPartnerDuplicateCandidate } from '../api/master-data.types';
-import type { BusinessPartnerFormValues } from '../forms/business-partner.schemas';
-import { ActiveStatusTag } from '../ui/active-status-tag';
+} from "../api/business-partners.hooks";
+import type { BusinessPartnerDuplicateCandidate } from "../api/master-data.types";
+import type { BusinessPartnerFormValues } from "../forms/business-partner.schemas";
+import { ActiveStatusTag } from "../ui/active-status-tag";
 import {
   activeFilterToIsActive,
   type ActiveFilterValue,
-} from '../ui/active-filter';
-import { BusinessPartnerFormModal } from '../ui/business-partner-form-modal';
-import { DuplicateReviewModal } from '../ui/duplicate-review-modal';
-import { MASTER_DATA_LABELS } from '../ui/labels';
-import { ActiveStatusFilter, FilterBar, FilterField } from '../ui/list-toolbar';
-import { PageHeader } from '../ui/page-header';
+} from "../ui/active-filter";
+import { BusinessPartnerFormModal } from "../ui/business-partner-form-modal";
+import { BusinessPartnerMovementReportModal } from "../ui/business-partner-movement-report-modal";
+import { DuplicateReviewModal } from "../ui/duplicate-review-modal";
+import { MASTER_DATA_LABELS } from "../ui/labels";
+import { ActiveStatusFilter, FilterBar, FilterField } from "../ui/list-toolbar";
+import { PageHeader } from "../ui/page-header";
+import "./business-partners-page.css";
 
 const { Text } = Typography;
 
-const DUPLICATE_CODE = 'BUSINESS_PARTNER_DUPLICATE_SUSPECTED';
+const DUPLICATE_CODE = "BUSINESS_PARTNER_DUPLICATE_SUSPECTED";
 
 type FormMode =
-  | { kind: 'closed' }
-  | { kind: 'create' }
-  | { kind: 'edit'; partner: BusinessPartner };
+  | { kind: "closed" }
+  | { kind: "create" }
+  | { kind: "edit"; partner: BusinessPartner };
 
-type RoleFilterValue = 'all' | 'customer' | 'supplier' | 'both';
+type RoleFilterValue = "all" | "customer" | "supplier" | "both";
 
 type PendingSubmit = {
-  mode: 'create' | 'edit';
+  mode: "create" | "edit";
   partnerId?: string;
   payload: CreateBusinessPartnerInput | UpdateBusinessPartnerInput;
 };
@@ -85,16 +92,16 @@ function roleLabel(partner: {
   if (partner.isCustomer && partner.isSupplier) return labels.bothRoles;
   if (partner.isCustomer) return labels.customer;
   if (partner.isSupplier) return labels.supplier;
-  return '—';
+  return "—";
 }
 
 function roleFilterToQuery(value: RoleFilterValue): {
   isCustomer?: boolean;
   isSupplier?: boolean;
 } {
-  if (value === 'customer') return { isCustomer: true };
-  if (value === 'supplier') return { isSupplier: true };
-  if (value === 'both') return { isCustomer: true, isSupplier: true };
+  if (value === "customer") return { isCustomer: true };
+  if (value === "supplier") return { isSupplier: true };
+  if (value === "both") return { isCustomer: true, isSupplier: true };
   return {};
 }
 
@@ -102,15 +109,17 @@ function parseDuplicateCandidates(
   candidates: unknown[] | undefined,
 ): BusinessPartnerDuplicateCandidate[] {
   if (!candidates) return [];
-  return candidates.filter((item): item is BusinessPartnerDuplicateCandidate => {
-    if (typeof item !== 'object' || item === null) return false;
-    const row = item as Partial<BusinessPartnerDuplicateCandidate>;
-    return (
-      typeof row.code === 'string' &&
-      typeof row.name === 'string' &&
-      Array.isArray(row.matchedFields)
-    );
-  });
+  return candidates.filter(
+    (item): item is BusinessPartnerDuplicateCandidate => {
+      if (typeof item !== "object" || item === null) return false;
+      const row = item as Partial<BusinessPartnerDuplicateCandidate>;
+      return (
+        typeof row.code === "string" &&
+        typeof row.name === "string" &&
+        Array.isArray(row.matchedFields)
+      );
+    },
+  );
 }
 
 function toPayload(
@@ -120,11 +129,11 @@ function toPayload(
     name: values.name.trim(),
     isCustomer: values.isCustomer,
     isSupplier: values.isSupplier,
-    phone: emptyToNull(values.phone ?? ''),
-    email: emptyToNull(values.email ?? ''),
-    taxNumber: emptyToNull(values.taxNumber ?? ''),
-    address: emptyToNull(values.address ?? ''),
-    notes: emptyToNull(values.notes ?? ''),
+    phone: emptyToNull(values.phone ?? ""),
+    email: emptyToNull(values.email ?? ""),
+    taxNumber: emptyToNull(values.taxNumber ?? ""),
+    address: emptyToNull(values.address ?? ""),
+    notes: emptyToNull(values.notes ?? ""),
   };
 }
 
@@ -145,13 +154,13 @@ export function BusinessPartnersPage() {
   const screens = Grid.useBreakpoint();
   const isDesktop = Boolean(screens.md);
 
-  const [searchInput, setSearchInput] = useState('');
-  const [search, setSearch] = useState('');
-  const [activeFilter, setActiveFilter] = useState<ActiveFilterValue>('all');
-  const [roleFilter, setRoleFilter] = useState<RoleFilterValue>('all');
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [activeFilter, setActiveFilter] = useState<ActiveFilterValue>("all");
+  const [roleFilter, setRoleFilter] = useState<RoleFilterValue>("all");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [formMode, setFormMode] = useState<FormMode>({ kind: 'closed' });
+  const [formMode, setFormMode] = useState<FormMode>({ kind: "closed" });
   const [formError, setFormError] = useState<string | undefined>();
   const [pendingSubmit, setPendingSubmit] = useState<PendingSubmit | null>(
     null,
@@ -159,6 +168,9 @@ export function BusinessPartnersPage() {
   const [duplicateCandidates, setDuplicateCandidates] = useState<
     BusinessPartnerDuplicateCandidate[]
   >([]);
+  const [reportPartner, setReportPartner] = useState<BusinessPartner | null>(
+    null,
+  );
 
   const listQuery = useMemo(
     () => ({
@@ -167,8 +179,8 @@ export function BusinessPartnersPage() {
       search: search || undefined,
       isActive: activeFilterToIsActive(activeFilter),
       ...roleFilterToQuery(roleFilter),
-      sortBy: 'code',
-      sortOrder: 'asc' as const,
+      sortBy: "code",
+      sortOrder: "asc" as const,
     }),
     [page, pageSize, search, activeFilter, roleFilter],
   );
@@ -182,28 +194,28 @@ export function BusinessPartnersPage() {
   const columns: ColumnsType<BusinessPartner> = [
     {
       title: common.status,
-      dataIndex: 'isActive',
-      key: 'isActive',
+      dataIndex: "isActive",
+      key: "isActive",
       width: 110,
       render: (isActive: boolean) => <ActiveStatusTag isActive={isActive} />,
     },
     {
-      title: common.code,
-      dataIndex: 'code',
-      key: 'code',
+      title: labels.partnerCode,
+      dataIndex: "code",
+      key: "code",
       width: 110,
       render: (value: string) => <CodeText value={value} />,
     },
     {
-      title: common.name,
-      dataIndex: 'name',
-      key: 'name',
+      title: labels.partnerName,
+      dataIndex: "name",
+      key: "name",
       ellipsis: true,
       render: (value: string) => <Text strong>{value}</Text>,
     },
     {
       title: labels.role,
-      key: 'role',
+      key: "role",
       width: 150,
       render: (_, record) => (
         <Tag style={{ marginInlineEnd: 0 }}>{roleLabel(record)}</Tag>
@@ -211,8 +223,8 @@ export function BusinessPartnersPage() {
     },
     {
       title: labels.phone,
-      dataIndex: 'phone',
-      key: 'phone',
+      dataIndex: "phone",
+      key: "phone",
       width: 150,
       render: (value: string | null) =>
         value ? (
@@ -226,17 +238,17 @@ export function BusinessPartnersPage() {
     },
     {
       title: labels.debtBalance,
-      key: 'currentDebtBalance',
+      key: "currentDebtBalance",
       width: 160,
-      align: 'right',
+      align: "right",
       render: (_, record) => (
-        <Space direction="vertical" size={0} style={{ width: '100%' }}>
+        <Space direction="vertical" size={0} style={{ width: "100%" }}>
           <MoneyCell
             value={record.currentDebtBalance}
             format={formatMoney}
             emphasize
           />
-          <Text type="secondary" style={{ fontSize: 11, textAlign: 'right' }}>
+          <Text type="secondary" style={{ fontSize: 11, textAlign: "right" }}>
             {debtBalanceSignLabel(record.currentDebtBalance)}
           </Text>
         </Space>
@@ -244,28 +256,35 @@ export function BusinessPartnersPage() {
     },
     {
       title: common.actions,
-      key: 'actions',
-      fixed: 'right',
+      key: "actions",
+      fixed: "right",
       width: 120,
       render: (_, record) => {
-        const menuItems: MenuProps['items'] = [
+        const menuItems: MenuProps["items"] = [
           {
-            key: 'edit',
+            key: "movement-report",
+            icon: phIcon(FileText, { size: ICON_SIZE.sm }),
+            label: labels.movementReport.action,
+            onClick: () => setReportPartner(record),
+          },
+          { type: "divider" },
+          {
+            key: "edit",
             icon: phIcon(PencilSimple, { size: ICON_SIZE.sm }),
             label: common.edit,
             onClick: () => openEdit(record),
           },
-          { type: 'divider' },
+          { type: "divider" },
           record.isActive
             ? {
-                key: 'deactivate',
+                key: "deactivate",
                 danger: true,
                 icon: phIcon(Prohibit, { size: ICON_SIZE.sm }),
                 label: common.deactivate,
                 onClick: () => confirmDeactivate(record),
               }
             : {
-                key: 'activate',
+                key: "activate",
                 icon: phIcon(Power, { size: ICON_SIZE.sm }),
                 label: common.activate,
                 onClick: () => confirmActivate(record),
@@ -282,10 +301,17 @@ export function BusinessPartnersPage() {
                 onClick={() => openEdit(record)}
               />
             </Tooltip>
-            <Dropdown menu={{ items: menuItems }} trigger={['click']}>
-              <Button type="text" size="small">
-                •••
-              </Button>
+            <Dropdown menu={{ items: menuItems }} trigger={["click"]}>
+              <Button
+                className="partners-row-menu"
+                type="text"
+                size="small"
+                icon={phIcon(DotsThreeVertical, {
+                  size: ICON_SIZE.md,
+                  weight: "bold",
+                })}
+                aria-label={common.actions}
+              />
             </Dropdown>
           </Space>
         );
@@ -297,25 +323,25 @@ export function BusinessPartnersPage() {
     setFormError(undefined);
     setDuplicateCandidates([]);
     setPendingSubmit(null);
-    setFormMode({ kind: 'create' });
+    setFormMode({ kind: "create" });
   }
 
   function openEdit(partner: BusinessPartner) {
     setFormError(undefined);
     setDuplicateCandidates([]);
     setPendingSubmit(null);
-    setFormMode({ kind: 'edit', partner });
+    setFormMode({ kind: "edit", partner });
   }
 
   function closeForm() {
-    setFormMode({ kind: 'closed' });
+    setFormMode({ kind: "closed" });
     setFormError(undefined);
     setDuplicateCandidates([]);
     setPendingSubmit(null);
   }
 
   async function executeSubmit(pending: PendingSubmit) {
-    if (pending.mode === 'create') {
+    if (pending.mode === "create") {
       await createMutation.mutateAsync(
         pending.payload as CreateBusinessPartnerInput,
       );
@@ -334,18 +360,15 @@ export function BusinessPartnersPage() {
     setFormError(undefined);
     const payload = toPayload(values);
     const pending: PendingSubmit =
-      formMode.kind === 'edit'
-        ? { mode: 'edit', partnerId: formMode.partner.id, payload }
-        : { mode: 'create', payload };
+      formMode.kind === "edit"
+        ? { mode: "edit", partnerId: formMode.partner.id, payload }
+        : { mode: "create", payload };
 
     try {
       await executeSubmit(pending);
     } catch (error) {
       const mapped = mapApiError(error);
-      if (
-        mapped.statusCode === 409 &&
-        mapped.code === DUPLICATE_CODE
-      ) {
+      if (mapped.statusCode === 409 && mapped.code === DUPLICATE_CODE) {
         setPendingSubmit(pending);
         setDuplicateCandidates(parseDuplicateCandidates(mapped.candidates));
         return;
@@ -373,7 +396,15 @@ export function BusinessPartnersPage() {
 
   function confirmDeactivate(partner: BusinessPartner) {
     Modal.confirm({
+      className: "app-mobile-modal partners-confirm-modal",
+      centered: true,
       title: labels.deactivateConfirm,
+      content: (
+        <div className="partners-confirm-entity">
+          <CodeText value={partner.code} />
+          <Text strong>{partner.name}</Text>
+        </div>
+      ),
       okText: common.confirm,
       cancelText: common.cancel,
       okButtonProps: { danger: true },
@@ -391,7 +422,15 @@ export function BusinessPartnersPage() {
 
   function confirmActivate(partner: BusinessPartner) {
     Modal.confirm({
+      className: "app-mobile-modal partners-confirm-modal",
+      centered: true,
       title: labels.activateConfirm,
+      content: (
+        <div className="partners-confirm-entity">
+          <CodeText value={partner.code} />
+          <Text strong>{partner.name}</Text>
+        </div>
+      ),
       okText: common.confirm,
       cancelText: common.cancel,
       onOk: async () => {
@@ -410,29 +449,31 @@ export function BusinessPartnersPage() {
   }
 
   const editInitialValues: BusinessPartnerFormValues | undefined =
-    formMode.kind === 'edit'
+    formMode.kind === "edit"
       ? {
           name: formMode.partner.name,
           isCustomer: formMode.partner.isCustomer,
           isSupplier: formMode.partner.isSupplier,
-          phone: formMode.partner.phone ?? '',
-          email: formMode.partner.email ?? '',
-          taxNumber: formMode.partner.taxNumber ?? '',
-          address: formMode.partner.address ?? '',
-          notes: formMode.partner.notes ?? '',
+          phone: formMode.partner.phone ?? "",
+          email: formMode.partner.email ?? "",
+          taxNumber: formMode.partner.taxNumber ?? "",
+          address: formMode.partner.address ?? "",
+          notes: formMode.partner.notes ?? "",
         }
       : undefined;
+  const partners = list.data?.data ?? [];
+  const partnerTotal = list.data?.meta.total ?? 0;
 
   return (
-    <div>
+    <div className="business-partners-page">
       <PageHeader
         title={labels.title}
         description={labels.description}
-        icon={phIcon(UsersThree, { size: ICON_SIZE.xl, weight: 'duotone' })}
+        icon={phIcon(UsersThree, { size: ICON_SIZE.xl, weight: "duotone" })}
         extra={
           <Button
             type="primary"
-            icon={phIcon(Plus, { size: ICON_SIZE.md, weight: 'bold' })}
+            icon={phIcon(Plus, { size: ICON_SIZE.md, weight: "bold" })}
             onClick={openCreate}
           >
             {labels.create}
@@ -440,48 +481,72 @@ export function BusinessPartnersPage() {
         }
       />
 
-      <FilterBar>
-        <FilterField label={common.search}>
-          <Input.Search
-            allowClear
-            placeholder={common.searchPlaceholder}
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
-            onSearch={(value) => {
-              setSearch(value.trim());
-              setPage(1);
-            }}
-            style={{ minWidth: 220, maxWidth: 320 }}
-          />
-        </FilterField>
-        <ActiveStatusFilter
-          value={activeFilter}
-          onChange={(value) => {
-            setActiveFilter(value);
+      <Card className="partners-filter-card" size="small">
+        <div className="partners-filter-heading">
+          <div>
+            <span className="partners-filter-icon">
+              {phIcon(FunnelSimple, { size: ICON_SIZE.sm, weight: "bold" })}
+            </span>
+            <Text strong>{common.search}</Text>
+          </div>
+          <Tag className="partners-result-count" color="blue">
+            {partnerTotal}
+          </Tag>
+        </div>
+        <FilterBar
+          onSearch={() => {
+            setSearch(searchInput.trim());
             setPage(1);
           }}
-        />
-        <FilterField label={labels.filterRole}>
-          <Select
-            value={roleFilter}
-            onChange={(value: RoleFilterValue) => {
-              setRoleFilter(value);
+          onReset={() => {
+            setSearchInput("");
+            setSearch("");
+            setActiveFilter("all");
+            setRoleFilter("all");
+            setPage(1);
+          }}
+        >
+          <FilterField label={common.search}>
+            <Input
+              allowClear
+              placeholder={common.searchPlaceholder}
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              onPressEnter={() => {
+                setSearch(searchInput.trim());
+                setPage(1);
+              }}
+            />
+          </FilterField>
+          <ActiveStatusFilter
+            value={activeFilter}
+            onChange={(value) => {
+              setActiveFilter(value);
               setPage(1);
             }}
-            style={{ minWidth: 160 }}
-            aria-label={labels.filterRole}
-            options={[
-              { value: 'all', label: common.all },
-              { value: 'customer', label: labels.customer },
-              { value: 'supplier', label: labels.supplier },
-              { value: 'both', label: labels.bothRoles },
-            ]}
           />
-        </FilterField>
-      </FilterBar>
+          <FilterField label={labels.filterRole}>
+            <Select
+              value={roleFilter}
+              onChange={(value: RoleFilterValue) => {
+                setRoleFilter(value);
+                setPage(1);
+              }}
+              aria-label={labels.filterRole}
+              options={[
+                { value: "all", label: common.all },
+                { value: "customer", label: labels.customer },
+                { value: "supplier", label: labels.supplier },
+                { value: "both", label: labels.bothRoles },
+              ]}
+            />
+          </FilterField>
+        </FilterBar>
+      </Card>
 
       {list.isError ? (
         <Alert
+          className="partners-page-alert"
           type="error"
           showIcon
           message={mapApiError(list.error).userMessage || common.loadError}
@@ -490,81 +555,138 @@ export function BusinessPartnersPage() {
               {common.retry}
             </Button>
           }
-          style={{ marginBottom: 16 }}
         />
       ) : null}
 
       {isDesktop ? (
-        <Table<BusinessPartner>
-          rowKey="id"
-          loading={list.isLoading}
-          columns={columns}
-          dataSource={list.data?.data ?? []}
-          pagination={false}
-          locale={{ emptyText: labels.empty }}
-          scroll={{ x: true }}
-        />
+        <div className="partners-table-shell">
+          <Table<BusinessPartner>
+            className="partners-table"
+            rowKey="id"
+            loading={list.isLoading}
+            columns={columns}
+            dataSource={partners}
+            pagination={false}
+            locale={{ emptyText: labels.empty }}
+            scroll={{ x: 980 }}
+          />
+        </div>
       ) : (
-        <Space direction="vertical" style={{ width: '100%' }} size="middle">
-          {list.isLoading ? <Text type="secondary">{common.loading}</Text> : null}
-          {!list.isLoading && (list.data?.data.length ?? 0) === 0 ? (
-            <Text type="secondary">{labels.empty}</Text>
+        <div className="partners-mobile-list">
+          {list.isLoading ? (
+            <Card className="partner-mobile-card">
+              <Skeleton active paragraph={{ rows: 4 }} />
+            </Card>
           ) : null}
-          {(list.data?.data ?? []).map((partner) => (
-            <Card key={partner.id} size="small">
-              <Space direction="vertical" style={{ width: '100%' }}>
-                <Text strong>
-                  {partner.code} — {partner.name}
-                </Text>
-                <Text type="secondary">
-                  {labels.role}: {roleLabel(partner)}
-                </Text>
-                <Text type="secondary">
-                  {labels.phone}: {partner.phone ?? '—'}
-                </Text>
-                <div>
-                  <Text type="secondary">{labels.debtBalance}: </Text>
-                  <DebtBalanceCell balance={partner.currentDebtBalance} />
+          {!list.isLoading && partners.length === 0 ? (
+            <Card className="partners-empty-card">
+              <Empty description={labels.empty} />
+            </Card>
+          ) : null}
+          {partners.map((partner) => (
+            <Card
+              className={`partner-mobile-card${
+                partner.isActive ? "" : " is-inactive"
+              }`}
+              key={partner.id}
+              size="small"
+            >
+              <div className="partner-mobile-topline">
+                <div className="partner-mobile-identity">
+                  <div>
+                    <CodeText value={partner.code} />
+                  </div>
+                  <div>
+                    <Text strong className="partner-mobile-name">
+                      {partner.name}
+                    </Text>
+                  </div>
                 </div>
-                <ActiveStatusTag isActive={partner.isActive} />
-                <Space wrap>
-                  <Button onClick={() => openEdit(partner)}>
-                    {common.edit}
-                  </Button>
+                <div className="partner-mobile-head-actions">
+                  <ActiveStatusTag isActive={partner.isActive} />
+                  <Tooltip title={labels.movementReport.action}>
+                    <Button
+                      type="text"
+                      icon={phIcon(FileText, { size: ICON_SIZE.sm })}
+                      aria-label={labels.movementReport.action}
+                      onClick={() => setReportPartner(partner)}
+                    />
+                  </Tooltip>
+                  <Button
+                    type="text"
+                    icon={phIcon(PencilSimple, { size: ICON_SIZE.sm })}
+                    aria-label={common.edit}
+                    onClick={() => openEdit(partner)}
+                  />
                   {partner.isActive ? (
-                    <Button danger onClick={() => confirmDeactivate(partner)}>
-                      {common.deactivate}
-                    </Button>
+                    <Button
+                      type="text"
+                      danger
+                      icon={phIcon(Prohibit, { size: ICON_SIZE.sm })}
+                      aria-label={common.deactivate}
+                      onClick={() => confirmDeactivate(partner)}
+                    />
                   ) : (
-                    <Button onClick={() => confirmActivate(partner)}>
-                      {common.activate}
-                    </Button>
+                    <Button
+                      type="text"
+                      icon={phIcon(Power, { size: ICON_SIZE.sm })}
+                      aria-label={common.activate}
+                      onClick={() => confirmActivate(partner)}
+                    />
                   )}
-                </Space>
-              </Space>
+                </div>
+              </div>
+
+              <div className="partner-mobile-tags">
+                <Tag color="blue">{roleLabel(partner)}</Tag>
+              </div>
+
+              <div className="partner-mobile-balance">
+                <Text type="secondary">{labels.debtBalance}</Text>
+                <DebtBalanceCell balance={partner.currentDebtBalance} />
+              </div>
+
+              <div className="partner-mobile-details">
+                <div>
+                  <Text type="secondary">{labels.phone}</Text>
+                  <strong>{partner.phone ?? "—"}</strong>
+                </div>
+                <div>
+                  <Text type="secondary">{labels.email}</Text>
+                  <strong>{partner.email ?? "—"}</strong>
+                </div>
+                <div>
+                  <Text type="secondary">{labels.taxNumber}</Text>
+                  <strong>{partner.taxNumber ?? "—"}</strong>
+                </div>
+              </div>
             </Card>
           ))}
-        </Space>
+        </div>
       )}
 
-      <Pagination
-        style={{ marginTop: 16, textAlign: 'right' }}
-        current={page}
-        pageSize={pageSize}
-        total={list.data?.meta.total ?? 0}
-        showSizeChanger
-        onChange={(nextPage, nextPageSize) => {
-          setPage(nextPage);
-          setPageSize(nextPageSize);
-        }}
-      />
+      {partnerTotal > 0 ? (
+        <div className="partners-pagination">
+          <Pagination
+            current={page}
+            pageSize={pageSize}
+            total={partnerTotal}
+            showSizeChanger
+            responsive
+            onChange={(nextPage, nextPageSize) => {
+              setPage(nextPage);
+              setPageSize(nextPageSize);
+            }}
+          />
+        </div>
+      ) : null}
 
       <BusinessPartnerFormModal
-        open={formMode.kind !== 'closed'}
-        title={formMode.kind === 'edit' ? labels.edit : labels.create}
-        mode={formMode.kind === 'edit' ? 'edit' : 'create'}
+        open={formMode.kind !== "closed"}
+        title={formMode.kind === "edit" ? labels.edit : labels.create}
+        mode={formMode.kind === "edit" ? "edit" : "create"}
         readOnlyCode={
-          formMode.kind === 'edit' ? formMode.partner.code : undefined
+          formMode.kind === "edit" ? formMode.partner.code : undefined
         }
         initialValues={editInitialValues}
         submitting={submitting && duplicateCandidates.length === 0}
@@ -583,6 +705,14 @@ export function BusinessPartnersPage() {
         }}
         onAcknowledge={() => void acknowledgeDuplicate()}
       />
+
+      {reportPartner ? (
+        <BusinessPartnerMovementReportModal
+          open
+          partner={reportPartner}
+          onClose={() => setReportPartner(null)}
+        />
+      ) : null}
     </div>
   );
 }

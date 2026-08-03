@@ -1,0 +1,28 @@
+{
+  "name": "@toptanflow/datetime",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared Asia/Baku date/time utilities for TOPTANFLOW (UTC storage, Baku display).",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./src/index.ts",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepare": "yarn build",
+    "test": "vitest run --config vitest.config.ts"
+  },
+  "dependencies": {
+    "dayjs": "^1.11.13"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "vitest": "3.2.4"
+  }
+}

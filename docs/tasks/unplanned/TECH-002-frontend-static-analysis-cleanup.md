@@ -1,0 +1,40 @@
+# TECH-002: Frontend static-analysis cleanup
+
+- **ID:** TECH-002
+- **Type:** TECH
+- **Title:** Frontend static-analysis cleanup
+- **Status:** Done
+- **Trigger:** Owner requested repository-wide frontend ESLint and TypeScript validation with all reported errors corrected.
+- **Urgency:** High
+- **Affected epics / stories / tasks:** Cross-cutting frontend maintenance; Sale and Purchase modal presentation/state modules under US-022 and US-023.
+- **Why not in the original plan:** New React Hooks and Fast Refresh lint rules exposed existing frontend module-boundary and state-synchronization violations after the UI refactor.
+- **Scope:** Run complete frontend TypeScript and ESLint checks; resolve every reported error and warning with minimal frontend-only refactors; verify the production build and complete web test suite.
+- **Out of scope:** Backend files; APIs; schemas; payloads; calculations; permissions; routes; Sale/Purchase/Cash business behavior; disabling or weakening lint rules.
+- **Risks:** Changing modal initialization timing, losing immediate-payment state, altering automatic payment-total synchronization, or changing post/cancel behavior.
+- **Acceptance criteria:**
+  - `yarn tsc --noEmit` passes in `apps/web`.
+  - `yarn lint` passes in `apps/web` with zero errors and zero warnings and without rule suppressions.
+  - Sale/Purchase immediate-payment initialization, total synchronization, validation, and confirmation behavior remain intact.
+  - Fast Refresh component files export components only; shared state helpers live in non-component modules.
+  - Production build and all frontend tests pass.
+  - No backend or business-authority boundary is changed.
+- **Impact on current work:** Standalone technical cleanup; US-022 and US-023 remain in Review and must not regress.
+- **Roadmap impact:** None.
+- **Result:** Resolved all 9 ESLint errors and 2 warnings reported by the complete frontend scan. Sale/Purchase immediate-payment types, factories, and validators now live in non-component modules so Fast Refresh boundaries remain valid. Modal initialization no longer synchronously sets React state inside effects; total synchronization uses a guarded render-time adjustment and explicit close/save resets while retaining the existing automatic total update and post-confirm handoff. Corrected both missing hook dependencies. The direct application TypeScript check additionally found and removed obsolete Cash account filter imports and fixed-value state setters; removing them does not change the effective query. No lint rules were disabled or weakened, and no backend/API/business behavior changed.
+- **Follow-up actions:** None.
+- **Evidence:**
+  - `apps/web/src/features/sales/ui/sale-form-modal.tsx`
+  - `apps/web/src/features/sales/ui/sale-immediate-payment.ts`
+  - `apps/web/src/features/sales/ui/sale-immediate-payment-section.tsx`
+  - `apps/web/src/features/sales/ui/sale-post-confirm-modal.tsx`
+  - `apps/web/src/features/purchases/ui/purchase-form-modal.tsx`
+  - `apps/web/src/features/purchases/ui/purchase-immediate-payment.ts`
+  - `apps/web/src/features/purchases/ui/purchase-immediate-payment-section.tsx`
+  - `apps/web/src/features/purchases/ui/purchase-post-confirm-modal.tsx`
+  - `apps/web/src/features/cash/pages/cash-accounts-page.tsx`
+  - `yarn lint` — passed with zero errors and zero warnings.
+  - `yarn tsc -p tsconfig.app.json --noEmit --incremental false` — passed.
+  - `yarn tsc -p tsconfig.node.json --noEmit --incremental false` — passed.
+  - `yarn test` — 19 files / 54 tests passed.
+  - `yarn vite build` — passed (existing bundle-size warning only).
+  - Scope audit — frontend only; no backend, API, schema, payload, calculation, permission, or route files changed for TECH-002.

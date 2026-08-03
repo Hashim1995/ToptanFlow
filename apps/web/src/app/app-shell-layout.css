@@ -1,0 +1,328 @@
+.app-shell.ant-layout {
+  min-height: 100vh;
+  background: #f4f7fb;
+}
+
+.app-sidebar.ant-layout-sider {
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  height: 100vh;
+  overflow: visible;
+  background: #fff;
+  border-inline-end: 1px solid #e7ebf0;
+  box-shadow: 8px 0 30px rgba(15, 23, 42, 0.035);
+}
+
+.app-sidebar .ant-layout-sider-children {
+  height: 100%;
+}
+
+.app-sidebar-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.app-brand {
+  position: relative;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 78px;
+  padding: 14px 14px 13px 16px;
+  border-bottom: 1px solid #edf0f4;
+}
+
+.app-brand-identity {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 11px;
+}
+
+.app-sidebar-logo.toptanflow-logo-full {
+  width: 158px;
+  height: 38px;
+}
+
+.app-sidebar-logo.toptanflow-logo-compact {
+  width: 44px;
+  height: 44px;
+}
+
+.app-sidebar-toggle.ant-btn {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  color: #64748b;
+  background: #f5f7fa;
+  border-radius: 9px;
+}
+
+.app-sidebar-toggle.ant-btn:hover,
+.app-sidebar-toggle.ant-btn:focus-visible {
+  color: #1677ff;
+  background: #eaf3ff;
+}
+
+.app-sidebar-navigation {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 7px 10px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.app-sidebar-navigation::-webkit-scrollbar {
+  display: none;
+}
+
+.app-sidebar-menu.ant-menu {
+  background: transparent;
+  border-inline-end: 0;
+}
+
+.app-sidebar-menu .ant-menu-item-group-title {
+  padding: 8px 12px 3px;
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.075em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.app-sidebar-menu .ant-menu-item {
+  height: 38px;
+  margin-block: 1px;
+  margin-inline: 0;
+  width: 100%;
+  color: #475569;
+  font-weight: 550;
+  line-height: 38px;
+  border-radius: 10px;
+}
+
+.app-sidebar-menu .ant-menu-item .ant-menu-item-icon {
+  color: #64748b;
+  font-size: 19px;
+}
+
+.app-sidebar-menu .ant-menu-item:hover {
+  color: #1457a6;
+  background: #f1f6fc;
+}
+
+.app-sidebar-menu .ant-menu-item-selected {
+  color: #1457a6;
+  font-weight: 700;
+  background: #eaf3ff;
+}
+
+.app-sidebar-menu .ant-menu-item-selected::after {
+  display: none;
+}
+
+.app-sidebar-menu .ant-menu-item-selected .ant-menu-item-icon {
+  color: #1677ff;
+}
+
+.app-nav-link {
+  color: inherit;
+}
+
+.app-sidebar-user {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 11px;
+  padding: 14px;
+  background: #fbfcfe;
+  border-top: 1px solid #e8edf3;
+}
+
+.app-user-identity {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 10px;
+}
+
+.app-user-avatar.ant-avatar {
+  flex: 0 0 auto;
+  color: #1457a6;
+  font-weight: 750;
+  background: #dcecff;
+}
+
+.app-user-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 1px;
+}
+
+.app-user-copy > .ant-typography {
+  max-width: 165px;
+  line-height: 1.35;
+}
+
+.app-user-copy > .ant-typography-secondary {
+  font-size: 11px;
+}
+
+.app-sidebar-logout.ant-btn {
+  min-height: 38px;
+  border-radius: 9px;
+  font-weight: 600;
+}
+
+.app-sidebar.is-collapsed .app-brand {
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  min-height: 104px;
+  padding: 12px 10px;
+}
+
+.app-sidebar.is-collapsed .app-brand-identity {
+  justify-content: center;
+}
+
+.app-sidebar.is-collapsed .app-sidebar-navigation {
+  padding-inline: 10px;
+}
+
+.app-sidebar.is-collapsed .app-sidebar-menu.ant-menu-inline-collapsed {
+  width: 64px;
+}
+
+.app-sidebar.is-collapsed .app-sidebar-menu .ant-menu-item-group-title {
+  height: 8px;
+  padding: 0;
+  overflow: hidden;
+  color: transparent;
+}
+
+.app-sidebar.is-collapsed .app-sidebar-menu .ant-menu-item {
+  padding-inline: calc(50% - 10px);
+}
+
+.app-sidebar.is-collapsed .app-sidebar-user {
+  align-items: center;
+  padding: 13px 10px;
+}
+
+.app-sidebar.is-collapsed .app-sidebar-logout.ant-btn {
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  padding: 0;
+}
+
+.app-topbar.ant-layout-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.94);
+  border-bottom: 1px solid #e7ebf0;
+  backdrop-filter: blur(10px);
+}
+
+.app-topbar .ant-btn {
+  border-radius: 9px;
+}
+
+.app-topbar-logo {
+  width: clamp(118px, 36vw, 146px);
+  height: 34px;
+}
+
+.app-content.ant-layout-content {
+  min-width: 0;
+  background: #f4f7fb;
+}
+
+.app-content-inner {
+  width: 100%;
+  max-width: 1760px;
+  margin: 0 auto;
+}
+
+.app-nav-drawer .ant-drawer-content {
+  background: #fff;
+}
+
+.app-nav-drawer .ant-drawer-header {
+  min-height: 64px;
+  padding: 14px 16px;
+  border-bottom-color: #e8edf3;
+}
+
+.app-nav-drawer .ant-drawer-title {
+  font-weight: 700;
+}
+
+.app-drawer-logo {
+  width: 148px;
+  height: 34px;
+}
+
+.app-nav-drawer .ant-drawer-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0;
+}
+
+.app-drawer-navigation {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 10px;
+  overflow-y: auto;
+}
+
+.app-drawer-user {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+  background: #fbfcfe;
+  border-top: 1px solid #e8edf3;
+}
+
+@media (max-width: 575px) {
+  .app-nav-drawer.ant-drawer .ant-drawer-content-wrapper {
+    width: min(88vw, 320px) !important;
+  }
+
+  .app-topbar.ant-layout-header {
+    padding-inline: 10px !important;
+  }
+
+  .app-topbar .ant-space:last-child .ant-typography {
+    display: none;
+  }
+
+  .app-topbar .ant-space:last-child .ant-btn {
+    width: 42px;
+    padding-inline: 0;
+    font-size: 0;
+  }
+
+  .app-topbar-logo {
+    width: clamp(108px, 34vw, 132px);
+    height: 30px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-sidebar.ant-layout-sider {
+    transition: none;
+  }
+}

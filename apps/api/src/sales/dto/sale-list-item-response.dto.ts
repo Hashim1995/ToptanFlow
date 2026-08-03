@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { DocumentStatusApi } from './document-status.enum';
 
 export class SalePartnerSummaryDto {
@@ -46,6 +46,13 @@ export class SaleListItemResponseDto {
   createdBy!: SaleUserSummaryDto;
   @ApiProperty()
   itemCount!: number;
+
+  @ApiProperty({
+    description:
+      'True when at least one POSTED Cash Transaction is linked (traceability only; not payment completeness).',
+  })
+  hasLinkedCashOperation!: boolean;
+
   @ApiProperty()
   createdAt!: Date;
   @ApiProperty()

@@ -1,0 +1,40 @@
+# CHANGE-018: Responsive official branding
+
+- **ID:** CHANGE-018
+- **Type:** CHANGE
+- **Title:** Responsive official branding
+- **Status:** Done
+- **Trigger:** Owner requested removal of dummy logo treatments and consistent use of the existing TOPTANFLOW logo file on web and mobile layouts.
+- **Urgency:** High
+- **Affected epics / stories / tasks:** Cross-cutting frontend presentation; follow-up to CHANGE-010 and CHANGE-012.
+- **Why not in the original plan:** The responsive shell retained a temporary `TF` avatar and default Vite favicon instead of the approved repository logo asset.
+- **Scope:** Frontend-only reusable logo presentation; desktop expanded/collapsed sidebar, mobile top bar and navigation drawer, login page, and browser icon; responsive sizing and accessible alternative text.
+- **Out of scope:** Logo artwork changes; generated images; backend files; authentication behavior; navigation logic; permissions; routes; business logic.
+- **Risks:** Distorting the wide wordmark, making the collapsed mark unreadable, consuming excessive mobile header width, or reducing login usability on narrow screens.
+- **Acceptance criteria:**
+  - The existing `apps/web/public/toptanflow-logo.png` is the only application branding asset used in the shell/login/browser icon.
+  - Temporary `TF` avatar branding and the default Vite favicon are removed.
+  - Expanded desktop displays the complete wordmark; collapsed desktop displays a clean crop of the mark from the same official asset.
+  - Mobile top bar and drawer display a readable, proportionally scaled wordmark without hiding navigation/logout actions.
+  - Login branding is centered and responsive from mobile through desktop widths.
+  - Full frontend ESLint, TypeScript, tests, and production bundle pass.
+- **Impact on current work:** Standalone UI presentation change; no active story is displaced.
+- **Roadmap impact:** None.
+- **Result:** Added one reusable `BrandLogo` component backed exclusively by the existing transparent `toptanflow-logo.png`. The expanded sidebar, mobile top bar, mobile drawer, and login page show the proportionally scaled full wordmark; the collapsed sidebar crops the official asset to its left-side mark without introducing a second logo file. Replaced the temporary `TF` avatar and default Vite favicon, and added responsive login/header sizing for narrow mobile through desktop widths. Navigation, authentication, permissions, and backend behavior are unchanged.
+- **Follow-up actions:** Owner visual acceptance at expanded/collapsed desktop and narrow mobile widths.
+- **Evidence:**
+  - `apps/web/public/toptanflow-logo.png`
+  - `apps/web/src/shared/ui/brand-logo.tsx`
+  - `apps/web/src/shared/ui/brand-logo.css`
+  - `apps/web/src/shared/ui/brand-logo.test.tsx`
+  - `apps/web/src/app/app-shell-layout.tsx`
+  - `apps/web/src/app/app-shell-layout.css`
+  - `apps/web/src/features/auth/pages/login-page.tsx`
+  - `apps/web/src/features/auth/pages/login-page.css`
+  - `apps/web/index.html`
+  - `yarn tsc -p tsconfig.app.json --noEmit --incremental false` — passed.
+  - `yarn tsc -p tsconfig.node.json --noEmit --incremental false` — passed.
+  - `yarn lint` — passed with zero errors and zero warnings.
+  - `yarn test` — 20 files / 55 tests passed.
+  - `yarn vite build` — passed (existing bundle-size warning only).
+  - Scope audit — frontend presentation only; no backend, API, authentication, navigation, permission, route, or business-logic file changed.

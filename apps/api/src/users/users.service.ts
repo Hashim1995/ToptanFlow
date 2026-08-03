@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -19,6 +20,7 @@ const userSelect = {
   fullName: true,
   username: true,
   isActive: true,
+  isSuperAdmin: true,
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.UserSelect;
@@ -44,6 +46,7 @@ export class UsersService {
           fullName,
           username,
           passwordHash,
+          isSuperAdmin: false,
         },
         select: userSelect,
       });
@@ -113,6 +116,10 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
+    if (dto.isActive === false) {
+      await this.assertMayDeactivate(existing);
+    }
+
     const data: {
       fullName?: string;
       username?: string;
@@ -174,16 +181,42 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    if (existing.isActive) {
-      const user = await this.prisma.user.update({
-        where: { id },
-        data: { isActive: false },
-        select: userSelect,
-      });
-      return this.toResponse(user);
+    if (!existing.isActive) {
+      return this.toResponse(existing);
     }
 
-    return this.toResponse(existing);
+    await this.assertMayDeactivate(existing);
+
+    const user = await this.prisma.user.update({
+      where: { id },
+      data: { isActive: false },
+      select: userSelect,
+    });
+    return this.toResponse(user);
+  }
+
+  private async assertMayDeactivate(user: UserRecord): Promise<void> {
+    // Super Admin is the root operator (ADR-039): never soft-deactivate.
+    if (user.isSuperAdmin) {
+      throw new ForbiddenException({
+        message: 'Super Admin cannot be deactivated',
+        code: 'SUPERADMIN_IMMUTABLE',
+      });
+    }
+
+    const responsibleAccount = await this.prisma.cashAccount.findUnique({
+      where: { responsibleUserId: user.id },
+      select: { id: true, name: true },
+    });
+    if (responsibleAccount) {
+      throw new ConflictException({
+        message:
+          'Reassign the responsible Cash Account before deactivating this user',
+        code: 'USER_RESPONSIBLE_FOR_CASH_ACCOUNT',
+        cashAccountId: responsibleAccount.id,
+        cashAccountName: responsibleAccount.name,
+      });
+    }
   }
 
   private buildListWhere(
@@ -245,6 +278,7 @@ export class UsersService {
       fullName: user.fullName,
       username: user.username,
       isActive: user.isActive,
+      isSuperAdmin: user.isSuperAdmin,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };

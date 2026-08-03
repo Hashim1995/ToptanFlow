@@ -21,7 +21,7 @@ export function AppProviders({ children }: AppProvidersProps) {
     <ReduxProvider store={store}>
       <QueryClientProvider client={queryClient}>
         <ConfigProvider
-          componentSize="small"
+          // componentSize="small"
           theme={{
             algorithm: theme.compactAlgorithm,
           }}

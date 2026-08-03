@@ -28,6 +28,7 @@ import { CancelPurchaseDto } from './dto/cancel-purchase.dto';
 import { CreatePurchaseDto } from './dto/create-purchase.dto';
 import { ListPurchasesQueryDto } from './dto/list-purchases-query.dto';
 import { PaginatedPurchasesResponseDto } from './dto/paginated-purchases-response.dto';
+import { PostPurchaseDto } from './dto/post-purchase.dto';
 import { PurchaseResponseDto } from './dto/purchase-response.dto';
 import { UpdatePurchaseDto } from './dto/update-purchase.dto';
 import { PurchasesService } from './purchases.service';
@@ -114,8 +115,9 @@ export class PurchasesController {
   post(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: PostPurchaseDto,
   ): Promise<PurchaseResponseDto> {
-    return this.purchasesService.post(id, user.id);
+    return this.purchasesService.post(id, user.id, dto);
   }
 
   @Post(':id/cancel')

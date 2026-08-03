@@ -8,7 +8,10 @@ import {
   Patch,
   Post,
   Query,
+  Req,
+  Res,
 } from '@nestjs/common';
+import type { Request, Response } from 'express';
 import {
   ApiBadRequestResponse,
   ApiBody,
@@ -18,20 +21,29 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
+  ApiProduces,
   ApiTags,
 } from '@nestjs/swagger';
+import { BusinessPartnerMovementReportService } from './business-partner-movement-report.service';
 import { BusinessPartnersService } from './business-partners.service';
 import { CreateBusinessPartnerDto } from './dto/create-business-partner.dto';
 import { UpdateBusinessPartnerDto } from './dto/update-business-partner.dto';
 import { ListBusinessPartnersQueryDto } from './dto/list-business-partners-query.dto';
 import { PaginatedBusinessPartnersResponseDto } from './dto/paginated-business-partners-response.dto';
 import { BusinessPartnerResponseDto } from './dto/business-partner-response.dto';
+import {
+  BusinessPartnerMovementReportExportQueryDto,
+  BusinessPartnerMovementReportQueryDto,
+  BusinessPartnerMovementReportResponseDto,
+  BusinessPartnerMovementReportUserDto,
+} from './dto/business-partner-movement-report.dto';
 
 @ApiTags('Business Partners')
 @Controller('business-partners')
 export class BusinessPartnersController {
   constructor(
     private readonly businessPartnersService: BusinessPartnersService,
+    private readonly movementReportService: BusinessPartnerMovementReportService,
   ) {}
 
   @Post()
@@ -84,6 +96,82 @@ export class BusinessPartnersController {
     @Query() query: ListBusinessPartnersQueryDto,
   ): Promise<PaginatedBusinessPartnersResponseDto> {
     return this.businessPartnersService.list(query);
+  }
+
+  @Get(':id/movement-report/users')
+  @ApiOperation({
+    summary: 'List operation users available for a partner movement report',
+  })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOkResponse({ type: [BusinessPartnerMovementReportUserDto] })
+  listMovementReportUsers(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<BusinessPartnerMovementReportUserDto[]> {
+    return this.movementReportService.listUsers(id);
+  }
+
+  @Get(':id/movement-report/export')
+  @ApiOperation({
+    summary: 'Generate a transient Business Partner movement report download',
+    description:
+      'Returns an in-memory XLSX response. No file, archive, background job, or storage record is created.',
+  })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiProduces(
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  )
+  async exportMovementReport(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query() query: BusinessPartnerMovementReportExportQueryDto,
+    @Req() request: Request,
+    @Res() response: Response,
+  ): Promise<void> {
+    const abortController = new AbortController();
+    request.once('aborted', () => abortController.abort());
+    const report = await this.movementReportService.getReport(
+      id,
+      query,
+      abortController.signal,
+    );
+    const buffer = await this.movementReportService.createExcel(
+      report,
+      abortController.signal,
+    );
+    abortController.signal.throwIfAborted();
+
+    response.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    response.setHeader(
+      'Content-Disposition',
+      `attachment; filename="partner-movements-${report.partnerCode}.xlsx"`,
+    );
+    response.setHeader('Cache-Control', 'no-store');
+    response.setHeader('Content-Length', buffer.length);
+    response.send(buffer);
+  }
+
+  @Get(':id/movement-report')
+  @ApiOperation({
+    summary: 'Get all matching Business Partner movements for browser print',
+    description:
+      'Read-only and intentionally unpaginated for the selected partner and filters.',
+  })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOkResponse({ type: BusinessPartnerMovementReportResponseDto })
+  getMovementReport(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query() query: BusinessPartnerMovementReportQueryDto,
+    @Req() request: Request,
+  ): Promise<BusinessPartnerMovementReportResponseDto> {
+    const abortController = new AbortController();
+    request.once('aborted', () => abortController.abort());
+    return this.movementReportService.getReport(
+      id,
+      query,
+      abortController.signal,
+    );
   }
 
   @Get(':id')

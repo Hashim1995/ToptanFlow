@@ -37,10 +37,10 @@ Workflows are grouped by business area and numbered as in the source analysis (S
 ### 4. Sale Cancellation
 - **Purpose:** Void a posted sale that is invalid, when a return is not the correct commercial fix.
 - **Trigger:** An authorized user identifies that a posted sale must be voided.
-- **Main Steps:** Assess linked payments/returns → unallocate or resolve linked cash receipts as separate cash/settlement actions → execute cancellation → reverse product quantity (via reversing history rows) and decrease partner Debt Balance by the reversed sale amount → optionally create a corrected replacement sale.
-- **Result:** Original sale is retained but marked cancelled (number never reused); product-quantity and partner debt-balance effects are reversed. Linked cash is not silently deleted into the sale; it is unallocated, reversed, or otherwise resolved as its own cash facts (ADR-028, ADR-030).
+- **Main Steps:** Assess linked payments/returns → **cancel every linked non-reversal POSTED Cash In** as its own cash cancellation (ADR-035) — Sale cancel is blocked while any such cash remains Posted (`SALE_HAS_LINKED_POSTED_CASH`) → execute Sale cancellation → reverse product quantity (via reversing history rows) and decrease partner Debt Balance by the reversed sale amount (same atomic action) → optionally create a corrected replacement sale.
+- **Result:** Original sale is retained but marked cancelled (number never reused); product-quantity and partner debt-balance effects are reversed. Sale cancel never mutates cash. Linked cash remains separate history (may show Cancelled) and is not treated as an active payment (ADR-028, ADR-030, CHANGE-006).
 - **Involved Modules:** Sales, Products, Settlement, Cash, Audit.
-- **Dependencies:** Requires an original posted Sale (Workflow 1); depends on resolution of any related Sale Payment and Allocation (Workflow 2).
+- **Dependencies:** Requires an original posted Sale (Workflow 1); depends on prior cancellation of any related Posted Cash In (Workflow 10 / US-046).
 
 ### 36. Bundle Sale
 - **Purpose:** Sell a defined commercial combination of products at one price while deducting and costing its individual components.
@@ -81,10 +81,10 @@ Workflows are grouped by business area and numbered as in the source analysis (S
 ### 35. Purchase Cancellation
 - **Purpose:** Void a posted purchase that is invalid.
 - **Trigger:** A posted purchase is invalid and must be reversed.
-- **Main Steps:** Check sold/consumed quantity and returns → unallocate or resolve linked payments as separate cash/settlement actions → post reversal of product quantity and increase partner Debt Balance by the reversed purchase amount (reversing history / balance-movement rows) → create a corrected replacement purchase if needed.
-- **Result:** Purchase receipt and partner debt effect are reversed; blocked if available product quantity is insufficient to reverse. Linked cash is not silently deleted into the purchase (ADR-028, ADR-030).
+- **Main Steps:** Check sold/consumed quantity and returns → **cancel every linked non-reversal POSTED Cash Out** as its own cash cancellation (ADR-035) — Purchase cancel is blocked while any such cash remains Posted (`PURCHASE_HAS_LINKED_POSTED_CASH`) → post reversal of product quantity and increase partner Debt Balance by the reversed purchase amount (same atomic action; reversing history / balance-movement rows) → create a corrected replacement purchase if needed.
+- **Result:** Purchase receipt and partner debt effect are reversed; blocked if available product quantity is insufficient to reverse (`PURCHASE_CANCEL_INSUFFICIENT_QUANTITY`). Purchase cancel never mutates cash. Linked cash remains separate history (may show Cancelled) and is not treated as an active payment (ADR-028, ADR-030, CHANGE-006).
 - **Involved Modules:** Purchasing, Products, Settlement, Cash, Audit.
-- **Dependencies:** Requires an original posted Purchase (Workflow 5); depends on product-quantity availability and any Supplier Payment and Allocation (Workflow 6).
+- **Dependencies:** Requires an original posted Purchase (Workflow 5); depends on product-quantity availability and prior cancellation of any related Posted Cash Out (Workflow 11 / US-046).
 
 ---
 
@@ -125,53 +125,55 @@ Workflows are grouped by business area and numbered as in the source analysis (S
 
 ## Cash Workflows
 
-### 10. Cash Receipt
-- **Purpose:** Record cash physically received from a customer, a supplier refund, an owner contribution, or another approved source — the only path that increases a money account for customer settlement (ADR-028).
-- **Trigger:** Cash is physically received (from Cash module, or optionally from a Sale save/post flow that also creates this separate record).
-- **Main Steps:** Select movement type and account → enter amount/source (AZN) → optionally link to sales, or record as unlinked / contribution → post. When from a partner, decrease partner Debt Balance (ADR-030, ADR-031).
-- **Result:** The destination money account increases; partner Debt Balance decreases when the receipt is from a partner. Sale documents are not mutated.
-- **Involved Modules:** Cash, Settlement, Business Partners.
-- **Dependencies:** May be part of Sale Payment and Allocation (Workflow 2). Yatı Collection (Workflow 21) only after redesign; feeds Cash Closing.
+> Multi-Cash-Account domain (ADR-032–037 / CHANGE-004). All amounts AZN (ADR-031). Sale/Purchase never mutate cash directly (ADR-028).
 
-### 11. Supplier Payment
-- **Purpose:** Pay money to a supplier before, during, or independent of a specific purchase — the only path that decreases a money account for supplier settlement of purchases (ADR-028).
-- **Trigger:** Money is paid to a supplier (from Cash module, or optionally from a Purchase save/post flow that also creates this separate record).
-- **Main Steps:** Create payment → optionally link to open purchases → post. Unlinked payments are allowed. When to a partner, increase partner Debt Balance (ADR-030).
-- **Result:** The source money account decreases; partner Debt Balance increases when the payment is to a partner. Purchase documents are not mutated.
+### 10. Cash In
+- **Purpose:** Record money entering a Cash Account **from a Business Partner** (ADR-038). Primary settlement path that increases cash and decreases partner debt (ADR-028, ADR-030).
+- **Trigger:** Cash is physically received (from Cash module, or optionally via Sale “Receive payment” that creates this separate record — US-048).
+- **Main Steps:** Default Cash Account to the logged-in user's responsible account (editable to any active account) → Business Partner → amount / date / note → optional Sale link → confirm cash + partner debt before/after → post in one step as the authenticated actor (ADR-036, ADR-040).
+- **Result:** Selected Cash Account increases; partner Debt Balance decreases. Sale documents are not mutated.
 - **Involved Modules:** Cash, Settlement, Business Partners.
-- **Dependencies:** Overlaps with Supplier Payment and Allocation (Workflow 6); feeds Cash Closing.
+- **Dependencies:** May accompany Sale Payment (Workflow 2). Feeds Cash Closing.
+
+### 11. Cash Out
+- **Purpose:** Record money leaving a Cash Account **paid to a Business Partner** (ADR-038). Primary settlement path that decreases cash and increases partner debt.
+- **Trigger:** Money is paid (from Cash module, or optionally via Purchase “Pay now” — US-048).
+- **Main Steps:** Default Cash Account to the logged-in user's responsible account (editable) → Business Partner → amount / date / note → optional Purchase link → balance check or negative override (ADR-037) → confirm cash + partner debt preview → post as the authenticated actor (ADR-040).
+- **Result:** Source Cash Account decreases; partner Debt Balance increases. Purchase documents are not mutated.
+- **Involved Modules:** Cash, Settlement, Business Partners.
+- **Dependencies:** Overlaps with Supplier Payment and Allocation (Workflow 6) for multi-doc allocation later; feeds Cash Closing.
 
 ### 12. Expense
-- **Purpose:** Record an actual business operating cost.
-- **Trigger:** A business operating cost is incurred and paid.
-- **Main Steps:** Capture details/evidence → distinguish a physical-product purchase from an expense → distinguish business-account payment from personal funds → obtain approval if a limit is exceeded → post.
-- **Result:** The business account decreases only if it paid; a personal payment creates a reimbursable amount instead.
-- **Involved Modules:** Expenses, Cash, Attachments.
-- **Dependencies:** May be linked to a Fixed Asset (Workflow 17); Yatı Trip (Workflow 22) only after redesign; feeds Cash Closing.
+- **Purpose:** Record an ordinary business operating cost paid from a Cash Account (fuel, rent, utilities, salary, etc.) — **not** a partner settlement (ADR-038).
+- **Trigger:** A business operating cost is paid from a Cash Account.
+- **Main Steps:** Default Cash Account to the logged-in user's responsible account (editable) → Expense Category → amount / date → **required description** → confirm cash before/after + category → post as the authenticated actor. No Business Partner field (ADR-040).
+- **Result:** Selected Cash Account decreases; partner debt unchanged.
+- **Involved Modules:** Cash, Expenses.
+- **Dependencies:** Expense categories; AD-07/AD-08 deferred; feeds reporting and Cash Closing.
 
 ### 13. Cash Transfer
-- **Purpose:** Move money from one money account to another.
+- **Purpose:** Move money from one Cash Account to another as one atomic aggregate (ADR-034 / ADR-038).
 - **Trigger:** Money must move between accounts.
-- **Main Steps:** Select accounts/amount/date → post paired transfer-out and transfer-in with one reference.
-- **Result:** Source account decreases and destination account increases by equal amounts; company-total cash is unchanged.
+- **Main Steps:** Default source to the logged-in user's responsible Cash Account (editable) → select source ≠ destination → amount/date/notes → balance check / override → confirm preview (source/target before/after; Total Company Cash unchanged) → post linked TRANSFER_OUT + TRANSFER_IN as the authenticated actor (ADR-040).
+- **Result:** Source decreases and destination increases by equal amounts; Total Company Cash unchanged; not income/expense; no partner-debt effect.
 - **Involved Modules:** Cash.
-- **Dependencies:** Used by cash float moves between money accounts. Yatı Loading (Workflow 19) starting-float use is deferred under ADR-029.
+- **Dependencies:** Used by cash float moves between accounts.
 
 ### 14. Cash Closing
-- **Purpose:** Reconcile system-calculated cash to physically counted cash.
+- **Purpose:** Reconcile system-calculated cash to physically counted cash per Cash Account.
 - **Trigger:** End of day/shift or another configured cash-count point.
 - **Main Steps:** Compare system and actual cash → if equal, record close → if different, investigate and enter a missing source document or obtain approval for an adjustment.
-- **Result:** Cash is unchanged when equal; an approved difference adjusts the account to the actual amount.
+- **Result:** Cash is unchanged when equal; an approved difference adjusts the account to the actual amount via adjustment movement (ADR-033).
 - **Involved Modules:** Cash, Audit.
-- **Dependencies:** Consumes results of Cash Receipt (Workflow 10), Supplier Payment (Workflow 11), Expense (Workflow 12), and Cash Transfer (Workflow 13); feeds Period Closing (Workflow 34).
+- **Dependencies:** Consumes results of Workflows 10–13; feeds Period Closing (Workflow 34). Initial Multi-Cash stages may defer full closing UI.
 
-### 33. Negative Cash Case
-- **Purpose:** Allow an urgent, authorized payment to proceed even when it would make a money account negative, while keeping the deficit visible and controlled.
-- **Trigger:** An urgent authorized payment would make a money account negative.
-- **Main Steps:** Show deficit → select reason → post real payment and open case → display exception status → clear via later valid receipt/funding.
-- **Result:** The account becomes negative under a tracked exception; a later receipt or personal funding clears it.
+### 33. Negative Cash Override
+- **Purpose:** Allow an urgent, authorized Cash Out / Transfer Out even when it would make a Cash Account negative, while keeping the deficit visible and reasoned (ADR-037).
+- **Trigger:** An urgent authorized payment would make a Cash Account negative.
+- **Main Steps:** Show available vs required → require override reason → post real payment with before/after → surface negative balance on overview.
+- **Result:** Account becomes negative under tracked reason; later receipt or funding clears it. False receipts to hide deficit are forbidden.
 - **Involved Modules:** Cash, Audit.
-- **Dependencies:** Depends on the source payment (e.g., Supplier Payment, Workflow 11); Yatı Expense (Workflow 22) only after redesign; resolved by Cash Receipt (Workflow 10) or personal financing.
+- **Dependencies:** Source payment/transfer workflows. Amount/age/case lifecycle still open (BRD-OD-05 remainder).
 
 ---
 

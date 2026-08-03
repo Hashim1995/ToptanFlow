@@ -48,6 +48,13 @@ export class PurchaseListItemResponseDto {
   createdBy!: PurchaseUserSummaryDto;
   @ApiProperty()
   itemCount!: number;
+
+  @ApiProperty({
+    description:
+      'True when at least one POSTED Cash Transaction is linked (traceability only; not payment completeness).',
+  })
+  hasLinkedCashOperation!: boolean;
+
   @ApiProperty()
   createdAt!: Date;
   @ApiProperty()

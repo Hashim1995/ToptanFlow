@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Alert, Form, Input, Modal, Select } from 'antd';
+import { appRequiredMark } from '../../../shared/ui/form-required-mark';
 import {
   productFormSchema,
   type ProductFormValues,
@@ -11,6 +12,7 @@ import { useUnitsList } from '../api/units.hooks';
 import type { ProductType } from '../api/products.api';
 import { DecimalInput } from './decimal-input';
 import { MASTER_DATA_LABELS, productTypeLabel } from './labels';
+import './product-form-modal.css';
 
 type ProductFormModalProps = {
   open: boolean;
@@ -127,8 +129,11 @@ export function ProductFormModal({
 
   return (
     <Modal
+      className="ui-form-modal ui-master-data-form-modal product-form-modal"
+      wrapClassName="product-form-modal-wrap"
       title={title}
       open={open}
+      centered
       onCancel={onCancel}
       onOk={handleSubmit(onSubmit)}
       okText={common.save}
@@ -136,205 +141,229 @@ export function ProductFormModal({
       confirmLoading={submitting}
       destroyOnHidden
       forceRender
-      width={560}
+      width={720}
     >
       {errorMessage ? (
         <Alert
+          className="product-form-alert"
           type="error"
           showIcon
           message={errorMessage}
-          style={{ marginBottom: 16 }}
         />
       ) : null}
-      <Form layout="vertical" requiredMark>
-        {mode === 'edit' && readOnlyCode ? (
-          <Form.Item label={common.code} help={labels.codeReadonlyHint}>
-            <Input value={readOnlyCode} disabled readOnly />
-          </Form.Item>
-        ) : null}
+      <Form
+        className="product-form"
+        layout="vertical"
+        requiredMark={appRequiredMark}
+      >
+        <section className="product-form-section">
+          <div className="product-form-section-heading">Əsas məlumatlar</div>
+          <div className="product-form-grid">
+            {mode === 'edit' && readOnlyCode ? (
+              <Form.Item
+                className="ui-form-field-readonly"
+                label={common.code}
+                help={labels.codeReadonlyHint}
+              >
+                <Input value={readOnlyCode} disabled readOnly />
+              </Form.Item>
+            ) : null}
 
-        <Form.Item
-          label={common.name}
-          required
-          validateStatus={errors.name ? 'error' : undefined}
-          help={errors.name?.message}
-        >
-          <Controller
-            name="name"
-            control={control}
-            render={({ field }) => (
-              <Input
-                {...field}
-                autoComplete="off"
-                placeholder={common.namePlaceholder}
+            <Form.Item
+              className="product-form-field-wide"
+              label={common.name}
+              required
+              validateStatus={errors.name ? 'error' : undefined}
+              help={errors.name?.message}
+            >
+              <Controller
+                name="name"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    {...field}
+                    autoComplete="off"
+                    placeholder={common.namePlaceholder}
+                  />
+                )}
               />
-            )}
-          />
-        </Form.Item>
+            </Form.Item>
 
-        <Form.Item
-          label={labels.type}
-          required
-          validateStatus={errors.type ? 'error' : undefined}
-          help={errors.type?.message}
-        >
-          <Controller
-            name="type"
-            control={control}
-            render={({ field }) => (
-              <Select
-                {...field}
-                options={typeOptions}
-                style={{ width: '100%' }}
-                placeholder={labels.typePlaceholder}
+            <Form.Item
+              label={labels.type}
+              required
+              validateStatus={errors.type ? 'error' : undefined}
+              help={errors.type?.message}
+            >
+              <Controller
+                name="type"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    {...field}
+                    options={typeOptions}
+                    placeholder={labels.typePlaceholder}
+                  />
+                )}
               />
-            )}
-          />
-        </Form.Item>
+            </Form.Item>
 
-        <Form.Item
-          label={labels.category}
-          validateStatus={errors.categoryId ? 'error' : undefined}
-          help={errors.categoryId?.message}
-        >
-          <Controller
-            name="categoryId"
-            control={control}
-            render={({ field }) => (
-              <Select
-                allowClear
-                showSearch
-                optionFilterProp="label"
-                loading={categoriesQuery.isLoading}
-                options={categoryOptions}
-                style={{ width: '100%' }}
-                placeholder={labels.categoryPlaceholder}
-                value={field.value || undefined}
-                onChange={(value) => field.onChange(value ?? '')}
-                onBlur={field.onBlur}
+            <Form.Item
+              label={labels.category}
+              validateStatus={errors.categoryId ? 'error' : undefined}
+              help={errors.categoryId?.message}
+            >
+              <Controller
+                name="categoryId"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    allowClear
+                    showSearch
+                    optionFilterProp="label"
+                    loading={categoriesQuery.isLoading}
+                    options={categoryOptions}
+                    placeholder={labels.categoryPlaceholder}
+                    value={field.value || undefined}
+                    onChange={(value) => field.onChange(value ?? '')}
+                    onBlur={field.onBlur}
+                  />
+                )}
               />
-            )}
-          />
-        </Form.Item>
+            </Form.Item>
 
-        <Form.Item
-          label={labels.unit}
-          required
-          validateStatus={errors.unitId ? 'error' : undefined}
-          help={errors.unitId?.message}
-        >
-          <Controller
-            name="unitId"
-            control={control}
-            render={({ field }) => (
-              <Select
-                showSearch
-                optionFilterProp="label"
-                loading={unitsQuery.isLoading}
-                options={unitOptions}
-                style={{ width: '100%' }}
-                placeholder={labels.unitPlaceholder}
-                value={field.value || undefined}
-                onChange={(value) => field.onChange(value ?? '')}
-                onBlur={field.onBlur}
+            <Form.Item
+              label={labels.unit}
+              required
+              validateStatus={errors.unitId ? 'error' : undefined}
+              help={errors.unitId?.message}
+            >
+              <Controller
+                name="unitId"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    showSearch
+                    optionFilterProp="label"
+                    loading={unitsQuery.isLoading}
+                    options={unitOptions}
+                    placeholder={labels.unitPlaceholder}
+                    value={field.value || undefined}
+                    onChange={(value) => field.onChange(value ?? '')}
+                    onBlur={field.onBlur}
+                  />
+                )}
               />
-            )}
-          />
-        </Form.Item>
+            </Form.Item>
+          </div>
+        </section>
 
-        <Form.Item
-          label={labels.standardSalePrice}
-          validateStatus={errors.standardSalePrice ? 'error' : undefined}
-          help={errors.standardSalePrice?.message}
-        >
-          <Controller
-            name="standardSalePrice"
-            control={control}
-            render={({ field }) => (
-              <DecimalInput
-                value={field.value}
-                onChange={field.onChange}
-                onBlur={field.onBlur}
-                placeholder={labels.decimalPlaceholder}
+        <section className="product-form-section">
+          <div className="product-form-section-heading">Qiymət və miqdar</div>
+          <div className="product-form-grid product-form-price-grid">
+            <Form.Item
+              label={labels.standardSalePrice}
+              validateStatus={errors.standardSalePrice ? 'error' : undefined}
+              help={errors.standardSalePrice?.message}
+            >
+              <Controller
+                name="standardSalePrice"
+                control={control}
+                render={({ field }) => (
+                  <DecimalInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    placeholder={labels.decimalPlaceholder}
+                  />
+                )}
               />
-            )}
-          />
-        </Form.Item>
+            </Form.Item>
 
-        <Form.Item
-          label={labels.latestPurchasePrice}
-          validateStatus={errors.latestPurchasePrice ? 'error' : undefined}
-          help={errors.latestPurchasePrice?.message}
-        >
-          <Controller
-            name="latestPurchasePrice"
-            control={control}
-            render={({ field }) => (
-              <DecimalInput
-                value={field.value}
-                onChange={field.onChange}
-                onBlur={field.onBlur}
-                placeholder={labels.decimalPlaceholder}
+            <Form.Item
+              label={labels.latestPurchasePrice}
+              validateStatus={errors.latestPurchasePrice ? 'error' : undefined}
+              help={errors.latestPurchasePrice?.message}
+            >
+              <Controller
+                name="latestPurchasePrice"
+                control={control}
+                render={({ field }) => (
+                  <DecimalInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    placeholder={labels.decimalPlaceholder}
+                  />
+                )}
               />
-            )}
-          />
-        </Form.Item>
+            </Form.Item>
 
-        <Form.Item
-          label={labels.criticalStockThreshold}
-          validateStatus={errors.criticalStockThreshold ? 'error' : undefined}
-          help={errors.criticalStockThreshold?.message}
-        >
-          <Controller
-            name="criticalStockThreshold"
-            control={control}
-            render={({ field }) => (
-              <DecimalInput
-                value={field.value}
-                onChange={field.onChange}
-                onBlur={field.onBlur}
-                placeholder={labels.decimalPlaceholder}
+            <Form.Item
+              label={labels.criticalStockThreshold}
+              validateStatus={
+                errors.criticalStockThreshold ? 'error' : undefined
+              }
+              help={errors.criticalStockThreshold?.message}
+            >
+              <Controller
+                name="criticalStockThreshold"
+                control={control}
+                render={({ field }) => (
+                  <DecimalInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    placeholder={labels.decimalPlaceholder}
+                  />
+                )}
               />
-            )}
-          />
-        </Form.Item>
+            </Form.Item>
+          </div>
+        </section>
 
-        <Form.Item
-          label={labels.barcode}
-          validateStatus={errors.barcode ? 'error' : undefined}
-          help={errors.barcode?.message}
-        >
-          <Controller
-            name="barcode"
-            control={control}
-            render={({ field }) => (
-              <Input
-                {...field}
-                placeholder={labels.barcodePlaceholder}
-                maxLength={128}
+        <section className="product-form-section">
+          <div className="product-form-section-heading">Əlavə məlumatlar</div>
+          <div className="product-form-grid">
+            <Form.Item
+              label={labels.barcode}
+              validateStatus={errors.barcode ? 'error' : undefined}
+              help={errors.barcode?.message}
+            >
+              <Controller
+                name="barcode"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    {...field}
+                    placeholder={labels.barcodePlaceholder}
+                    maxLength={128}
+                  />
+                )}
               />
-            )}
-          />
-        </Form.Item>
+            </Form.Item>
 
-        <Form.Item
-          label={labels.notes}
-          validateStatus={errors.notes ? 'error' : undefined}
-          help={errors.notes?.message}
-        >
-          <Controller
-            name="notes"
-            control={control}
-            render={({ field }) => (
-              <Input.TextArea
-                {...field}
-                placeholder={labels.notesPlaceholder}
-                rows={3}
-                maxLength={4000}
+            <Form.Item
+              className="product-form-field-wide"
+              label={labels.notes}
+              validateStatus={errors.notes ? 'error' : undefined}
+              help={errors.notes?.message}
+            >
+              <Controller
+                name="notes"
+                control={control}
+                render={({ field }) => (
+                  <Input.TextArea
+                    {...field}
+                    placeholder={labels.notesPlaceholder}
+                    rows={3}
+                    maxLength={4000}
+                  />
+                )}
               />
-            )}
-          />
-        </Form.Item>
+            </Form.Item>
+          </div>
+        </section>
       </Form>
     </Modal>
   );

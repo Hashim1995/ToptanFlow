@@ -3,11 +3,16 @@ import { NumberSequencesModule } from '../number-sequences/number-sequences.modu
 import { BusinessPartnersController } from './business-partners.controller';
 import { BusinessPartnersService } from './business-partners.service';
 import { PartnerDebtBalanceService } from './partner-debt-balance.service';
+import { BusinessPartnerMovementReportService } from './business-partner-movement-report.service';
 
 @Module({
   imports: [NumberSequencesModule],
   controllers: [BusinessPartnersController],
-  providers: [BusinessPartnersService, PartnerDebtBalanceService],
+  providers: [
+    BusinessPartnersService,
+    PartnerDebtBalanceService,
+    BusinessPartnerMovementReportService,
+  ],
   exports: [PartnerDebtBalanceService],
 })
 export class BusinessPartnersModule {}

@@ -9,7 +9,9 @@
   ],
   "scripts": {
     "format": "prettier --write .",
-    "swagger": "yarn workspace api swagger"
+    "swagger": "yarn workspace api swagger",
+    "datetime:build": "yarn workspace @toptanflow/datetime build",
+    "datetime:test": "yarn workspace @toptanflow/datetime test"
   },
   "devDependencies": {
     "prettier": "^3.4.2"
