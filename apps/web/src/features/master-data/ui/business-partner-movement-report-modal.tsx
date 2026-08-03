@@ -14,7 +14,7 @@ import {
   message,
 } from "antd";
 import { useQuery } from "@tanstack/react-query";
-import type { Dayjs } from "dayjs";
+import dayjs, { type Dayjs } from "dayjs";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
@@ -48,8 +48,12 @@ const STATUSES: PartnerMovementStatus[] = ["DRAFT", "POSTED", "CANCELLED"];
 const schema = z.object({
   dateRange: z
     .tuple([
-      z.custom<Dayjs>((value) => Boolean(value?.isValid())).nullable(),
-      z.custom<Dayjs>((value) => Boolean(value?.isValid())).nullable(),
+      z
+        .custom<Dayjs>((value) => dayjs.isDayjs(value) && value.isValid())
+        .nullable(),
+      z
+        .custom<Dayjs>((value) => dayjs.isDayjs(value) && value.isValid())
+        .nullable(),
     ])
     .nullable(),
   operationTypes: z

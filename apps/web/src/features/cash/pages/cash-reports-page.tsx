@@ -249,9 +249,8 @@ export function CashReportsPage() {
       ) : null}
 
       <Row
-        className="ui-summary-grid"
+        className="ui-summary-grid cash-report-summary-grid"
         gutter={[12, 12]}
-        className="cash-report-summary-grid"
       >
         <Col xs={24} sm={12} lg={8} xl={6}>
           <SummaryStat
