@@ -15,7 +15,7 @@ async function bootstrap() {
   // process termination signals (e.g. SIGTERM), per this task's requirement.
   app.enableShutdownHooks();
 
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
   const swaggerUrl = `http://localhost:${port}/${apiPrefix}/docs`;
   Logger.log(
     `TOPTANFLOW API listening on port ${port}, prefix "/${apiPrefix}"`,
