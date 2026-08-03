@@ -376,6 +376,17 @@
   gap: 4px;
 }
 
+.cash-transaction-details .cash-transaction-partner {
+  padding: 3px 7px;
+  color: #0f4c8a;
+  background: #edf5ff;
+  border-radius: 6px;
+}
+
+.cash-transaction-partner strong {
+  font-weight: 750;
+}
+
 .cash-transaction-note {
   width: 100%;
 }

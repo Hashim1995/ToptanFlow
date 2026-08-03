@@ -732,10 +732,12 @@ export function CashAccountDetailPage() {
                     {phIcon(CalendarBlank, { size: ICON_SIZE.sm })}
                     {formatDateTime(row.transactionDate)}
                   </span>
-                  <span>
-                    {phIcon(User, { size: ICON_SIZE.sm })}
-                    {row.partnerName || "—"}
-                  </span>
+                  {row.partnerName ? (
+                    <span className="cash-transaction-partner">
+                      {phIcon(User, { size: ICON_SIZE.sm })}
+                      <strong>{row.partnerName}</strong>
+                    </span>
+                  ) : null}
                   <span>
                     {phIcon(Wallet, { size: ICON_SIZE.sm })}
                     {formatMoney(row.balanceAfter)}

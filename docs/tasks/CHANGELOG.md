@@ -4,7 +4,7 @@ Planning-history only. Not a product release-notes replacement.
 
 ## 2026-08-03
 
-- **CHANGE-026 Done:** Compacted the mobile Cash account summary and transaction history with icon-led facts, four direct movement actions, shorter transaction rows, and a small direct cancellation action without changing desktop or Cash behavior.
+- **CHANGE-026 Done:** Compacted the mobile Cash account summary and transaction history with icon-led facts, four direct movement actions, shorter transaction rows, a small direct cancellation action, and highlighted available Business Partner names without changing desktop or Cash behavior.
 - **CHANGE-025 Done:** Compacted Product and Business Partner mobile cards with direct header icon actions, and moved Posted Sale/Purchase View and Cancel actions into small card-header buttons while preserving desktop presentation and all behavior.
 - **CHANGE-024 Done:** Rebuilt mobile Sale/Purchase lists and details around compact invoice summaries, direct icon actions, and simple quantity × price product lines; rebuilt Cash Transaction cards with icon-led metadata and direct account access; removed Product Quantity History from detail presentation without changing desktop or business behavior.
 - **CHANGE-023 Done:** Standardized current filter panels across master data, users, Cash, Sales, and Purchases with a shared 40px control baseline, default-collapsed responsive accordion, and consistent “Axtar” / “Təmizlə” actions. Added controlled Sale/Purchase date ranges and a focused regression test; filtering APIs and business behavior remain unchanged.

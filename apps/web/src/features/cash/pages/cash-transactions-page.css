@@ -168,6 +168,17 @@
   font-weight: 650;
 }
 
+.cash-transactions-mobile-meta .cash-transactions-mobile-partner {
+  padding: 3px 7px;
+  color: #0f4c8a;
+  background: #edf5ff;
+  border-radius: 6px;
+}
+
+.cash-transactions-mobile-partner strong {
+  font-weight: 750;
+}
+
 .cash-transactions-mobile-note {
   display: flex;
   align-items: flex-start;

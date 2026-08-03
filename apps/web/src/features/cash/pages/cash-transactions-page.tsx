@@ -379,10 +379,17 @@ export function CashTransactionsPage() {
                   {phIcon(Wallet, { size: ICON_SIZE.sm })}
                   {row.cashAccountName || "—"}
                 </Link>
-                <span>
-                  {phIcon(User, { size: ICON_SIZE.sm })}
-                  {row.partnerName || row.expenseCategoryName || "—"}
-                </span>
+                {row.partnerName ? (
+                  <span className="cash-transactions-mobile-partner">
+                    {phIcon(User, { size: ICON_SIZE.sm })}
+                    <strong>{row.partnerName}</strong>
+                  </span>
+                ) : row.expenseCategoryName ? (
+                  <span>
+                    {phIcon(NoteBlank, { size: ICON_SIZE.sm })}
+                    {row.expenseCategoryName}
+                  </span>
+                ) : null}
                 <span>
                   {phIcon(User, { size: ICON_SIZE.sm })}
                   {row.createdByName || "—"}
