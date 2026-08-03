@@ -1,0 +1,41 @@
+# CHANGE-027: Business Partner movement report
+
+- **ID:** CHANGE-027
+- **Type:** CHANGE
+- **Title:** Business Partner movement report
+- **Status:** Done
+- **Trigger:** Owner requested a per-partner `Hərəkət reportu` action with date, operation-type, status, actor, and output-format filters; an Excel response download; and a browser-native print view with visible preparation stages and cancellable modal handling. The owner subsequently removed PDF because it did not work and confirmed Excel plus direct Print as the final output scope.
+- **Urgency:** High
+- **Affected epics / stories / tasks:** Business Partners; US-017 Business Partner Statement (related reporting workflow, not claimed complete); US-022 Purchases; US-023 Sales; US-024 Cash; US-051 user administration (actor names only).
+- **Why not in the original plan:** The delivered Business Partner list has lifecycle actions but no operational movement export or print workflow. The full Business Partner Statement remains a wider settlement/reporting story.
+- **Scope:** Add a Business Partner row action and responsive modal; optional inclusive date range; multi-select Purchase, Sale, Cash In, and Cash Out types; multi-select document statuses and operation actors; Excel and Print output; read-only backend aggregation without pagination; transient response generation without file persistence, background jobs, archives, or additional storage; explicit loading stages; abort confirmation and cleanup; browser-only A4 print view with repeating table headers.
+- **Out of scope:** Full US-017 signed-balance statement semantics (opening/running/closing balance, returns, adjustments, allocations, and source-link navigation); new ledger effects; storage of generated files; background jobs; report archives; new authorization policy; changes to Sale, Purchase, Cash, partner-debt, or user lifecycle behavior.
+- **Risks:** Missing records through accidental pagination; mixing Cash reversal rows with primary Cash In/Out; exposing raw enum values; corrupting Azerbaijani characters in exported files; treating print-dialog cancellation as an error; leaving server or browser work active after a confirmed modal abort.
+- **Acceptance criteria:**
+  - Every Business Partner desktop and mobile action surface exposes `Hərəkət reportu` and opens the selected partner's modal.
+  - Date range, operation types, statuses, operation users, and exactly one output format are selectable; omitted date bounds and empty multi-selects mean all values in that filter dimension.
+  - Purchase, Sale, primary partner Cash In (`CUSTOMER_RECEIPT`), and primary partner Cash Out (`SUPPLIER_PAYMENT`) rows are returned for the selected partner with name/code, type, date, number, amount, localized status, actor name, and short description.
+  - Matching data is not page-limited; deterministic chronological ordering is used.
+  - Excel is generated for the HTTP request, returned as a response, and never written to server storage. No background job, persistent archive, or additional storage is introduced.
+  - Print fetches the filtered data and opens a separate Azerbaijani A4 browser view containing only the report title/partner identity and table; application chrome/actions are absent and table headers repeat across pages; no server-side print file is generated.
+  - The modal shows honest indeterminate preparation stages without fake percentages. It cannot silently close while active; an explicit Azerbaijani warning confirms abort, aborts the request/process, and clears transient browser state.
+  - A successful response/download or opened print dialog produces a success message and a completed state; cancelling the browser print dialog is not an error.
+  - Backend service/export tests and frontend report/print tests cover filters, all-row behavior, localization, abort handling, and print-only markup; scoped lint, type checks, builds, and existing regression tests pass.
+- **Impact on current work:** Standalone owner-approved unplanned change; no active story is displaced. US-022, US-023, and US-024 remain in Review and must not regress.
+- **Roadmap impact:** None. This adds an operational report without claiming completion of the wider deferred Settlement statement story.
+- **Result:** Added `Hərəkət reportu` to each Business Partner desktop action menu and mobile action surface. The responsive modal supports inclusive/all-date filtering, all four requested primary operation types, all document statuses, historical operation-user filtering, and explicit Excel/Print selection. A read-only unpaginated API aggregates Purchase, Sale, `CUSTOMER_RECEIPT` Cash In, and `SUPPLIER_PAYMENT` Cash Out rows only, with deterministic chronological ordering and localized labels. XLSX responses are generated in memory and returned directly without files, jobs, archives, migrations, or storage. Print uses a separate browser-only A4 landscape table view with repeating headers and automatic `window.print()`. Honest indeterminate stages, the owner-provided close warning, request abort, object-URL/print-window cleanup, success states, and print-cancel-as-success behavior are implemented. The subsequently removed PDF path and its dependencies are not part of the final implementation.
+- **Follow-up actions:** Owner visual acceptance of the modal and browser print preview; the wider signed-balance Business Partner Statement remains in US-017 and is not claimed by this change.
+- **Evidence:**
+  - `apps/api/src/business-partners/business-partner-movement-report.service.ts`
+  - `apps/api/src/business-partners/dto/business-partner-movement-report.dto.ts`
+  - `apps/api/src/business-partners/business-partners.controller.ts`
+  - `apps/web/src/features/master-data/pages/business-partners-page.tsx`
+  - `apps/web/src/features/master-data/ui/business-partner-movement-report-modal.tsx`
+  - `apps/web/src/features/master-data/ui/print-partner-movement-report.ts`
+  - `yarn workspace api test --runInBand` — 29 suites / 312 tests passed.
+  - `yarn workspace web test --run` — 24 files / 62 tests passed.
+  - Scoped API and web ESLint — passed.
+  - `yarn workspace web tsc --noEmit` — passed.
+  - `yarn workspace api build` — passed.
+  - `yarn workspace web vite build` — passed (existing bundle-size warning only).
+  - `git diff --check` — passed.

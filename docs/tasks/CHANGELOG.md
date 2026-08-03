@@ -2,6 +2,10 @@
 
 Planning-history only. Not a product release-notes replacement.
 
+## 2026-08-04
+
+- **CHANGE-027 Done:** Added a responsive per-partner movement report for all matching Purchase, Sale, primary Cash In, and primary Cash Out rows with date/status/actor/type filters, a transient in-memory XLSX response, browser-only A4 print with repeating headers, honest preparation stages, and confirmed request abort/cleanup. The owner subsequently removed the non-working PDF option. API 312 tests, web 62 tests, scoped lint/type checks, API build, and Vite production bundle passed; no file storage, background job, archive, migration, or ledger behavior was added.
+
 ## 2026-08-03
 
 - **CHANGE-026 Done:** Compacted the mobile Cash account summary and transaction history with icon-led facts, four direct movement actions, shorter transaction rows, a small direct cancellation action, and highlighted available Business Partner names without changing desktop or Cash behavior.

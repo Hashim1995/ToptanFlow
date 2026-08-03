@@ -97,6 +97,9 @@ export const MASTER_DATA_LABELS = {
     duplicateIntro:
       'Eyni ad, telefon və ya vergi nömrəsinə oxşayan mövcud qeydlər var. Davam etmək üçün açıq şəkildə təsdiqləyin.',
     duplicateAcknowledge: 'Buna baxmayaraq yadda saxla',
+    movementReport: {
+      action: 'Hərəkət reportu',
+    },
     matchedFields: 'Uyğun sahələr',
     matched: {
       name: 'Ad',

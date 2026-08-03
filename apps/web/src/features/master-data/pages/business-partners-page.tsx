@@ -22,6 +22,7 @@ import type { MenuProps } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
   DotsThreeVertical,
+  FileText,
   FunnelSimple,
   PencilSimple,
   Phone,
@@ -54,6 +55,7 @@ import {
   type ActiveFilterValue,
 } from "../ui/active-filter";
 import { BusinessPartnerFormModal } from "../ui/business-partner-form-modal";
+import { BusinessPartnerMovementReportModal } from "../ui/business-partner-movement-report-modal";
 import { DuplicateReviewModal } from "../ui/duplicate-review-modal";
 import { MASTER_DATA_LABELS } from "../ui/labels";
 import { ActiveStatusFilter, FilterBar, FilterField } from "../ui/list-toolbar";
@@ -166,6 +168,9 @@ export function BusinessPartnersPage() {
   const [duplicateCandidates, setDuplicateCandidates] = useState<
     BusinessPartnerDuplicateCandidate[]
   >([]);
+  const [reportPartner, setReportPartner] = useState<BusinessPartner | null>(
+    null,
+  );
 
   const listQuery = useMemo(
     () => ({
@@ -256,6 +261,13 @@ export function BusinessPartnersPage() {
       width: 120,
       render: (_, record) => {
         const menuItems: MenuProps["items"] = [
+          {
+            key: "movement-report",
+            icon: phIcon(FileText, { size: ICON_SIZE.sm }),
+            label: labels.movementReport.action,
+            onClick: () => setReportPartner(record),
+          },
+          { type: "divider" },
           {
             key: "edit",
             icon: phIcon(PencilSimple, { size: ICON_SIZE.sm }),
@@ -592,6 +604,14 @@ export function BusinessPartnersPage() {
                 </div>
                 <div className="partner-mobile-head-actions">
                   <ActiveStatusTag isActive={partner.isActive} />
+                  <Tooltip title={labels.movementReport.action}>
+                    <Button
+                      type="text"
+                      icon={phIcon(FileText, { size: ICON_SIZE.sm })}
+                      aria-label={labels.movementReport.action}
+                      onClick={() => setReportPartner(partner)}
+                    />
+                  </Tooltip>
                   <Button
                     type="text"
                     icon={phIcon(PencilSimple, { size: ICON_SIZE.sm })}
@@ -685,6 +705,14 @@ export function BusinessPartnersPage() {
         }}
         onAcknowledge={() => void acknowledgeDuplicate()}
       />
+
+      {reportPartner ? (
+        <BusinessPartnerMovementReportModal
+          open
+          partner={reportPartner}
+          onClose={() => setReportPartner(null)}
+        />
+      ) : null}
     </div>
   );
 }
