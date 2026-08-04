@@ -2,7 +2,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Alert,
   Button,
-  DatePicker,
   Form,
   Modal,
   Radio,
@@ -19,6 +18,7 @@ import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { mapApiError } from "../../../api/map-api-error";
+import { ResponsiveRangePicker } from "../../../shared/ui/responsive-date-pickers";
 import type {
   BusinessPartner,
   BusinessPartnerMovementReportQuery,
@@ -314,7 +314,7 @@ export function BusinessPartnerMovementReportModal({
               help={errors.dateRange?.message}
               validateStatus={errors.dateRange ? "error" : undefined}
             >
-              <DatePicker.RangePicker
+              <ResponsiveRangePicker
                 value={field.value}
                 onChange={field.onChange}
                 placeholder={["Başlanğıc tarixi", "Bitmə tarixi"]}

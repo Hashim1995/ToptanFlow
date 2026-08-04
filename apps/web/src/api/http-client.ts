@@ -5,6 +5,10 @@ import {
   clearSession,
 } from '../features/auth/session';
 import type { AuthTokensResponse } from '../features/auth/api/auth.api';
+import {
+  createOfflineMutationError,
+  isMutatingHttpMethod,
+} from '../shared/pwa/offline-guard';
 
 /**
  * Shared Axios instance for all frontend→backend HTTP (ADR-010 / ADR-025).
@@ -12,8 +16,8 @@ import type { AuthTokensResponse } from '../features/auth/api/auth.api';
  *
  * Local Vite (`import.meta.env.DEV`) uses a same-origin `/api` proxy
  * (see vite.config.ts) when `VITE_API_BASE_URL` is unset.
- * Production builds must set `VITE_API_BASE_URL` (e.g. on Vercel) and never
- * fall back to localhost.
+ * Production builds must set `VITE_API_BASE_URL` to the same-origin path
+ * `/api/v1` (Vercel rewrites that path to the Nest API deployment).
  */
 function resolveApiBaseUrl(): string {
   const configured = import.meta.env.VITE_API_BASE_URL?.trim();
@@ -40,6 +44,14 @@ export const httpClient = axios.create({
 });
 
 httpClient.interceptors.request.use((config) => {
+  if (
+    typeof navigator !== 'undefined' &&
+    !navigator.onLine &&
+    isMutatingHttpMethod(config.method)
+  ) {
+    return Promise.reject(createOfflineMutationError());
+  }
+
   const token = getAccessToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;

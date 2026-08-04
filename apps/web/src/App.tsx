@@ -19,6 +19,7 @@ import { SaleDetailPage } from './features/sales/pages/sale-detail-page';
 import { SalesPage } from './features/sales/pages/sales-page';
 import { UsersPage } from './features/users/pages/users-page';
 import { HomePage } from './pages/home-page';
+import { PwaRuntime } from './shared/pwa/pwa-runtime';
 
 /**
  * App routes — auth gate (US-019) + master-data / purchase / sale / cash screens.
@@ -27,6 +28,7 @@ import { HomePage } from './pages/home-page';
 function App() {
   return (
     <BrowserRouter>
+      <PwaRuntime />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route element={<RequireAuth />}>

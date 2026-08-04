@@ -4,7 +4,6 @@ import {
   Alert,
   Button,
   Card,
-  DatePicker,
   Empty,
   Grid,
   Input,
@@ -33,6 +32,7 @@ import {
 import { formatMoney } from "../../../shared/money/format-money";
 import { formatDateTime } from "../../../shared/ui/format";
 import { ICON_SIZE, phIcon } from "../../../shared/ui/ph-icon";
+import { ResponsiveRangePicker } from "../../../shared/ui/responsive-date-pickers";
 import { CodeText, MoneyCell } from "../../../shared/ui/table-cells";
 import { FilterBar, FilterField } from "../../master-data/ui/list-toolbar";
 import { PageHeader } from "../../master-data/ui/page-header";
@@ -50,7 +50,6 @@ import { CASH_LABELS } from "../ui/labels";
 import "./cash-transactions-page.css";
 
 const { Text } = Typography;
-const { RangePicker } = DatePicker;
 
 type FilterDraft = {
   transactionNumber: string;
@@ -282,7 +281,7 @@ export function CashTransactionsPage() {
               />
             </FilterField>
             <FilterField label={CASH_LABELS.filters.dateRange}>
-              <RangePicker
+              <ResponsiveRangePicker
                 value={draft.dateRange}
                 format={DATE_DISPLAY_FORMAT}
                 onChange={(dateRange) =>

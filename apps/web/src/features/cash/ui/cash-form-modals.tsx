@@ -3,7 +3,6 @@ import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Alert,
-  DatePicker,
   Form,
   Input,
   Modal,
@@ -33,6 +32,7 @@ import { useUsersList } from '../../users/api/users.hooks';
 import { useAuth } from '../../auth/use-auth';
 import { formatMoney } from '../../../shared/money/format-money';
 import { ICON_SIZE, phIcon } from '../../../shared/ui/ph-icon';
+import { ResponsiveDatePicker } from '../../../shared/ui/responsive-date-pickers';
 import type { CashAccount } from '../api/cash.api';
 import {
   cashAccountFormSchema,
@@ -795,7 +795,7 @@ export function CashInFormModal({
               name="transactionDate"
               control={control}
               render={({ field }) => (
-                <DatePicker
+                <ResponsiveDatePicker
                   style={{ width: '100%' }}
                   format={DATE_DISPLAY_FORMAT}
                   allowClear={false}
@@ -1212,7 +1212,7 @@ export function CashOutFormModal({
               name="transactionDate"
               control={control}
               render={({ field }) => (
-                <DatePicker
+                <ResponsiveDatePicker
                   style={{ width: '100%' }}
                   format={DATE_DISPLAY_FORMAT}
                   allowClear={false}
@@ -1532,7 +1532,7 @@ export function ExpenseFormModal({
               name="transactionDate"
               control={control}
               render={({ field }) => (
-                <DatePicker
+                <ResponsiveDatePicker
                   style={{ width: '100%' }}
                   format={DATE_DISPLAY_FORMAT}
                   allowClear={false}
@@ -1883,7 +1883,7 @@ export function TransferFormModal({
               name="transactionDate"
               control={control}
               render={({ field }) => (
-                <DatePicker
+                <ResponsiveDatePicker
                   style={{ width: '100%' }}
                   format={DATE_DISPLAY_FORMAT}
                   allowClear={false}
