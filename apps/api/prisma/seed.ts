@@ -8,10 +8,13 @@
 // Uses `pg` + `argon2` (not the generated Prisma ESM client) so `ts-node`
 // seed works under CommonJS. See docs/technical/database-development.md.
 
-import 'dotenv/config';
+import { loadApiEnvFiles } from '../src/config/load-api-env';
 import * as argon2 from 'argon2';
 import { randomUUID } from 'node:crypto';
+import { resolve } from 'node:path';
 import { Client } from 'pg';
+
+loadApiEnvFiles(resolve(__dirname, '..'));
 
 async function seedBootstrapUser(client: Client): Promise<void> {
   const username = process.env.BOOTSTRAP_USERNAME?.trim();

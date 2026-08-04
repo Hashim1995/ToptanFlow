@@ -26,6 +26,10 @@ export enum NodeEnv {
   Production = 'production',
 }
 
+/** Default local-only JWT secret; must never be used when NODE_ENV=production. */
+export const DEV_JWT_ACCESS_SECRET =
+  'dev-only-jwt-access-secret-change-me';
+
 /**
  * Declares every environment variable the backend requires at startup, and
  * how it is validated. This is infrastructure/bootstrap configuration only —
@@ -35,7 +39,7 @@ export enum NodeEnv {
  * since the backend cannot be the authoritative source of business data
  * (ADR-003) without a database connection. The remaining variables have
  * safe, non-business defaults so local development works with a minimal
- * `.env` file.
+ * `.env.development` (or legacy `.env`) file.
  */
 export class EnvironmentVariables {
   @IsEnum(NodeEnv)
@@ -82,10 +86,11 @@ export class EnvironmentVariables {
 
   /**
    * JWT access-token signing secret (ADR-025). Override in every non-local env.
+   * Production rejects the local default (see validateEnv).
    */
   @IsString()
   @IsNotEmpty()
-  JWT_ACCESS_SECRET = 'dev-only-jwt-access-secret-change-me';
+  JWT_ACCESS_SECRET = DEV_JWT_ACCESS_SECRET;
 
   /** Access token lifetime (ADR-025: 24h). Parsed by @nestjs/jwt. */
   @IsString()
@@ -111,6 +116,10 @@ export class EnvironmentVariables {
  * `ConfigModule` configuration-validation pattern. Throws synchronously if
  * any required variable is missing or malformed, so the application never
  * boots into a partially-configured state.
+ *
+ * Local development defaults are unchanged. Production reads values from the
+ * process environment (e.g. Vercel Project Settings) and rejects the
+ * local-only JWT default and empty CORS allow-list.
  */
 export function validateEnv(
   config: Record<string, unknown>,
@@ -125,6 +134,22 @@ export function validateEnv(
 
   if (errors.length > 0) {
     throw new Error(`Environment validation failed:\n${errors.toString()}`);
+  }
+
+  if (validatedConfig.NODE_ENV === NodeEnv.Production) {
+    if (
+      !validatedConfig.JWT_ACCESS_SECRET ||
+      validatedConfig.JWT_ACCESS_SECRET === DEV_JWT_ACCESS_SECRET
+    ) {
+      throw new Error(
+        'Environment validation failed: JWT_ACCESS_SECRET must be set to a non-default value when NODE_ENV=production',
+      );
+    }
+    if (!validatedConfig.CORS_ORIGINS.trim()) {
+      throw new Error(
+        'Environment validation failed: CORS_ORIGINS must be set when NODE_ENV=production',
+      );
+    }
   }
 
   return validatedConfig;

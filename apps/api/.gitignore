@@ -1,5 +1,8 @@
 node_modules
-# Keep environment variables out of version control
+# Never commit real credentials
 .env
+.env.*
+.env.local
+.env.*.local
 
 /generated/prisma

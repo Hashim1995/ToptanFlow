@@ -10,12 +10,25 @@ import type { AuthTokensResponse } from '../features/auth/api/auth.api';
  * Shared Axios instance for all frontend→backend HTTP (ADR-010 / ADR-025).
  * Access token is attached from memory; refresh uses httpOnly cookie.
  *
- * Local Vite uses a same-origin `/api` proxy (see vite.config.ts) so the
- * browser does not need CORS. Override with VITE_API_BASE_URL when needed.
+ * Local Vite (`import.meta.env.DEV`) uses a same-origin `/api` proxy
+ * (see vite.config.ts) when `VITE_API_BASE_URL` is unset.
+ * Production builds must set `VITE_API_BASE_URL` (e.g. on Vercel) and never
+ * fall back to localhost.
  */
-const baseURL =
-  import.meta.env.VITE_API_BASE_URL?.trim() ||
-  (import.meta.env.DEV ? '/api/v1' : 'http://localhost:3000/api/v1');
+function resolveApiBaseUrl(): string {
+  const configured = import.meta.env.VITE_API_BASE_URL?.trim();
+  if (configured) {
+    return configured;
+  }
+  if (import.meta.env.DEV) {
+    return '/api/v1';
+  }
+  throw new Error(
+    'VITE_API_BASE_URL must be set for production builds (Vercel env).',
+  );
+}
+
+const baseURL = resolveApiBaseUrl();
 
 export const httpClient = axios.create({
   baseURL,
