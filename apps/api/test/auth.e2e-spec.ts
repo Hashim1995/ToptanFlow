@@ -5,7 +5,7 @@ import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/bootstrap/configure-app';
 import { PrismaService } from '../src/prisma/prisma.service';
-import { verifyPassword } from '../src/users/password.util';
+import { hashPassword, verifyPassword } from '../src/users/password.util';
 import { attachAuthUserMock, E2E_AUTH_USER, withAuth } from './auth-e2e.helper';
 
 jest.mock('../src/users/password.util', () => ({
@@ -19,6 +19,7 @@ describe('Auth (e2e)', () => {
     onModuleDestroy: jest.fn().mockResolvedValue(undefined),
     user: {
       findUnique: jest.fn(),
+      update: jest.fn(),
     },
     refreshToken: {
       create: jest.fn(),
@@ -30,6 +31,7 @@ describe('Auth (e2e)', () => {
       findMany: jest.fn(),
       count: jest.fn(),
     },
+    $transaction: jest.fn(),
   };
 
   let app: INestApplication<App>;
@@ -37,6 +39,11 @@ describe('Auth (e2e)', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     attachAuthUserMock(prisma);
+    prisma.$transaction.mockImplementation(
+      async (callback: (tx: typeof prisma) => Promise<unknown>) =>
+        callback(prisma),
+    );
+    (hashPassword as jest.Mock).mockResolvedValue('hashed:new');
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -81,6 +88,7 @@ describe('Auth (e2e)', () => {
       id: E2E_AUTH_USER.id,
       username: E2E_AUTH_USER.username,
       fullName: E2E_AUTH_USER.fullName,
+      isSuperAdmin: E2E_AUTH_USER.isSuperAdmin,
     });
     expect(response.body).not.toHaveProperty('passwordHash');
     expect(response.headers['set-cookie']).toEqual(
@@ -135,5 +143,77 @@ describe('Auth (e2e)', () => {
 
     expect(response.body).toEqual({ ok: true });
     expect(prisma.refreshToken.updateMany).toHaveBeenCalled();
+  });
+
+  it('POST /api/v1/auth/change-password requires auth', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/change-password')
+      .send({
+        currentPassword: 'ChangeMe123!',
+        newPassword: 'NewPass123!',
+        newPasswordConfirmation: 'NewPass123!',
+      })
+      .expect(401);
+  });
+
+  it('POST /api/v1/auth/change-password rejects mismatched confirmation', async () => {
+    await withAuth(request(app.getHttpServer()))
+      .post('/api/v1/auth/change-password')
+      .send({
+        currentPassword: 'ChangeMe123!',
+        newPassword: 'NewPass123!',
+        newPasswordConfirmation: 'OtherPass1!',
+      })
+      .expect(400);
+  });
+
+  it('POST /api/v1/auth/change-password rejects weak new password', async () => {
+    await withAuth(request(app.getHttpServer()))
+      .post('/api/v1/auth/change-password')
+      .send({
+        currentPassword: 'ChangeMe123!',
+        newPassword: 'short',
+        newPasswordConfirmation: 'short',
+      })
+      .expect(400);
+  });
+
+  it('POST /api/v1/auth/change-password rejects wrong current password', async () => {
+    (verifyPassword as jest.Mock).mockResolvedValue(false);
+
+    await withAuth(request(app.getHttpServer()))
+      .post('/api/v1/auth/change-password')
+      .send({
+        currentPassword: 'WrongPass1!',
+        newPassword: 'NewPass123!',
+        newPasswordConfirmation: 'NewPass123!',
+      })
+      .expect(401);
+  });
+
+  it('POST /api/v1/auth/change-password succeeds and revokes refresh tokens', async () => {
+    (verifyPassword as jest.Mock).mockResolvedValue(true);
+    prisma.user.update.mockResolvedValue({ id: E2E_AUTH_USER.id });
+    prisma.refreshToken.updateMany.mockResolvedValue({ count: 2 });
+
+    const response = await withAuth(request(app.getHttpServer()))
+      .post('/api/v1/auth/change-password')
+      .send({
+        currentPassword: 'ChangeMe123!',
+        newPassword: 'NewPass123!',
+        newPasswordConfirmation: 'NewPass123!',
+      })
+      .expect(200);
+
+    expect(response.body).toEqual({ ok: true, requiresReauth: true });
+    expect(response.body).not.toHaveProperty('passwordHash');
+    expect(hashPassword).toHaveBeenCalledWith('NewPass123!');
+    expect(prisma.refreshToken.updateMany).toHaveBeenCalledWith({
+      where: {
+        userId: E2E_AUTH_USER.id,
+        revokedAt: null,
+      },
+      data: { revokedAt: expect.any(Date) },
+    });
   });
 });

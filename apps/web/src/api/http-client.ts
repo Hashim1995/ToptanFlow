@@ -82,7 +82,8 @@ httpClient.interceptors.response.use(
       original._retry ||
       url.includes('/auth/login') ||
       url.includes('/auth/refresh') ||
-      url.includes('/auth/logout')
+      url.includes('/auth/logout') ||
+      url.includes('/auth/change-password')
     ) {
       throw error;
     }

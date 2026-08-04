@@ -18,6 +18,7 @@ import {
   CaretLeft,
   CaretRight,
   House,
+  Key,
   List,
   Package,
   Ruler,
@@ -65,6 +66,11 @@ const NAV_ITEMS: MenuItem[] = [
         key: '/',
         icon: phIcon(House, { size: ICON_SIZE.md }),
         label: navLabel('Ana səhifə', '/'),
+      },
+      {
+        key: '/account',
+        icon: phIcon(Key, { size: ICON_SIZE.md }),
+        label: navLabel(AUTH_LABELS.accountNav, '/account'),
       },
     ],
   },
@@ -200,6 +206,8 @@ export function AppShellLayout() {
   const selectedKeys = [
     location.pathname === '/'
       ? '/'
+      : location.pathname.startsWith('/account')
+        ? '/account'
       : location.pathname.startsWith('/purchases')
         ? '/purchases'
         : location.pathname.startsWith('/sales')
@@ -305,6 +313,23 @@ export function AppShellLayout() {
                 </div>
               </Tooltip>
               <Tooltip
+                title={sidebarCollapsed ? AUTH_LABELS.accountNav : undefined}
+                placement="right"
+              >
+                <Button
+                  className="app-sidebar-logout"
+                  block={!sidebarCollapsed}
+                  icon={phIcon(Key, { size: ICON_SIZE.md })}
+                  aria-label={AUTH_LABELS.accountNav}
+                  onClick={() => {
+                    navigate('/account');
+                    setDrawerOpen(false);
+                  }}
+                >
+                  {!sidebarCollapsed ? AUTH_LABELS.accountNav : null}
+                </Button>
+              </Tooltip>
+              <Tooltip
                 title={sidebarCollapsed ? AUTH_LABELS.logout : undefined}
                 placement="right"
               >
@@ -356,6 +381,13 @@ export function AppShellLayout() {
               <Text type="secondary" style={{ fontSize: 12 }}>
                 {displayName}
               </Text>
+              <Button
+                icon={phIcon(Key, { size: ICON_SIZE.md })}
+                aria-label={AUTH_LABELS.accountNav}
+                onClick={() => navigate('/account')}
+              >
+                {AUTH_LABELS.accountNav}
+              </Button>
               <Button
                 icon={phIcon(SignOut, { size: ICON_SIZE.md })}
                 loading={loggingOut}
