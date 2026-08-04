@@ -37,7 +37,7 @@ describe('ProductQuantityService', () => {
   });
 
   it('completing a purchase increases product quantity (PURCHASE)', async () => {
-    const result = await service.applyChange(tx as never, {
+    const result = await service.applyChange(tx, {
       productId: 'product-1',
       quantityChange: '100',
       kind: ProductQuantityKind.PURCHASE,
@@ -64,7 +64,7 @@ describe('ProductQuantityService', () => {
   });
 
   it('completing a sale decreases product quantity (SALE)', async () => {
-    const result = await service.applyChange(tx as never, {
+    const result = await service.applyChange(tx, {
       productId: 'product-1',
       quantityChange: '-10',
       kind: ProductQuantityKind.SALE,
@@ -81,7 +81,7 @@ describe('ProductQuantityService', () => {
     expect(
       Object.getOwnPropertyNames(Object.getPrototypeOf(service)),
     ).not.toEqual(expect.arrayContaining(['applyCash', 'postCash']));
-    await service.applyChange(tx as never, {
+    await service.applyChange(tx, {
       productId: 'product-1',
       quantityChange: '5',
       kind: ProductQuantityKind.PURCHASE,
@@ -130,7 +130,7 @@ describe('ProductQuantityService', () => {
   });
 
   it('allows negative quantity with permission and reason', async () => {
-    const result = await service.applyChange(tx as never, {
+    const result = await service.applyChange(tx, {
       productId: 'product-1',
       quantityChange: '-150',
       kind: ProductQuantityKind.SALE,
@@ -155,7 +155,7 @@ describe('ProductQuantityService', () => {
   });
 
   it('cancellation reversal creates an auditable reversing history row', async () => {
-    const result = await service.applyChange(tx as never, {
+    const result = await service.applyChange(tx, {
       productId: 'product-1',
       quantityChange: '10',
       kind: ProductQuantityKind.CANCELLATION_REVERSAL,
@@ -175,7 +175,7 @@ describe('ProductQuantityService', () => {
       currentQuantity: new Decimal('-20.0000'),
     });
 
-    const result = await service.applyChange(tx as never, {
+    const result = await service.applyChange(tx, {
       productId: 'product-1',
       quantityChange: '10',
       kind: ProductQuantityKind.CANCELLATION_REVERSAL,

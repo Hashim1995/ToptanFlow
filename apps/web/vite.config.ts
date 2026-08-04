@@ -29,6 +29,7 @@ export default defineConfig(({ command, mode }) => {
         injectRegister: false,
         includeAssets: [
           'toptanflow-logo.png',
+          'toptan-flow-mobile-logo.png',
           'apple-touch-icon.png',
           'pwa-192.png',
           'pwa-512.png',

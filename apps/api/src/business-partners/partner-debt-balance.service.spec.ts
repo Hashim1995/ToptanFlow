@@ -33,7 +33,7 @@ describe('PartnerDebtBalanceService', () => {
   });
 
   it('completed Sale increases partner balance', async () => {
-    const result = await service.applyChange(tx as never, {
+    const result = await service.applyChange(tx, {
       partnerId: 'partner-1',
       signedAmount: '500',
       kind: PartnerDebtMovementKind.SALE,
@@ -45,7 +45,7 @@ describe('PartnerDebtBalanceService', () => {
   });
 
   it('completed Purchase decreases partner balance', async () => {
-    const result = await service.applyChange(tx as never, {
+    const result = await service.applyChange(tx, {
       partnerId: 'partner-1',
       signedAmount: '-1000',
       kind: PartnerDebtMovementKind.PURCHASE,
@@ -56,7 +56,7 @@ describe('PartnerDebtBalanceService', () => {
   });
 
   it('customer Cash Receipt decreases partner balance', async () => {
-    const result = await service.applyChange(tx as never, {
+    const result = await service.applyChange(tx, {
       partnerId: 'partner-1',
       signedAmount: '-300',
       kind: PartnerDebtMovementKind.CASH_RECEIPT,
@@ -71,7 +71,7 @@ describe('PartnerDebtBalanceService', () => {
       id: 'partner-1',
       currentDebtBalance: new Decimal('-600.0000'),
     });
-    const result = await service.applyChange(tx as never, {
+    const result = await service.applyChange(tx, {
       partnerId: 'partner-1',
       signedAmount: '250',
       kind: PartnerDebtMovementKind.CASH_PAYMENT,
@@ -82,7 +82,7 @@ describe('PartnerDebtBalanceService', () => {
   });
 
   it('balance may cross from positive to negative', async () => {
-    const result = await service.applyChange(tx as never, {
+    const result = await service.applyChange(tx, {
       partnerId: 'partner-1',
       signedAmount: '-500',
       kind: PartnerDebtMovementKind.PURCHASE,
@@ -97,7 +97,7 @@ describe('PartnerDebtBalanceService', () => {
       id: 'partner-1',
       currentDebtBalance: new Decimal('-100.0000'),
     });
-    const result = await service.applyChange(tx as never, {
+    const result = await service.applyChange(tx, {
       partnerId: 'partner-1',
       signedAmount: '400',
       kind: PartnerDebtMovementKind.SALE,
@@ -111,7 +111,7 @@ describe('PartnerDebtBalanceService', () => {
       id: 'partner-1',
       currentDebtBalance: new Decimal('0'),
     });
-    const result = await service.applyChange(tx as never, {
+    const result = await service.applyChange(tx, {
       partnerId: 'partner-1',
       signedAmount: '-500',
       kind: PartnerDebtMovementKind.CASH_RECEIPT,
@@ -125,7 +125,7 @@ describe('PartnerDebtBalanceService', () => {
       id: 'partner-1',
       currentDebtBalance: new Decimal('0'),
     });
-    const result = await service.applyChange(tx as never, {
+    const result = await service.applyChange(tx, {
       partnerId: 'partner-1',
       signedAmount: '500',
       kind: PartnerDebtMovementKind.CASH_PAYMENT,
@@ -135,7 +135,7 @@ describe('PartnerDebtBalanceService', () => {
   });
 
   it('sale cancellation reverses sale effect', async () => {
-    const result = await service.applyChange(tx as never, {
+    const result = await service.applyChange(tx, {
       partnerId: 'partner-1',
       signedAmount: '-500',
       kind: PartnerDebtMovementKind.SALE_CANCELLATION,
@@ -152,7 +152,7 @@ describe('PartnerDebtBalanceService', () => {
       id: 'partner-1',
       currentDebtBalance: new Decimal('-600.0000'),
     });
-    const result = await service.applyChange(tx as never, {
+    const result = await service.applyChange(tx, {
       partnerId: 'partner-1',
       signedAmount: '1000',
       kind: PartnerDebtMovementKind.PURCHASE_CANCELLATION,
@@ -164,7 +164,7 @@ describe('PartnerDebtBalanceService', () => {
   });
 
   it('returns create auditable reverse effects', async () => {
-    const result = await service.applyChange(tx as never, {
+    const result = await service.applyChange(tx, {
       partnerId: 'partner-1',
       signedAmount: '-100',
       kind: PartnerDebtMovementKind.SALE_RETURN,
@@ -198,7 +198,7 @@ describe('PartnerDebtBalanceService', () => {
   });
 
   it('keeps source references on movement create', async () => {
-    await service.applyChange(tx as never, {
+    await service.applyChange(tx, {
       partnerId: 'partner-1',
       signedAmount: '50',
       kind: PartnerDebtMovementKind.SALE,

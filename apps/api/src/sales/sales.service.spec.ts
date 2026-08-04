@@ -180,9 +180,9 @@ describe('SalesService', () => {
       partnerDebt as unknown as PartnerDebtBalanceService,
       cashBalance as never,
       {
-        resolveActorName: jest.fn().mockResolvedValue('Murad'),
-        enqueueInTransaction: jest.fn().mockResolvedValue('evt-1'),
-        scheduleDispatch: jest.fn(),
+        notifySaleCreated: jest.fn(),
+        notifySalePosted: jest.fn(),
+        notifySaleCancelled: jest.fn(),
       } as never,
     );
   });

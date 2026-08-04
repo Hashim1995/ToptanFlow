@@ -15,7 +15,8 @@ export class UserResponseDto {
 
   @ApiProperty({
     example: false,
-    description: 'Users-module Super Admin (ADR-039). Never set via create API.',
+    description:
+      'Users-module Super Admin (ADR-039). Never set via create API.',
   })
   isSuperAdmin: boolean;
 

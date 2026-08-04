@@ -92,9 +92,7 @@ describe('ProductsService', () => {
       numberSequences as unknown as NumberSequencesService,
       productQuantity as never,
       {
-        resolveActorName: jest.fn().mockResolvedValue('Murad'),
-        enqueueInTransaction: jest.fn().mockResolvedValue('evt-1'),
-        scheduleDispatch: jest.fn(),
+        notifyInventoryAdjusted: jest.fn(),
       } as never,
     );
   });

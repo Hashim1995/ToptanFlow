@@ -32,7 +32,6 @@ export class PrismaClient {
   }
 }
 
-
 export class PrismaClientKnownRequestError extends Error {
   code: string;
   clientVersion: string;

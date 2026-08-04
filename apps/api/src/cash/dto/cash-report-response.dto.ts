@@ -108,10 +108,14 @@ export class CashAccountStatementResponseDto {
   @ApiProperty({ description: 'Balance before the first movement in range' })
   openingBalance!: string;
 
-  @ApiProperty({ description: 'Balance after the last Posted movement in range' })
+  @ApiProperty({
+    description: 'Balance after the last Posted movement in range',
+  })
   closingBalance!: string;
 
-  @ApiProperty({ description: 'Live account balance (may differ if range ends before now)' })
+  @ApiProperty({
+    description: 'Live account balance (may differ if range ends before now)',
+  })
   currentBalance!: string;
 
   @ApiProperty({ type: [CashStatementLineDto] })
@@ -167,8 +171,7 @@ export class CashPeriodSummaryResponseDto {
   expensesByCategory!: ExpenseCategoryTotalDto[];
 
   @ApiProperty({
-    description:
-      'Posted partner Cash In (CUSTOMER_RECEIPT only)',
+    description: 'Posted partner Cash In (CUSTOMER_RECEIPT only)',
   })
   partnerCashInTotal!: string;
 

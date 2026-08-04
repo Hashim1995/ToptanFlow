@@ -8,10 +8,5 @@ export function resolveEnvFilePaths(
   nodeEnv: string | undefined = process.env.NODE_ENV,
 ): string[] {
   const mode = nodeEnv?.trim() || 'development';
-  return [
-    `.env.${mode}.local`,
-    '.env.local',
-    `.env.${mode}`,
-    '.env',
-  ];
+  return [`.env.${mode}.local`, '.env.local', `.env.${mode}`, '.env'];
 }

@@ -96,9 +96,12 @@ describe('CashTransactionsService', () => {
       partnerDebt as never,
       numberSequences as never,
       {
-        resolveActorName: jest.fn().mockResolvedValue('Murad'),
-        enqueueInTransaction: jest.fn().mockResolvedValue('evt-1'),
-        scheduleDispatch: jest.fn(),
+        notifyCashIn: jest.fn(),
+        notifyCashOut: jest.fn(),
+        notifyCashExpense: jest.fn(),
+        notifyCashTransfer: jest.fn(),
+        notifyCashTransferCancel: jest.fn(),
+        notifyCashTransactionCancel: jest.fn(),
       } as never,
     );
   });
@@ -115,11 +118,17 @@ describe('CashTransactionsService', () => {
         async (fn: (tx: unknown) => Promise<unknown>) =>
           fn({
             cashAccount: {
-              findUniqueOrThrow: jest.fn().mockResolvedValue({ name: 'Əsas kassa' }),
+              findUniqueOrThrow: jest
+                .fn()
+                .mockResolvedValue({ name: 'Əsas kassa' }),
             },
             cashTransfer: prisma.cashTransfer,
             cashTransaction: prisma.cashTransaction,
-            user: { findUnique: jest.fn().mockResolvedValue({ fullName: 'Murad', username: 'murad' }) },
+            user: {
+              findUnique: jest
+                .fn()
+                .mockResolvedValue({ fullName: 'Murad', username: 'murad' }),
+            },
           }),
       );
       prisma.cashTransaction.findUnique.mockResolvedValue({
@@ -182,11 +191,17 @@ describe('CashTransactionsService', () => {
         async (fn: (tx: unknown) => Promise<unknown>) =>
           fn({
             cashAccount: {
-              findUniqueOrThrow: jest.fn().mockResolvedValue({ name: 'Əsas kassa' }),
+              findUniqueOrThrow: jest
+                .fn()
+                .mockResolvedValue({ name: 'Əsas kassa' }),
             },
             cashTransfer: prisma.cashTransfer,
             cashTransaction: prisma.cashTransaction,
-            user: { findUnique: jest.fn().mockResolvedValue({ fullName: 'Murad', username: 'murad' }) },
+            user: {
+              findUnique: jest
+                .fn()
+                .mockResolvedValue({ fullName: 'Murad', username: 'murad' }),
+            },
           }),
       );
       prisma.cashTransaction.findUnique.mockResolvedValue(outTxn);
@@ -239,11 +254,17 @@ describe('CashTransactionsService', () => {
         async (fn: (tx: unknown) => Promise<unknown>) =>
           fn({
             cashAccount: {
-              findUniqueOrThrow: jest.fn().mockResolvedValue({ name: 'Əsas kassa' }),
+              findUniqueOrThrow: jest
+                .fn()
+                .mockResolvedValue({ name: 'Əsas kassa' }),
             },
             cashTransfer: prisma.cashTransfer,
             cashTransaction: prisma.cashTransaction,
-            user: { findUnique: jest.fn().mockResolvedValue({ fullName: 'Murad', username: 'murad' }) },
+            user: {
+              findUnique: jest
+                .fn()
+                .mockResolvedValue({ fullName: 'Murad', username: 'murad' }),
+            },
           }),
       );
       prisma.cashTransaction.findUnique.mockResolvedValue(expenseTxn);
@@ -319,11 +340,17 @@ describe('CashTransactionsService', () => {
         async (fn: (tx: unknown) => Promise<unknown>) =>
           fn({
             cashAccount: {
-              findUniqueOrThrow: jest.fn().mockResolvedValue({ name: 'Əsas kassa' }),
+              findUniqueOrThrow: jest
+                .fn()
+                .mockResolvedValue({ name: 'Əsas kassa' }),
             },
             cashTransfer: prisma.cashTransfer,
             cashTransaction: prisma.cashTransaction,
-            user: { findUnique: jest.fn().mockResolvedValue({ fullName: 'Murad', username: 'murad' }) },
+            user: {
+              findUnique: jest
+                .fn()
+                .mockResolvedValue({ fullName: 'Murad', username: 'murad' }),
+            },
           }),
       );
       prisma.cashTransaction.findUnique.mockResolvedValue(receiptTxn);
@@ -495,11 +522,17 @@ describe('CashTransactionsService', () => {
         async (fn: (tx: unknown) => Promise<unknown>) =>
           fn({
             cashAccount: {
-              findUniqueOrThrow: jest.fn().mockResolvedValue({ name: 'Əsas kassa' }),
+              findUniqueOrThrow: jest
+                .fn()
+                .mockResolvedValue({ name: 'Əsas kassa' }),
             },
             cashTransfer: prisma.cashTransfer,
             cashTransaction: prisma.cashTransaction,
-            user: { findUnique: jest.fn().mockResolvedValue({ fullName: 'Murad', username: 'murad' }) },
+            user: {
+              findUnique: jest
+                .fn()
+                .mockResolvedValue({ fullName: 'Murad', username: 'murad' }),
+            },
           }),
       );
       prisma.cashTransaction.findUnique.mockResolvedValue(paymentTxn);
@@ -632,10 +665,13 @@ describe('CashTransactionsService', () => {
   });
 
   describe('cancel', () => {
-    function mockCancelTx(original: {
-      type: string;
-      partnerId: string | null;
-    }, debtMovement: { id: string; signedAmount: Decimal } | null = null) {
+    function mockCancelTx(
+      original: {
+        type: string;
+        partnerId: string | null;
+      },
+      debtMovement: { id: string; signedAmount: Decimal } | null = null,
+    ) {
       return {
         cashTransaction: {
           findUnique: jest.fn().mockResolvedValue(original),
@@ -848,7 +884,10 @@ describe('CashTransactionsService', () => {
           cancelReason: 'Səhv transfer',
           createdByUserId: actorId,
           createdAt: new Date('2026-08-01T10:00:00.000Z'),
-          sourceCashAccount: { name: 'Ofis', currentBalance: new Decimal('100') },
+          sourceCashAccount: {
+            name: 'Ofis',
+            currentBalance: new Decimal('100'),
+          },
           destinationCashAccount: {
             name: 'Anbar',
             currentBalance: new Decimal('50'),

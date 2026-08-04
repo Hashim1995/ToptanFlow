@@ -23,8 +23,6 @@ import {
   ProductQuantityService,
 } from './product-quantity.service';
 import { PaginationQueryDto } from '../common/pagination/pagination-query.dto';
-import { PushEventKey } from '../push/push-event-keys.js';
-import { buildInventoryAdjustedBody } from '../push/push-message-builder.js';
 import { PushNotificationsService } from '../push/push-notifications.service.js';
 
 const unitSummarySelect = {
@@ -284,7 +282,7 @@ export class ProductsService {
     dto: AdjustProductQuantityDto,
     userId: string,
   ): Promise<ProductResponseDto> {
-    const adjustResult = await this.prisma.$transaction(async (tx) => {
+    const historyId = await this.prisma.$transaction(async (tx) => {
       const change = await this.productQuantity.applyChange(tx, {
         productId,
         quantityChange: dto.quantityChange,
@@ -294,19 +292,12 @@ export class ProductsService {
         allowNegativeQuantity: true,
       });
 
-      const actorName = await this.pushNotifications.resolveActorName(
-        tx,
-        userId,
-      );
-      const eventId = await this.pushNotifications.enqueueInTransaction(tx, {
-        idempotencyKey: `inventory.adjust:${change.historyId}`,
-        eventKey: PushEventKey.INVENTORY_QUANTITY_ADJUSTED,
-        actorUserId: userId,
-        body: buildInventoryAdjustedBody({ actorName }),
-      });
-      return { eventId };
+      return change.historyId;
     });
-    this.pushNotifications.scheduleDispatch(adjustResult.eventId);
+    this.pushNotifications.notifyInventoryAdjusted({
+      actorUserId: userId,
+      historyId,
+    });
     return this.findOne(productId);
   }
 
