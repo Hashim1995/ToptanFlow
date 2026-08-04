@@ -205,10 +205,14 @@ export class AuthService {
 
   private cookieOptions(expires: Date): CookieOptions {
     const nodeEnv = this.configService.get<string>('NODE_ENV', 'development');
+    const isProduction = nodeEnv === 'production';
+    // Local Vite proxies `/api` same-origin → SameSite=Lax is correct.
+    // Production web + API are different vercel.app sites → cross-site
+    // credentialed refresh requires SameSite=None with Secure.
     return {
       httpOnly: true,
-      secure: nodeEnv === 'production',
-      sameSite: 'lax',
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
       path: '/',
       expires,
     };

@@ -1,6 +1,5 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { config } from 'dotenv';
 import { resolve } from 'path';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/bootstrap/configure-app';
@@ -8,8 +7,9 @@ import { BusinessPartnersService } from '../src/business-partners/business-partn
 import { ProductTypeApi } from '../src/products/dto/product-type.enum';
 import { ProductsService } from '../src/products/products.service';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { loadApiEnvFiles } from '../src/config/load-api-env';
 
-config({ path: resolve(__dirname, '../.env') });
+loadApiEnvFiles(resolve(__dirname, '..'));
 
 function sortBigIntAsc(values: bigint[]): bigint[] {
   return [...values].sort((a, b) => {

@@ -3,6 +3,7 @@ import { APP_FILTER } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { resolveEnvFilePaths } from './config/env-file-paths';
 import { validateEnv } from './config/env.validation';
 import { PrismaModule } from './prisma/prisma.module';
 import { HealthModule } from './health/health.module';
@@ -21,6 +22,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: resolveEnvFilePaths(),
       validate: validateEnv,
     }),
     PrismaModule,
