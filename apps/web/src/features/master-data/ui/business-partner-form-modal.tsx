@@ -26,7 +26,7 @@ const emptyValues: BusinessPartnerFormValues = {
   name: '',
   isCustomer: true,
   isSupplier: false,
-  email: '',
+  phone: '',
 };
 
 export function BusinessPartnerFormModal({
@@ -161,19 +161,19 @@ export function BusinessPartnerFormModal({
 
             <Form.Item
               className="business-partner-form-field-wide"
-              label={labels.email}
-              validateStatus={errors.email ? 'error' : undefined}
-              help={errors.email?.message}
+              label={labels.phone}
+              validateStatus={errors.phone ? 'error' : undefined}
+              help={errors.phone?.message}
             >
               <Controller
-                name="email"
+                name="phone"
                 control={control}
                 render={({ field }) => (
                   <Input
                     {...field}
-                    autoComplete="email"
-                    type="email"
-                    placeholder={labels.emailPlaceholder}
+                    autoComplete="tel"
+                    inputMode="tel"
+                    placeholder={labels.phonePlaceholder}
                   />
                 )}
               />

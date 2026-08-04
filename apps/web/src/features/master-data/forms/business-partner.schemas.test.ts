@@ -5,7 +5,7 @@ const validBase = {
   name: 'Müştəri MMC',
   isCustomer: true,
   isSupplier: false,
-  email: '',
+  phone: '',
 };
 
 describe('businessPartnerFormSchema', () => {
@@ -36,18 +36,10 @@ describe('businessPartnerFormSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('rejects invalid email when provided', () => {
+  it('accepts optional phone', () => {
     const result = businessPartnerFormSchema.safeParse({
       ...validBase,
-      email: 'not-an-email',
-    });
-    expect(result.success).toBe(false);
-  });
-
-  it('accepts empty email', () => {
-    const result = businessPartnerFormSchema.safeParse({
-      ...validBase,
-      email: '',
+      phone: '+994501234567',
     });
     expect(result.success).toBe(true);
   });
