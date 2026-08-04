@@ -169,6 +169,45 @@ describe('ProductQuantityService', () => {
     expect(result.quantityAfter).toBe('110.0000');
   });
 
+  it('allows sale cancellation restore when quantity remains negative', async () => {
+    productFindUnique.mockResolvedValue({
+      id: 'product-1',
+      currentQuantity: new Decimal('-20.0000'),
+    });
+
+    const result = await service.applyChange(tx as never, {
+      productId: 'product-1',
+      quantityChange: '10',
+      kind: ProductQuantityKind.CANCELLATION_REVERSAL,
+      createdByUserId: 'user-1',
+      saleId: 'sale-1',
+      reason: 'Sale cancelled',
+      allowNegativeQuantity: false,
+    });
+
+    expect(result.quantityBefore).toBe('-20.0000');
+    expect(result.quantityAfter).toBe('-10.0000');
+  });
+
+  it('still blocks purchase cancellation decrease into negative without permission', async () => {
+    productFindUnique.mockResolvedValue({
+      id: 'product-1',
+      currentQuantity: new Decimal('5.0000'),
+    });
+
+    await expect(
+      service.applyChange(tx as never, {
+        productId: 'product-1',
+        quantityChange: '-10',
+        kind: ProductQuantityKind.CANCELLATION_REVERSAL,
+        createdByUserId: 'user-1',
+        purchaseId: 'purchase-1',
+        reason: 'Purchase cancelled',
+        allowNegativeQuantity: false,
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
   it('throws NotFound when product is missing', async () => {
     productFindUnique.mockResolvedValue(null);
     await expect(

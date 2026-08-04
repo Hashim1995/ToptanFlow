@@ -32,6 +32,12 @@ import {
   ListCashAccountsQueryDto,
 } from './dto/list-cash-accounts-query.dto';
 import { UpdateCashAccountDto } from './dto/update-cash-account.dto';
+import { PushEventKey } from '../push/push-event-keys.js';
+import {
+  buildCashAccountCreatedBody,
+  buildOpeningBalanceCorrectedBody,
+} from '../push/push-message-builder.js';
+import { PushNotificationsService } from '../push/push-notifications.service.js';
 
 const accountSelect = {
   id: true,
@@ -59,6 +65,7 @@ export class CashAccountsService {
     private readonly prisma: PrismaService,
     private readonly numberSequences: NumberSequencesService,
     private readonly cashBalance: CashBalanceService,
+    private readonly pushNotifications: PushNotificationsService,
   ) {}
 
   async create(
@@ -106,13 +113,29 @@ export class CashAccountsService {
           });
         }
 
-        return tx.cashAccount.findUniqueOrThrow({
+        const actorName = await this.pushNotifications.resolveActorName(
+          tx,
+          actorUserId,
+        );
+        const eventId = await this.pushNotifications.enqueueInTransaction(tx, {
+          idempotencyKey: `cash.account.create:${account.id}`,
+          eventKey: PushEventKey.CASH_ACCOUNT_CREATED,
+          actorUserId,
+          body: buildCashAccountCreatedBody({
+            actorName,
+            accountName: account.name,
+          }),
+        });
+
+        const row = await tx.cashAccount.findUniqueOrThrow({
           where: { id: account.id },
           select: accountSelect,
         });
+        return { row, eventId };
       });
 
-      return this.toResponse(created, opening);
+      this.pushNotifications.scheduleDispatch(created.eventId);
+      return this.toResponse(created.row, opening);
     } catch (error) {
       this.rethrowUniqueAccountConflict(error);
       throw error;
@@ -222,18 +245,41 @@ export class CashAccountsService {
 
     try {
       const updated = await this.prisma.$transaction(async (tx) => {
+        let openingEventId: string | null = null;
         if (newOpening !== null) {
           if (!actorUserId) {
             throw new BadRequestException(
               'Actor is required to correct opening balance',
             );
           }
-          await this.applyOpeningBalanceCorrection(
+          const corrected = await this.applyOpeningBalanceCorrection(
             tx,
             id,
             newOpening,
             actorUserId,
           );
+          if (corrected) {
+            const account = await tx.cashAccount.findUniqueOrThrow({
+              where: { id },
+              select: { name: true },
+            });
+            const actorName = await this.pushNotifications.resolveActorName(
+              tx,
+              actorUserId,
+            );
+            openingEventId = await this.pushNotifications.enqueueInTransaction(
+              tx,
+              {
+                idempotencyKey: `cash.opening.correct:${id}:${corrected}`,
+                eventKey: PushEventKey.CASH_OPENING_BALANCE_CORRECTED,
+                actorUserId,
+                body: buildOpeningBalanceCorrectedBody({
+                  actorName,
+                  accountName: account.name,
+                }),
+              },
+            );
+          }
         }
 
         const metadata: Prisma.CashAccountUncheckedUpdateInput = {
@@ -244,22 +290,24 @@ export class CashAccountsService {
             : {}),
         };
 
-        if (Object.keys(metadata).length === 0) {
-          return tx.cashAccount.findUniqueOrThrow({
-            where: { id },
-            select: accountSelect,
-          });
-        }
+        const row =
+          Object.keys(metadata).length === 0
+            ? await tx.cashAccount.findUniqueOrThrow({
+                where: { id },
+                select: accountSelect,
+              })
+            : await tx.cashAccount.update({
+                where: { id },
+                data: metadata,
+                select: accountSelect,
+              });
 
-        return tx.cashAccount.update({
-          where: { id },
-          data: metadata,
-          select: accountSelect,
-        });
+        return { row, openingEventId };
       });
 
+      this.pushNotifications.scheduleDispatch(updated.openingEventId);
       const openings = await this.openingBalancesByAccountIds([id]);
-      return this.toResponse(updated, openings.get(id) ?? new Decimal(0));
+      return this.toResponse(updated.row, openings.get(id) ?? new Decimal(0));
     } catch (error) {
       this.rethrowUniqueAccountConflict(error);
       throw error;
@@ -462,7 +510,7 @@ export class CashAccountsService {
     cashAccountId: string,
     newOpening: Decimal,
     actorUserId: string,
-  ): Promise<void> {
+  ): Promise<string | null> {
     const existing = await tx.cashTransaction.findFirst({
       where: {
         cashAccountId,
@@ -479,7 +527,7 @@ export class CashAccountsService {
     const nextOpening = newOpening.toDecimalPlaces(2);
 
     if (oldOpening.eq(nextOpening)) {
-      return;
+      return null;
     }
 
     const auditNote = `Opening balance corrected from ${oldOpening.toFixed(2)} to ${nextOpening.toFixed(2)}`;
@@ -493,7 +541,7 @@ export class CashAccountsService {
     }
 
     if (nextOpening.gt(0)) {
-      await this.cashBalance.applyPostedTransaction(tx, {
+      const posted = await this.cashBalance.applyPostedTransaction(tx, {
         cashAccountId,
         direction: CashTransactionDirectionValue.IN,
         type: CashTransactionTypeValue.OPENING_BALANCE,
@@ -502,7 +550,11 @@ export class CashAccountsService {
         notes: auditNote,
         createdByUserId: actorUserId,
       });
+      return posted.id;
     }
+
+    // Correction that zeros opening still has a stable idempotency source.
+    return existing?.id ?? `zero:${cashAccountId}:${nextOpening.toFixed(2)}`;
   }
 
   private async openingBalancesByAccountIds(

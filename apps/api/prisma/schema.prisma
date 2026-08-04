@@ -191,6 +191,8 @@ model User {
   createdProductQuantityHistory ProductQuantityHistory[]      @relation("ProductQuantityHistoryCreatedBy")
   createdPartnerDebtMovements   BusinessPartnerDebtMovement[] @relation("PartnerDebtMovementCreatedBy")
   refreshTokens                 RefreshToken[]
+  pushSubscriptions             PushSubscription[]
+  pushNotificationEvents        PushNotificationEvent[]       @relation("PushNotificationEventActor")
 
   @@index([isActive])
   @@index([isSuperAdmin])
@@ -807,4 +809,84 @@ model CashTransaction {
   @@index([cashTransferId])
   @@index([createdByUserId])
   @@index([postedAt])
+}
+
+// ---------------------------------------------------------------------------
+// Web Push (CHANGE-032) — subscriptions + transactional outbox deliveries
+// ---------------------------------------------------------------------------
+
+/// Delivery lifecycle for one push attempt row (event × subscription).
+enum PushDeliveryStatus {
+  PENDING
+  SENT
+  FAILED_RETRYABLE
+  FAILED_FINAL
+  SKIPPED_INVALID_SUBSCRIPTION
+}
+
+/// Browser/device Web Push subscription bound to an authenticated user.
+/// `endpoint` is unique across the system; secrets (p256dh/auth) are never
+/// exposed to other users or logged in full.
+model PushSubscription {
+  id           String    @id @default(uuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint     String    @unique
+  p256dh       String
+  auth         String
+  userAgent    String?
+  deviceLabel  String?
+  isActive     Boolean   @default(true)
+  failureCount Int       @default(0)
+  lastUsedAt   DateTime?
+  disabledAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  deliveries PushDelivery[]
+
+  @@index([userId, isActive])
+  @@index([isActive])
+}
+
+/// One logical business notification event (outbox). Idempotency key prevents
+/// duplicate event creation from retries or double-hooks.
+model PushNotificationEvent {
+  id             String   @id @default(uuid())
+  idempotencyKey String   @unique
+  eventKey       String
+  actorUserId    String
+  actor          User     @relation("PushNotificationEventActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  title          String
+  body           String
+  /// Safe, non-secret metadata only (never notes, JWTs, or subscription secrets).
+  payloadJson    Json?
+  createdAt      DateTime @default(now())
+
+  deliveries PushDelivery[]
+
+  @@index([eventKey])
+  @@index([actorUserId])
+  @@index([createdAt])
+}
+
+/// Per-subscription delivery row for an event. Unique (eventId, subscriptionId)
+/// prevents duplicate delivery records on dispatcher retries.
+model PushDelivery {
+  id                String             @id @default(uuid())
+  eventId           String
+  event             PushNotificationEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  subscriptionId    String
+  subscription      PushSubscription   @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  status            PushDeliveryStatus @default(PENDING)
+  attemptCount      Int                @default(0)
+  lastErrorCategory String?
+  nextAttemptAt     DateTime?
+  sentAt            DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@unique([eventId, subscriptionId])
+  @@index([status, nextAttemptAt])
+  @@index([subscriptionId])
 }

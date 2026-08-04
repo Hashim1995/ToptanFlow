@@ -1,0 +1,42 @@
+# CHANGE-032: Web Push notifications
+
+- **ID:** CHANGE-032
+- **Type:** CHANGE
+- **Title:** Reliable Web Push notifications for completed business operations
+- **Status:** Review
+- **Trigger:** Owner request for production-ready Web Push (PWA open/background/closed) with outbox reliability on Vercel serverless
+- **Urgency:** High
+- **Affected epics / stories / tasks:** Related to planned EPIC-018 (alerts/notifications); implemented as unplanned CHANGE because EPIC-018 remains Planned and Yellow-Card decisions are out of scope
+- **Why not in the original plan:** Web Push delivery to installed PWAs was not activated as a current story; EPIC-018 covers broader alert channels
+- **Scope:**
+  - Prisma push subscription + outbox event/delivery models and migration
+  - Authenticated subscription API + protected dispatch/retry endpoint
+  - VAPID env configuration (optional locally; required to send)
+  - Emit short Azerbaijani notifications after canonical business completion points
+  - Service Worker `push` / `notificationclick` handlers without deep linking
+  - Account-settings notification enable/disable UX (explicit permission only)
+  - Backend and frontend tests
+- **Out of scope:**
+  - In-app notification center / Telegram
+  - Deep-link navigation on notification click
+  - Sale/Purchase returns (deferred)
+  - FCM
+  - Changing cash/sale/purchase/stock business calculations
+- **Risks:** Browser/OS push delivery is at-most-once at the application layer only; external push services may still duplicate rarely. iOS requires Home Screen install.
+- **Acceptance criteria:**
+  - Actor never receives own notification; other active subscribed users do
+  - Business txn never fails solely because push failed
+  - Outbox + unique delivery rows prevent duplicate event/delivery creation
+  - Expired subscriptions (404/410) disabled; transient failures retryable via protected dispatcher
+  - Permission requested only after explicit user action
+- **Impact on current work:** none (no active story)
+- **Roadmap impact:** Advances notification capability ahead of EPIC-018 without resolving EPIC-018 Yellow Cards
+- **Result:** Implemented transactional outbox Web Push end-to-end (API + PWA SW + Account Settings). Awaiting owner env/migration cutover and manual device matrix.
+- **Follow-up actions:** Set Vercel env vars + cron; apply migration before enable; owner manual verification matrix
+- **Evidence:**
+  - Migration `20260804190000_web_push_outbox`
+  - Module `apps/api/src/push/**`
+  - SW `apps/web/src/sw.ts` (injectManifest)
+  - API tests: 136 passed (push + cash + sales + purchases + products suites)
+  - Web unit: push-support.test.ts (3)
+  - API build + Vite production build passed

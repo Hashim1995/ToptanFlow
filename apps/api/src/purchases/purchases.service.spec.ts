@@ -176,6 +176,11 @@ describe('PurchasesService', () => {
       productQuantity as unknown as ProductQuantityService,
       partnerDebt as unknown as PartnerDebtBalanceService,
       cashBalance as never,
+      {
+        resolveActorName: jest.fn().mockResolvedValue('Murad'),
+        enqueueInTransaction: jest.fn().mockResolvedValue('evt-1'),
+        scheduleDispatch: jest.fn(),
+      } as never,
     );
   });
 

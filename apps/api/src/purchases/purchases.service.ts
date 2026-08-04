@@ -38,6 +38,13 @@ import { PostPurchaseDto } from './dto/post-purchase.dto';
 import { PurchaseListItemResponseDto } from './dto/purchase-list-item-response.dto';
 import { PurchaseResponseDto } from './dto/purchase-response.dto';
 import { UpdatePurchaseDto } from './dto/update-purchase.dto';
+import { PushEventKey } from '../push/push-event-keys.js';
+import {
+  buildPurchaseCancelledBody,
+  buildPurchaseCreatedBody,
+  buildPurchasePostedBody,
+} from '../push/push-message-builder.js';
+import { PushNotificationsService } from '../push/push-notifications.service.js';
 
 type CalculatedLine = {
   receivedQuantity: Decimal;
@@ -349,13 +356,14 @@ export class PurchasesService {
     private readonly productQuantity: ProductQuantityService,
     private readonly partnerDebt: PartnerDebtBalanceService,
     private readonly cashBalance: CashBalanceService,
+    private readonly pushNotifications: PushNotificationsService,
   ) {}
 
   async create(
     userId: string,
     dto: CreatePurchaseDto,
   ): Promise<PurchaseResponseDto> {
-    const purchaseId = await this.prisma.$transaction(async (tx) => {
+    const created = await this.prisma.$transaction(async (tx) => {
       await this.assertValidPartner(tx, dto.partnerId);
       const products = await this.loadAndValidateProducts(tx, dto.items);
       const calculated = recalculateLines(dto.items, dto.discountAmount);
@@ -394,9 +402,22 @@ export class PurchasesService {
         },
         select: { id: true },
       });
-      return purchase.id;
+
+      const actorName = await this.pushNotifications.resolveActorName(
+        tx,
+        userId,
+      );
+      const eventId = await this.pushNotifications.enqueueInTransaction(tx, {
+        idempotencyKey: `purchase.create:${purchase.id}`,
+        eventKey: PushEventKey.PURCHASE_CREATED,
+        actorUserId: userId,
+        body: buildPurchaseCreatedBody({ actorName }),
+      });
+
+      return { purchaseId: purchase.id, eventId };
     });
-    return this.findOne(purchaseId);
+    this.pushNotifications.scheduleDispatch(created.eventId);
+    return this.findOne(created.purchaseId);
   }
 
   async list(
@@ -551,7 +572,7 @@ export class PurchasesService {
     userId: string,
     dto?: PostPurchaseDto,
   ): Promise<PurchaseResponseDto> {
-    await this.prisma.$transaction(async (tx) => {
+    const postResult = await this.prisma.$transaction(async (tx) => {
       const purchase = await tx.purchase.findUnique({
         where: { id },
         include: { items: true },
@@ -666,7 +687,24 @@ export class PurchasesService {
           relatedDocumentId: id,
         });
       }
+
+      const actorName = await this.pushNotifications.resolveActorName(
+        tx,
+        userId,
+      );
+      const eventId = await this.pushNotifications.enqueueInTransaction(tx, {
+        idempotencyKey: `purchase.post:${id}`,
+        eventKey: PushEventKey.PURCHASE_POSTED,
+        actorUserId: userId,
+        body: buildPurchasePostedBody({
+          actorName,
+          documentNumber: purchase.documentNumber,
+          amount: totals.totalAmount.toFixed(2),
+        }),
+      });
+      return { eventId };
     });
+    this.pushNotifications.scheduleDispatch(postResult.eventId);
     return this.findOne(id);
   }
 
@@ -679,7 +717,7 @@ export class PurchasesService {
     if (reason.length === 0) {
       throw new BadRequestException('Cancellation reason is required');
     }
-    await this.prisma.$transaction(async (tx) => {
+    const cancelResult = await this.prisma.$transaction(async (tx) => {
       const purchase = await tx.purchase.findUnique({
         where: { id },
         include: { items: true },
@@ -757,7 +795,23 @@ export class PurchasesService {
         relatedDocumentId: id,
         reversalOfId: original?.id,
       });
+
+      const actorName = await this.pushNotifications.resolveActorName(
+        tx,
+        userId,
+      );
+      const eventId = await this.pushNotifications.enqueueInTransaction(tx, {
+        idempotencyKey: `purchase.cancel:${id}`,
+        eventKey: PushEventKey.PURCHASE_CANCELLED,
+        actorUserId: userId,
+        body: buildPurchaseCancelledBody({
+          actorName,
+          documentNumber: purchase.documentNumber,
+        }),
+      });
+      return { eventId };
     });
+    this.pushNotifications.scheduleDispatch(cancelResult.eventId);
     return this.findOne(id);
   }
 

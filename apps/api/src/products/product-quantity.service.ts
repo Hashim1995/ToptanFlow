@@ -36,9 +36,11 @@ export type ApplyProductQuantityChangeInput = {
   relatedDocumentType?: string | null;
   relatedDocumentId?: string | null;
   /**
-   * When true (ADR-025 v1: all active users), a decrease that would leave
-   * quantity &lt; 0 is allowed if `reason` is non-empty. When false, it is
-   * blocked even with a reason.
+   * When true (ADR-025 v1: all active users), a *decrease* that would leave
+   * quantity &lt; 0 is allowed if `reason` is non-empty. When false, that
+   * decrease is blocked even with a reason. Increases that leave quantity
+   * still negative (e.g. sale cancellation restoring stock into an existing
+   * deficit) do not require this flag — they improve quantity, not worsen it.
    */
   allowNegativeQuantity: boolean;
 };
@@ -117,7 +119,11 @@ export class ProductQuantityService {
       this.assertNonEmptyReason(input.reason);
     }
 
-    if (quantityAfter.isNegative()) {
+    // Only decreases need negative-quantity authorization (ADR-027 / ADR-029).
+    // An increase that leaves quantity still negative (sale cancel into an
+    // existing deficit) must not be blocked — otherwise posted sales that
+    // previously went negative cannot be cancelled.
+    if (change.isNegative() && quantityAfter.isNegative()) {
       if (!input.allowNegativeQuantity) {
         throw new ForbiddenException(
           'Negative product quantity is not permitted without authorization',

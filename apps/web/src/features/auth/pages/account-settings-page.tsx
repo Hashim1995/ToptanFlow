@@ -23,6 +23,7 @@ import { appRequiredMark } from '../../../shared/ui/form-required-mark';
 import { changePasswordRequest } from '../api/auth.api';
 import { useAuth } from '../use-auth';
 import { AUTH_LABELS } from '../ui/labels';
+import { PushNotificationSettingsCard } from '../ui/push-notification-settings-card';
 
 const { Title, Paragraph } = Typography;
 
@@ -205,6 +206,12 @@ export function AccountSettingsPage() {
                 {AUTH_LABELS.changePasswordSubmit}
               </Button>
             </Form>
+          </Card>
+        </Col>
+
+        <Col xs={24}>
+          <Card title={AUTH_LABELS.pushTitle}>
+            <PushNotificationSettingsCard />
           </Card>
         </Col>
       </Row>

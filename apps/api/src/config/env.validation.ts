@@ -27,8 +27,7 @@ export enum NodeEnv {
 }
 
 /** Default local-only JWT secret; must never be used when NODE_ENV=production. */
-export const DEV_JWT_ACCESS_SECRET =
-  'dev-only-jwt-access-secret-change-me';
+export const DEV_JWT_ACCESS_SECRET = 'dev-only-jwt-access-secret-change-me';
 
 /**
  * Declares every environment variable the backend requires at startup, and
@@ -108,6 +107,40 @@ export class EnvironmentVariables {
   @IsString()
   @IsNotEmpty()
   REFRESH_COOKIE_NAME = 'refresh_token';
+
+  /**
+   * Web Push VAPID public key (CHANGE-032). Optional locally — push sending
+   * is disabled when incomplete. Production should set all three VAPID vars
+   * before enabling client subscribe.
+   */
+  @IsOptional()
+  @IsString()
+  WEB_PUSH_VAPID_PUBLIC_KEY = '';
+
+  @IsOptional()
+  @IsString()
+  WEB_PUSH_VAPID_PRIVATE_KEY = '';
+
+  /** Contact for VAPID, e.g. mailto:admin@toptanflow.az */
+  @IsOptional()
+  @IsString()
+  WEB_PUSH_CONTACT = '';
+
+  /**
+   * Shared secret for POST /push/dispatch (Vercel Cron / internal retry).
+   * Required to authorize the dispatcher; leave empty to reject all calls.
+   */
+  @IsOptional()
+  @IsString()
+  PUSH_DISPATCH_SECRET = '';
+
+  /**
+   * Optional Vercel Cron shared secret. Used as a fallback for
+   * GET/POST /push/dispatch Authorization Bearer validation.
+   */
+  @IsOptional()
+  @IsString()
+  CRON_SECRET = '';
 }
 
 /**

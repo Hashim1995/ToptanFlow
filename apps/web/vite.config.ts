@@ -22,6 +22,9 @@ export default defineConfig(({ command, mode }) => {
     plugins: [
       react(),
       VitePWA({
+        strategies: 'injectManifest',
+        srcDir: 'src',
+        filename: 'sw.ts',
         registerType: 'prompt',
         injectRegister: false,
         includeAssets: [
@@ -64,15 +67,11 @@ export default defineConfig(({ command, mode }) => {
             },
           ],
         },
-        workbox: {
+        injectManifest: {
           // Precache hashed frontend assets + shell. Never cache API responses.
           globPatterns: [
             '**/*.{js,css,html,ico,png,svg,woff,woff2,webmanifest}',
           ],
-          navigateFallback: 'index.html',
-          navigateFallbackDenylist: [/^\/api/],
-          cleanupOutdatedCaches: true,
-          // No runtimeCaching — API is cross-origin and must never be cached.
         },
         devOptions: {
           enabled: false,
