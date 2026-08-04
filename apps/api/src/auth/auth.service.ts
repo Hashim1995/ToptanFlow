@@ -1,10 +1,16 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import type { CookieOptions, Response } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
-import { verifyPassword } from '../users/password.util';
+import { hashPassword, verifyPassword } from '../users/password.util';
 import { AuthTokensResponseDto } from './dto/auth-tokens-response.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { ChangePasswordResponseDto } from './dto/change-password-response.dto';
 import { LoginDto } from './dto/login.dto';
 import { generateRefreshToken, hashRefreshToken } from './refresh-token.util';
 
@@ -121,6 +127,63 @@ export class AuthService {
 
     this.clearRefreshCookie(res);
     return { ok: true };
+  }
+
+  /**
+   * Self-service password change for the authenticated user.
+   * Verifies current password, stores Argon2id hash, revokes all refresh
+   * tokens, clears the refresh cookie, and requires re-login.
+   */
+  async changePassword(
+    userId: string,
+    dto: ChangePasswordDto,
+    res: Response,
+  ): Promise<ChangePasswordResponseDto> {
+    if (dto.newPassword === dto.currentPassword) {
+      throw new BadRequestException(
+        'newPassword must be different from currentPassword',
+      );
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        passwordHash: true,
+        isActive: true,
+      },
+    });
+
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const currentOk = await verifyPassword(
+      user.passwordHash,
+      dto.currentPassword,
+    );
+    if (!currentOk) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const passwordHash = await hashPassword(dto.newPassword);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: user.id },
+        data: { passwordHash },
+      });
+      await tx.refreshToken.updateMany({
+        where: {
+          userId: user.id,
+          revokedAt: null,
+        },
+        data: { revokedAt: new Date() },
+      });
+    });
+
+    this.clearRefreshCookie(res);
+    return { ok: true, requiresReauth: true };
   }
 
   private async issueSession(

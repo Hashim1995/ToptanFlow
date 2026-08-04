@@ -1,4 +1,4 @@
-import { UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import type { Response } from 'express';
@@ -30,6 +30,7 @@ describe('AuthService', () => {
   const prisma = {
     user: {
       findUnique: jest.fn(),
+      update: jest.fn(),
     },
     refreshToken: {
       create: jest.fn(),
@@ -37,6 +38,7 @@ describe('AuthService', () => {
       update: jest.fn(),
       updateMany: jest.fn(),
     },
+    $transaction: jest.fn(),
   };
 
   const jwtService = {
@@ -67,6 +69,11 @@ describe('AuthService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (passwordUtil.verifyPassword as jest.Mock).mockResolvedValue(true);
+    (passwordUtil.hashPassword as jest.Mock).mockResolvedValue('hashed:new');
+    prisma.$transaction.mockImplementation(
+      async (callback: (tx: typeof prisma) => Promise<unknown>) =>
+        callback(prisma),
+    );
     service = new AuthService(
       prisma as unknown as PrismaService,
       jwtService as unknown as JwtService,
@@ -197,6 +204,70 @@ describe('AuthService', () => {
         expect.objectContaining({ httpOnly: true }),
       );
       expect(result).toEqual({ ok: true });
+    });
+  });
+
+  describe('changePassword', () => {
+    const dto = {
+      currentPassword: 'ChangeMe123!',
+      newPassword: 'NewPass123!',
+      newPasswordConfirmation: 'NewPass123!',
+    };
+
+    it('rejects wrong current password', async () => {
+      prisma.user.findUnique.mockResolvedValue(user);
+      (passwordUtil.verifyPassword as jest.Mock).mockResolvedValue(false);
+
+      await expect(
+        service.changePassword(userId, dto, res),
+      ).rejects.toBeInstanceOf(UnauthorizedException);
+
+      expect(passwordUtil.hashPassword).not.toHaveBeenCalled();
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+
+    it('rejects when new password equals current password', async () => {
+      await expect(
+        service.changePassword(
+          userId,
+          {
+            currentPassword: 'SamePass1!',
+            newPassword: 'SamePass1!',
+            newPasswordConfirmation: 'SamePass1!',
+          },
+          res,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+
+      expect(prisma.user.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('updates hash, revokes all refresh tokens, and clears cookie', async () => {
+      prisma.user.findUnique.mockResolvedValue(user);
+      prisma.user.update.mockResolvedValue({ id: userId });
+      prisma.refreshToken.updateMany.mockResolvedValue({ count: 2 });
+
+      const result = await service.changePassword(userId, dto, res);
+
+      expect(passwordUtil.verifyPassword).toHaveBeenCalledWith(
+        'stored-hash',
+        'ChangeMe123!',
+      );
+      expect(passwordUtil.hashPassword).toHaveBeenCalledWith('NewPass123!');
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { id: userId },
+        data: { passwordHash: 'hashed:new' },
+      });
+      expect(prisma.refreshToken.updateMany).toHaveBeenCalledWith({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: expect.any(Date) as Date },
+      });
+      expect(clearCookie).toHaveBeenCalledWith(
+        'refresh_token',
+        expect.objectContaining({ httpOnly: true }),
+      );
+      expect(result).toEqual({ ok: true, requiresReauth: true });
+      expect(JSON.stringify(result)).not.toMatch(/password|hash/i);
     });
   });
 });

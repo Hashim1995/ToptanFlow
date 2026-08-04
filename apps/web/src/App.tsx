@@ -3,6 +3,7 @@ import { AppShellLayout } from './app/app-shell-layout';
 import { RequireAuth } from './features/auth/require-auth';
 import { RequireSuperAdmin } from './features/auth/require-super-admin';
 import { LoginPage } from './features/auth/pages/login-page';
+import { AccountSettingsPage } from './features/auth/pages/account-settings-page';
 import { CashAccountDetailPage } from './features/cash/pages/cash-account-detail-page';
 import { CashAccountsPage } from './features/cash/pages/cash-accounts-page';
 import { CashReportsPage } from './features/cash/pages/cash-reports-page';
@@ -56,6 +57,7 @@ function App() {
               path="cash/expense-categories"
               element={<ExpenseCategoriesPage />}
             />
+            <Route path="account" element={<AccountSettingsPage />} />
             <Route element={<RequireSuperAdmin />}>
               <Route path="users" element={<UsersPage />} />
             </Route>

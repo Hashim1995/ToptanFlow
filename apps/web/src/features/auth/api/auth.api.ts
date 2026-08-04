@@ -31,3 +31,15 @@ export async function logoutRequest(): Promise<{ ok: true }> {
   const { data } = await httpClient.post<{ ok: true }>('/auth/logout');
   return data;
 }
+
+export async function changePasswordRequest(input: {
+  currentPassword: string;
+  newPassword: string;
+  newPasswordConfirmation: string;
+}): Promise<{ ok: true; requiresReauth: true }> {
+  const { data } = await httpClient.post<{ ok: true; requiresReauth: true }>(
+    '/auth/change-password',
+    input,
+  );
+  return data;
+}
