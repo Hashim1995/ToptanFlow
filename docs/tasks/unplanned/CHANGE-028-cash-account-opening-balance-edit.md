@@ -1,0 +1,42 @@
+# CHANGE-028: Super Admin edit of Cash Account opening balance
+
+- **ID:** CHANGE-028
+- **Type:** CHANGE
+- **Title:** Super Admin edit of Cash Account opening balance
+- **Status:** Done
+- **Trigger:** Owner requested that Super Admin may correct a Cash Account opening balance after creation when the value was forgotten or entered incorrectly, without recreating ordinary inflow/outflow history.
+- **Urgency:** High
+- **Affected epics / stories / tasks:** EPIC-011 / US-024 Cash Accounts; ADR-033; ADR-035; ADR-039 / ADR-040 Super Admin boundary.
+- **Why not in the original plan:** Opening balance was create-only; ADR-033 rejected silent in-place rewrite and required reversal/adjustment for later corrections, but no Super Admin correction UI/API was delivered.
+- **Confirmed owner decisions:**
+  - Only Super Admin may edit opening balance of an existing Cash Account (UI and API).
+  - Opening balance appears on the account Edit form for Super Admin only; ordinary users must not see or modify it.
+  - Create flow is unchanged.
+  - Existing money/decimal validation and formatting are reused; empty/NaN/negative values are rejected (negative opening remains forbidden).
+  - Ordinary cash transaction history must not be rebuilt; current balance must remain consistent with opening + inflows − outflows.
+  - No separate Audit History entity exists; correction must remain auditable via Cash Transaction history (old/new amounts, actor, timestamps).
+- **Scope:** Update DTO/service/controller authorization; expose current opening balance on account responses; Super Admin edit UI; unit tests; ADR-033 / invariants / ADR-039 scope note; planning docs.
+- **Out of scope:** General RBAC; allowing ordinary users to change opening balance; mutating posted inflow/outflow rows; allowing negative opening balances; changing Cash In/Out/Expense/Transfer posting logic; introducing a full Audit History module.
+- **Approved resolution (2026-08-04):** Super Admin may set opening balance on `PATCH /cash-accounts/:id`. Correction cancels the active `OPENING_BALANCE` movement (immutable reversal per ADR-035) when one exists, then posts a new `OPENING_BALANCE` when the new amount is greater than zero. Other historical movements are untouched. `currentBalance` continues to be maintained only through Cash Transactions (ADR-033).
+- **Acceptance criteria:**
+  - Super Admin can edit opening balance from the Edit form; ordinary users do not see the field and receive `SUPERADMIN_REQUIRED` if they send it to the API.
+  - Updated balance reflects the correction; existing inflows/outflows remain unchanged.
+  - Create Cash Account flow still works.
+  - Cancelled original + reversal + optional new opening provide old amount, new amount, actor, and timestamps.
+  - Scoped lint, type-check, tests, and production builds pass once at end of task.
+- **Impact on current work:** Standalone owner-approved unplanned change; US-024 remains in Review and must not regress.
+- **Roadmap impact:** Narrow extension of Super Admin Cash Account administration; does not activate US-050 permissions.
+- **Result:** Super Admin opening-balance correction is live end-to-end. Account responses expose `openingBalance` from the active posted `OPENING_BALANCE` amount. Edit form shows the field only to Super Admin. API rejects ordinary-user attempts with `SUPERADMIN_REQUIRED`. Correction uses reverse+repost of opening only; create flow and ordinary Cash operations are unchanged. No schema migration.
+- **Follow-up actions:** Owner visual acceptance of Super Admin edit on an existing account with prior movements.
+- **Evidence:**
+  - ADR-033 / ADR-039 / invariants Cash amended for CHANGE-028.
+  - API: `UpdateCashAccountDto.openingBalance`, Super Admin gate, reverse+repost correction, `openingBalance` on responses.
+  - Web: Super Admin-only edit field, required non-negative validation, submit payload.
+  - Scoped API/web ESLint — passed.
+  - API `tsc -p tsconfig.build.json --noEmit` — passed.
+  - `cash-accounts.service.spec` — 16 tests passed (incl. Super Admin correction / ordinary-user reject).
+  - Web unit test `responsible-cash-account.test.ts` — passed.
+  - API nest production build — passed.
+  - Vite production bundle — passed (existing chunk-size warning only).
+  - Web full `tsc --noEmit -p tsconfig.app.json` still reports pre-existing Dayjs range errors in `business-partner-movement-report-modal.tsx` (outside CHANGE-028).
+  - No Prisma migration required.

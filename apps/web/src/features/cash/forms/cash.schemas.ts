@@ -21,6 +21,15 @@ const moneyOptionalNonNegative = z
     message: CASH_LABELS.validation.amountFormat,
   });
 
+/** Required non-negative money including zero (Super Admin opening edit). */
+const moneyNonNegativeRequired = z
+  .string()
+  .trim()
+  .min(1, { message: CASH_LABELS.validation.amountRequired })
+  .regex(MONEY_PATTERN, {
+    message: CASH_LABELS.validation.amountFormat,
+  });
+
 export const cashAccountFormSchema = z.object({
   name: z
     .string()
@@ -32,6 +41,10 @@ export const cashAccountFormSchema = z.object({
   responsibleUserId: z
     .string()
     .uuid({ message: CASH_LABELS.validation.responsibleUserRequired }),
+});
+
+export const cashAccountEditSuperAdminFormSchema = cashAccountFormSchema.extend({
+  openingBalance: moneyNonNegativeRequired,
 });
 
 export type CashAccountFormValues = z.infer<typeof cashAccountFormSchema>;

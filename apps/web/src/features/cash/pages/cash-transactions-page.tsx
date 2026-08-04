@@ -32,7 +32,7 @@ import {
 import { formatMoney } from "../../../shared/money/format-money";
 import { formatDateTime } from "../../../shared/ui/format";
 import { ICON_SIZE, phIcon } from "../../../shared/ui/ph-icon";
-import { ResponsiveRangePicker } from "../../../shared/ui/responsive-date-pickers";
+import { ResponsiveDatePicker } from "../../../shared/ui/responsive-date-pickers";
 import { CodeText, MoneyCell } from "../../../shared/ui/table-cells";
 import { FilterBar, FilterField } from "../../master-data/ui/list-toolbar";
 import { PageHeader } from "../../master-data/ui/page-header";
@@ -57,12 +57,14 @@ type FilterDraft = {
   type?: string;
   direction?: CashTxnDirection;
   status?: CashTxnStatus;
-  dateRange: [Dayjs | null, Dayjs | null] | null;
+  dateFrom: Dayjs | null;
+  dateTo: Dayjs | null;
 };
 
 const EMPTY_FILTERS: FilterDraft = {
   transactionNumber: "",
-  dateRange: null,
+  dateFrom: null,
+  dateTo: null,
 };
 
 function transactionTypeLabel(type: string): string {
@@ -108,8 +110,8 @@ export function CashTransactionsPage() {
       type: draft.type,
       direction: draft.direction,
       status: draft.status,
-      dateFrom: dateOnlyPickerToApi(draft.dateRange?.[0]) || undefined,
-      dateTo: dateOnlyPickerToApi(draft.dateRange?.[1]) || undefined,
+      dateFrom: dateOnlyPickerToApi(draft.dateFrom) || undefined,
+      dateTo: dateOnlyPickerToApi(draft.dateTo) || undefined,
     });
     setPage(1);
   }
@@ -280,12 +282,27 @@ export function CashTransactionsPage() {
                 }
               />
             </FilterField>
-            <FilterField label={CASH_LABELS.filters.dateRange}>
-              <ResponsiveRangePicker
-                value={draft.dateRange}
+            <FilterField label={CASH_LABELS.filters.dateFrom}>
+              <ResponsiveDatePicker
+                allowClear
+                value={draft.dateFrom}
                 format={DATE_DISPLAY_FORMAT}
-                onChange={(dateRange) =>
-                  setDraft((current) => ({ ...current, dateRange }))
+                placeholder={CASH_LABELS.filters.dateFrom}
+                style={{ width: "100%" }}
+                onChange={(dateFrom) =>
+                  setDraft((current) => ({ ...current, dateFrom }))
+                }
+              />
+            </FilterField>
+            <FilterField label={CASH_LABELS.filters.dateTo}>
+              <ResponsiveDatePicker
+                allowClear
+                value={draft.dateTo}
+                format={DATE_DISPLAY_FORMAT}
+                placeholder={CASH_LABELS.filters.dateTo}
+                style={{ width: "100%" }}
+                onChange={(dateTo) =>
+                  setDraft((current) => ({ ...current, dateTo }))
                 }
               />
             </FilterField>

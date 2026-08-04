@@ -81,18 +81,18 @@
 }
 
 .business-partner-form-section {
-  padding: 15px;
+  padding: 12px;
   background: #fbfcfe;
   border: 1px solid #e8edf3;
   border-radius: 12px;
 }
 
 .business-partner-form-section + .business-partner-form-section {
-  margin-top: 13px;
+  margin-top: 12px;
 }
 
 .business-partner-form-section-heading {
-  margin-bottom: 13px;
+  margin-bottom: 10px;
   color: #334155;
   font-size: 12px;
   font-weight: 750;
@@ -107,7 +107,7 @@
 
 .business-partner-form .ant-form-item {
   min-width: 0;
-  margin-bottom: 15px;
+  margin-bottom: 12px;
 }
 
 .business-partner-form .ant-form-item:last-child {

@@ -26,6 +26,23 @@ export function AppProviders({ children }: AppProvidersProps) {
             algorithm: theme.compactAlgorithm,
           }}
           locale={azAZ}
+          modal={{
+            focusable: {
+              // Panel focus only — do not trap-focus into the first input (CHANGE-029).
+              trap: false,
+              focusTriggerAfterClose: true,
+            },
+          }}
+          drawer={{
+            focusable: {
+              trap: false,
+              focusTriggerAfterClose: true,
+            },
+          }}
+          form={{
+            // Avoid scrolling/focusing the first invalid control (opens mobile keyboard).
+            scrollToFirstError: false,
+          }}
         >
           <AuthProvider>{children}</AuthProvider>
         </ConfigProvider>

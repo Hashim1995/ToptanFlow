@@ -5,7 +5,6 @@ import {
   Card,
   Grid,
   Input,
-  Modal,
   Pagination,
   Space,
   Table,
@@ -13,6 +12,7 @@ import {
   Typography,
   message,
 } from "antd";
+import { confirmWithoutAutofocus } from "../../../shared/ui/confirm-without-autofocus";
 import type { ColumnsType } from "antd/es/table";
 import {
   PencilSimple,
@@ -209,7 +209,7 @@ export function UsersPage() {
       message.warning(USERS_LABELS.cannotDeactivateSuperAdmin);
       return;
     }
-    Modal.confirm({
+    confirmWithoutAutofocus({
       className: "app-mobile-modal",
       title: USERS_LABELS.deactivateConfirm,
       okText: USERS_LABELS.confirm,
@@ -227,7 +227,7 @@ export function UsersPage() {
   }
 
   function confirmActivate(user: AppUser) {
-    Modal.confirm({
+    confirmWithoutAutofocus({
       className: "app-mobile-modal",
       title: USERS_LABELS.activateConfirm,
       okText: USERS_LABELS.confirm,

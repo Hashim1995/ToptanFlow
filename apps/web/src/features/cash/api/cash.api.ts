@@ -15,6 +15,8 @@ export type CashAccount = {
   name: string;
   code: string;
   currentBalance: string;
+  /** Active posted OPENING_BALANCE amount; Super Admin may correct via PATCH. */
+  openingBalance: string;
   notes: string | null;
   responsibleUserId: string;
   responsibleUserName: string;
@@ -47,6 +49,8 @@ export type UpdateCashAccountInput = {
   name?: string;
   notes?: string | null;
   responsibleUserId?: string;
+  /** Super Admin only — corrects opening balance (CHANGE-028). */
+  openingBalance?: string;
 };
 
 export type TotalCompanyCash = {

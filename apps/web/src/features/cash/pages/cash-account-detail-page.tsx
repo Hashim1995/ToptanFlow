@@ -7,7 +7,6 @@ import {
   Empty,
   Grid,
   Input,
-  Modal,
   Pagination,
   Select,
   Skeleton,
@@ -17,6 +16,7 @@ import {
   Typography,
   message,
 } from "antd";
+import { confirmWithoutAutofocus } from "../../../shared/ui/confirm-without-autofocus";
 import type { ColumnsType } from "antd/es/table";
 import {
   ArrowDown,
@@ -149,7 +149,7 @@ export function CashAccountDetailPage() {
     let reason = "";
     const effects = cancelEffectsForType(txn.type);
     const isCashIn = txn.type === "CUSTOMER_RECEIPT";
-    Modal.confirm({
+    confirmWithoutAutofocus({
       className: "cash-confirm-modal cash-cancel-transaction-confirm",
       centered: true,
       title: CASH_LABELS.confirmations.cancelTxnTitle,
@@ -186,7 +186,6 @@ export function CashAccountDetailPage() {
           <Input.TextArea
             className="cash-confirm-reason"
             rows={3}
-            autoFocus
             maxLength={2000}
             placeholder={CASH_LABELS.fields.cancelReasonPlaceholder}
             onChange={(e) => {
@@ -225,9 +224,12 @@ export function CashAccountDetailPage() {
         id: data.id,
         input: {
           name: values.name,
-          notes: values.notes || null,
+          // CHANGE-030: notes omitted so edit does not clear stored values.
           ...(user?.isSuperAdmin
-            ? { responsibleUserId: values.responsibleUserId }
+            ? {
+                responsibleUserId: values.responsibleUserId,
+                openingBalance: values.openingBalance,
+              }
             : {}),
         },
       });

@@ -7,7 +7,6 @@ import {
   Empty,
   Grid,
   Input,
-  Modal,
   Pagination,
   Skeleton,
   Space,
@@ -17,6 +16,7 @@ import {
   Typography,
   message,
 } from "antd";
+import { confirmWithoutAutofocus } from "../../../shared/ui/confirm-without-autofocus";
 import type { ColumnsType } from "antd/es/table";
 import type { MenuProps } from "antd";
 import {
@@ -198,7 +198,7 @@ export function ProductCategoriesPage() {
   }
 
   function confirmDeactivate(category: ProductCategory) {
-    Modal.confirm({
+    confirmWithoutAutofocus({
       className: "app-mobile-modal reference-confirm-modal",
       centered: true,
       title: labels.deactivateConfirm,
@@ -219,7 +219,7 @@ export function ProductCategoriesPage() {
   }
 
   function confirmActivate(category: ProductCategory) {
-    Modal.confirm({
+    confirmWithoutAutofocus({
       className: "app-mobile-modal reference-confirm-modal",
       centered: true,
       title: labels.activateConfirm,

@@ -12,13 +12,14 @@ import {
   Typography,
   message,
 } from "antd";
+import { confirmWithoutAutofocus } from "../../../shared/ui/confirm-without-autofocus";
 import { useQuery } from "@tanstack/react-query";
 import dayjs, { type Dayjs } from "dayjs";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { mapApiError } from "../../../api/map-api-error";
-import { ResponsiveRangePicker } from "../../../shared/ui/responsive-date-pickers";
+import { ResponsiveDatePicker } from "../../../shared/ui/responsive-date-pickers";
 import type {
   BusinessPartner,
   BusinessPartnerMovementReportQuery,
@@ -46,15 +47,11 @@ const OPERATION_TYPES: PartnerMovementOperationType[] = [
 const STATUSES: PartnerMovementStatus[] = ["DRAFT", "POSTED", "CANCELLED"];
 
 const schema = z.object({
-  dateRange: z
-    .tuple([
-      z
-        .custom<Dayjs>((value) => dayjs.isDayjs(value) && value.isValid())
-        .nullable(),
-      z
-        .custom<Dayjs>((value) => dayjs.isDayjs(value) && value.isValid())
-        .nullable(),
-    ])
+  dateFrom: z
+    .custom<Dayjs>((value) => dayjs.isDayjs(value) && value.isValid())
+    .nullable(),
+  dateTo: z
+    .custom<Dayjs>((value) => dayjs.isDayjs(value) && value.isValid())
     .nullable(),
   operationTypes: z
     .array(z.enum(["PURCHASE", "SALE", "CASH_IN", "CASH_OUT"]))
@@ -115,9 +112,11 @@ export function BusinessPartnerMovementReportModal({
     handleSubmit,
     formState: { errors },
   } = useForm<FormValues>({
+    shouldFocusError: false,
     resolver: zodResolver(schema),
     defaultValues: {
-      dateRange: null,
+      dateFrom: null,
+      dateTo: null,
       operationTypes: OPERATION_TYPES,
       statuses: STATUSES,
       createdByUserIds: [],
@@ -153,7 +152,7 @@ export function BusinessPartnerMovementReportModal({
       onClose();
       return;
     }
-    Modal.confirm({
+    confirmWithoutAutofocus({
       title: "Report hazırlanmasını dayandırırsınız?",
       content:
         "Report hazırlanır və ya yükləmə tamamlanmayıb. Modalı bağlasanız əməliyyat yarımçıq qala bilər.",
@@ -173,7 +172,8 @@ export function BusinessPartnerMovementReportModal({
     abortControllerRef.current = controller;
     setActiveFormat(values.format);
     const query: BusinessPartnerMovementReportQuery = {
-      dateRange: values.dateRange,
+      dateFrom: values.dateFrom,
+      dateTo: values.dateTo,
       operationTypes: values.operationTypes,
       statuses: values.statuses,
       createdByUserIds: values.createdByUserIds,
@@ -305,27 +305,50 @@ export function BusinessPartnerMovementReportModal({
       ) : null}
 
       <Form layout="vertical" className="partner-report-form">
-        <Controller
-          name="dateRange"
-          control={control}
-          render={({ field }) => (
-            <Form.Item
-              label="Tarix aralığı"
-              help={errors.dateRange?.message}
-              validateStatus={errors.dateRange ? "error" : undefined}
-            >
-              <ResponsiveRangePicker
-                value={field.value}
-                onChange={field.onChange}
-                placeholder={["Başlanğıc tarixi", "Bitmə tarixi"]}
-                format="DD.MM.YYYY"
-                allowClear
-                allowEmpty={[true, true]}
-                disabled={busy}
-              />
-            </Form.Item>
-          )}
-        />
+        <div className="partner-report-date-fields">
+          <Controller
+            name="dateFrom"
+            control={control}
+            render={({ field }) => (
+              <Form.Item
+                label="Başlanğıc tarixi"
+                help={errors.dateFrom?.message}
+                validateStatus={errors.dateFrom ? "error" : undefined}
+              >
+                <ResponsiveDatePicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="Başlanğıc tarixi"
+                  format="DD.MM.YYYY"
+                  allowClear
+                  disabled={busy}
+                  style={{ width: "100%" }}
+                />
+              </Form.Item>
+            )}
+          />
+          <Controller
+            name="dateTo"
+            control={control}
+            render={({ field }) => (
+              <Form.Item
+                label="Bitmə tarixi"
+                help={errors.dateTo?.message}
+                validateStatus={errors.dateTo ? "error" : undefined}
+              >
+                <ResponsiveDatePicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="Bitmə tarixi"
+                  format="DD.MM.YYYY"
+                  allowClear
+                  disabled={busy}
+                  style={{ width: "100%" }}
+                />
+              </Form.Item>
+            )}
+          />
+        </div>
 
         <div className="partner-report-grid">
           <Controller

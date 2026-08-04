@@ -9,6 +9,7 @@ import {
   Select,
   Typography,
 } from 'antd';
+import { confirmWithoutAutofocus } from "../../../shared/ui/confirm-without-autofocus";
 import type { FormProps } from 'antd';
 import {
   ArrowDown,
@@ -35,6 +36,7 @@ import { ICON_SIZE, phIcon } from '../../../shared/ui/ph-icon';
 import { ResponsiveDatePicker } from '../../../shared/ui/responsive-date-pickers';
 import type { CashAccount } from '../api/cash.api';
 import {
+  cashAccountEditSuperAdminFormSchema,
   cashAccountFormSchema,
   cashInFormSchema,
   cashOutFormSchema,
@@ -246,13 +248,22 @@ export function CashAccountFormModal({
     open && canManageOwnership,
   );
   const ownedAccounts = useCashAccountsList({ page: 1, pageSize: 100 });
+  const canEditOpeningBalance = canManageOwnership && mode === 'edit';
+  const accountFormSchema = useMemo(
+    () =>
+      canEditOpeningBalance
+        ? cashAccountEditSuperAdminFormSchema
+        : cashAccountFormSchema,
+    [canEditOpeningBalance],
+  );
   const {
     control,
     handleSubmit,
     reset,
     formState: { errors },
   } = useForm<CashAccountFormValues>({
-    resolver: zodResolver(cashAccountFormSchema),
+    shouldFocusError: false,
+    resolver: zodResolver(accountFormSchema),
     defaultValues: {
       name: '',
       notes: '',
@@ -267,7 +278,9 @@ export function CashAccountFormModal({
       reset({
         name: account.name,
         notes: account.notes ?? '',
-        openingBalance: '',
+        openingBalance: canManageOwnership
+          ? (account.openingBalance ?? '0.00')
+          : '',
         responsibleUserId: account.responsibleUserId,
       });
     } else {
@@ -278,7 +291,7 @@ export function CashAccountFormModal({
         responsibleUserId: '',
       });
     }
-  }, [open, mode, account, reset]);
+  }, [open, mode, account, reset, canManageOwnership]);
 
   return (
     <Modal
@@ -346,19 +359,21 @@ export function CashAccountFormModal({
                 <Input
                   {...field}
                   placeholder={CASH_LABELS.fields.namePlaceholder}
-                  autoFocus
                   maxLength={255}
                 />
               )}
             />
           </Form.Item>
-          {mode === 'create' ? (
+          {mode === 'create' || canEditOpeningBalance ? (
             <Form.Item
               label={CASH_LABELS.fields.openingBalance}
+              required={canEditOpeningBalance}
               validateStatus={errors.openingBalance ? 'error' : undefined}
               help={
                 errors.openingBalance?.message ||
-                CASH_LABELS.fields.openingBalanceHint
+                (canEditOpeningBalance
+                  ? CASH_LABELS.fields.openingBalanceEditHint
+                  : CASH_LABELS.fields.openingBalanceHint)
               }
             >
               <Controller
@@ -425,26 +440,6 @@ export function CashAccountFormModal({
               )}
             />
           </Form.Item>
-          <Form.Item
-            className="cash-form-field-wide"
-            label={CASH_LABELS.fields.notes}
-            validateStatus={errors.notes ? 'error' : undefined}
-            help={errors.notes?.message}
-          >
-            <Controller
-              name="notes"
-              control={control}
-              render={({ field }) => (
-                <Input.TextArea
-                  {...field}
-                  rows={3}
-                  maxLength={2000}
-                  showCount
-                  placeholder={CASH_LABELS.fields.notesPlaceholder}
-                />
-              )}
-            />
-          </Form.Item>
         </div>
       </Form>
     </Modal>
@@ -493,6 +488,7 @@ export function CashInFormModal({
     setValue,
     formState: { errors },
   } = useForm<CashInFormValues>({
+    shouldFocusError: false,
     resolver: zodResolver(cashInFormSchema),
     defaultValues: {
       cashAccountId: '',
@@ -566,7 +562,7 @@ export function CashInFormModal({
   }, [open, account, responsibleAccountId, reset]);
 
   function submitWithConfirm(values: CashInFormValues) {
-    Modal.confirm({
+    confirmWithoutAutofocus({
       className: 'cash-confirm-modal cash-confirm-modal-in',
       centered: true,
       width: 440,
@@ -780,7 +776,6 @@ export function CashInFormModal({
                   maxFractionDigits={2}
                   placeholder={CASH_LABELS.fields.amountPlaceholder}
                   suffix="AZN"
-                  autoFocus
                 />
               )}
             />
@@ -801,23 +796,6 @@ export function CashInFormModal({
                   allowClear={false}
                   value={dateOnlyPickerValue(field.value)}
                   onChange={(d) => field.onChange(dateOnlyPickerToApi(d))}
-                />
-              )}
-            />
-          </Form.Item>
-          <Form.Item
-            className="cash-form-field-wide"
-            label={CASH_LABELS.fields.notes}
-          >
-            <Controller
-              name="notes"
-              control={control}
-              render={({ field }) => (
-                <Input.TextArea
-                  {...field}
-                  rows={2}
-                  maxLength={2000}
-                  placeholder={CASH_LABELS.fields.notesPlaceholder}
                 />
               )}
             />
@@ -870,6 +848,7 @@ export function CashOutFormModal({
     setValue,
     formState: { errors },
   } = useForm<CashOutFormValues>({
+    shouldFocusError: false,
     resolver: zodResolver(cashOutFormSchema),
     defaultValues: {
       cashAccountId: '',
@@ -956,7 +935,7 @@ export function CashOutFormModal({
 
   function submitWithConfirm(values: CashOutFormValues) {
     const willGoNegative = needsNegativeReason;
-    Modal.confirm({
+    confirmWithoutAutofocus({
       className: `cash-confirm-modal cash-confirm-modal-out${
         willGoNegative ? ' cash-confirm-modal-warning' : ''
       }`,
@@ -1197,7 +1176,6 @@ export function CashOutFormModal({
                   maxFractionDigits={2}
                   placeholder={CASH_LABELS.fields.amountPlaceholder}
                   suffix="AZN"
-                  autoFocus
                 />
               )}
             />
@@ -1249,23 +1227,6 @@ export function CashOutFormModal({
               />
             </Form.Item>
           ) : null}
-          <Form.Item
-            className="cash-form-field-wide"
-            label={CASH_LABELS.fields.notes}
-          >
-            <Controller
-              name="notes"
-              control={control}
-              render={({ field }) => (
-                <Input.TextArea
-                  {...field}
-                  rows={2}
-                  maxLength={2000}
-                  placeholder={CASH_LABELS.fields.notesPlaceholder}
-                />
-              )}
-            />
-          </Form.Item>
         </div>
       </Form>
     </Modal>
@@ -1314,6 +1275,7 @@ export function ExpenseFormModal({
     setValue,
     formState: { errors },
   } = useForm<ExpenseFormValues>({
+    shouldFocusError: false,
     resolver: zodResolver(expenseFormSchema),
     defaultValues: {
       cashAccountId: '',
@@ -1363,7 +1325,7 @@ export function ExpenseFormModal({
   }, [resolvedAccount, setValue]);
 
   function submitWithConfirm(values: ExpenseFormValues) {
-    Modal.confirm({
+    confirmWithoutAutofocus({
       className: `cash-confirm-modal cash-confirm-modal-expense${
         needsNegativeReason ? ' cash-confirm-modal-warning' : ''
       }`,
@@ -1517,7 +1479,6 @@ export function ExpenseFormModal({
                   maxFractionDigits={2}
                   placeholder={CASH_LABELS.fields.amountPlaceholder}
                   suffix="AZN"
-                  autoFocus
                 />
               )}
             />
@@ -1630,6 +1591,7 @@ export function TransferFormModal({
     setValue,
     formState: { errors },
   } = useForm<TransferFormValues>({
+    shouldFocusError: false,
     resolver: zodResolver(transferFormSchema),
     defaultValues: {
       sourceCashAccountId: '',
@@ -1694,7 +1656,7 @@ export function TransferFormModal({
   }, [source, setValue]);
 
   function submitWithConfirm(values: TransferFormValues) {
-    Modal.confirm({
+    confirmWithoutAutofocus({
       className: `cash-confirm-modal cash-confirm-modal-transfer${
         needsNegativeReason ? ' cash-confirm-modal-warning' : ''
       }`,
@@ -1868,7 +1830,6 @@ export function TransferFormModal({
                   maxFractionDigits={2}
                   placeholder={CASH_LABELS.fields.amountPlaceholder}
                   suffix="AZN"
-                  autoFocus
                 />
               )}
             />
@@ -1920,23 +1881,6 @@ export function TransferFormModal({
               />
             </Form.Item>
           ) : null}
-          <Form.Item
-            className="cash-form-field-wide"
-            label={CASH_LABELS.fields.notes}
-          >
-            <Controller
-              name="notes"
-              control={control}
-              render={({ field }) => (
-                <Input.TextArea
-                  {...field}
-                  rows={2}
-                  maxLength={2000}
-                  placeholder={CASH_LABELS.fields.notesPlaceholder}
-                />
-              )}
-            />
-          </Form.Item>
         </div>
       </Form>
     </Modal>
@@ -1968,6 +1912,7 @@ export function ExpenseCategoryFormModal({
     reset,
     formState: { errors },
   } = useForm<ExpenseCategoryFormValues>({
+    shouldFocusError: false,
     resolver: zodResolver(expenseCategoryFormSchema),
     defaultValues: { name: '' },
   });
@@ -2032,7 +1977,6 @@ export function ExpenseCategoryFormModal({
             render={({ field }) => (
               <Input
                 {...field}
-                autoFocus
                 placeholder="Məsələn, Ofis xərcləri"
                 maxLength={255}
               />

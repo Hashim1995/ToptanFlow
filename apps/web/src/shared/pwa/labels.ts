@@ -14,7 +14,6 @@ export const PWA_LABELS = {
     'Safari-də Paylaş düyməsini açın və “Add to Home Screen” / “Ana ekrana əlavə et” seçin.',
   iosInstallDismiss: 'Bağla',
   datePickerTitle: 'Tarix seçin',
-  rangePickerTitle: 'Tarix aralığı seçin',
   datePickerDone: 'Hazırdır',
   datePickerCancel: 'Ləğv et',
 } as const;

@@ -7,6 +7,7 @@ const account = (overrides: Partial<CashAccount>): CashAccount => ({
   name: 'Ofis kassası',
   code: 'CA-0000001',
   currentBalance: '0.00',
+  openingBalance: '0.00',
   notes: null,
   responsibleUserId: 'user-1',
   responsibleUserName: 'İstifadəçi',

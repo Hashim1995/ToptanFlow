@@ -33,7 +33,8 @@ export type PartnerMovementStatus = 'DRAFT' | 'POSTED' | 'CANCELLED';
 export type PartnerMovementOutputFormat = 'EXCEL' | 'PRINT';
 
 export type BusinessPartnerMovementReportQuery = {
-  dateRange?: [Dayjs | null, Dayjs | null] | null;
+  dateFrom?: Dayjs | null;
+  dateTo?: Dayjs | null;
   operationTypes: PartnerMovementOperationType[];
   statuses: PartnerMovementStatus[];
   createdByUserIds: string[];
@@ -146,8 +147,8 @@ export async function deactivateBusinessPartner(
 
 function movementReportParams(query: BusinessPartnerMovementReportQuery) {
   return {
-    dateFrom: query.dateRange?.[0]?.format('YYYY-MM-DD'),
-    dateTo: query.dateRange?.[1]?.format('YYYY-MM-DD'),
+    dateFrom: query.dateFrom?.format('YYYY-MM-DD'),
+    dateTo: query.dateTo?.format('YYYY-MM-DD'),
     operationTypes: query.operationTypes.join(','),
     statuses: query.statuses.join(','),
     createdByUserIds: query.createdByUserIds.join(','),

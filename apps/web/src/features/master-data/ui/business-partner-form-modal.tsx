@@ -10,8 +10,6 @@ import {
 import { MASTER_DATA_LABELS } from './labels';
 import './business-partner-modals.css';
 
-const { TextArea } = Input;
-
 type BusinessPartnerFormModalProps = {
   open: boolean;
   title: string;
@@ -28,11 +26,7 @@ const emptyValues: BusinessPartnerFormValues = {
   name: '',
   isCustomer: true,
   isSupplier: false,
-  phone: '',
   email: '',
-  taxNumber: '',
-  address: '',
-  notes: '',
 };
 
 export function BusinessPartnerFormModal({
@@ -55,6 +49,7 @@ export function BusinessPartnerFormModal({
     reset,
     formState: { errors },
   } = useForm<BusinessPartnerFormValues>({
+    shouldFocusError: false,
     resolver: zodResolver(businessPartnerFormSchema),
     defaultValues: initialValues ?? emptyValues,
   });
@@ -79,7 +74,7 @@ export function BusinessPartnerFormModal({
       confirmLoading={submitting}
       destroyOnHidden
       forceRender
-      width={760}
+      width={640}
     >
       {errorMessage ? (
         <Alert
@@ -163,34 +158,9 @@ export function BusinessPartnerFormModal({
                 />
               </div>
             </Form.Item>
-          </div>
-        </section>
-
-        <section className="business-partner-form-section">
-          <div className="business-partner-form-section-heading">
-            Əlaqə məlumatları
-          </div>
-          <div className="business-partner-form-grid">
-            <Form.Item
-              label={labels.phone}
-              validateStatus={errors.phone ? 'error' : undefined}
-              help={errors.phone?.message}
-            >
-              <Controller
-                name="phone"
-                control={control}
-                render={({ field }) => (
-                  <Input
-                    {...field}
-                    autoComplete="tel"
-                    inputMode="tel"
-                    placeholder={labels.phonePlaceholder}
-                  />
-                )}
-              />
-            </Form.Item>
 
             <Form.Item
+              className="business-partner-form-field-wide"
               label={labels.email}
               validateStatus={errors.email ? 'error' : undefined}
               help={errors.email?.message}
@@ -204,69 +174,6 @@ export function BusinessPartnerFormModal({
                     autoComplete="email"
                     type="email"
                     placeholder={labels.emailPlaceholder}
-                  />
-                )}
-              />
-            </Form.Item>
-
-            <Form.Item
-              label={labels.taxNumber}
-              validateStatus={errors.taxNumber ? 'error' : undefined}
-              help={errors.taxNumber?.message}
-            >
-              <Controller
-                name="taxNumber"
-                control={control}
-                render={({ field }) => (
-                  <Input
-                    {...field}
-                    autoComplete="off"
-                    placeholder={labels.taxNumberPlaceholder}
-                  />
-                )}
-              />
-            </Form.Item>
-          </div>
-        </section>
-
-        <section className="business-partner-form-section">
-          <div className="business-partner-form-section-heading">
-            Əlavə məlumatlar
-          </div>
-          <div className="business-partner-form-grid">
-            <Form.Item
-              className="business-partner-form-field-wide"
-              label={labels.address}
-              validateStatus={errors.address ? 'error' : undefined}
-              help={errors.address?.message}
-            >
-              <Controller
-                name="address"
-                control={control}
-                render={({ field }) => (
-                  <TextArea
-                    {...field}
-                    rows={2}
-                    placeholder={labels.addressPlaceholder}
-                  />
-                )}
-              />
-            </Form.Item>
-
-            <Form.Item
-              className="business-partner-form-field-wide"
-              label={labels.notes}
-              validateStatus={errors.notes ? 'error' : undefined}
-              help={errors.notes?.message}
-            >
-              <Controller
-                name="notes"
-                control={control}
-                render={({ field }) => (
-                  <TextArea
-                    {...field}
-                    rows={3}
-                    placeholder={labels.notesPlaceholder}
                   />
                 )}
               />

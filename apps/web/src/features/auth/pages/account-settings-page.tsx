@@ -63,6 +63,7 @@ export function AccountSettingsPage() {
     reset,
     formState: { errors, isSubmitting },
   } = useForm<ChangePasswordFormValues>({
+    shouldFocusError: false,
     resolver: zodResolver(changePasswordSchema),
     defaultValues: {
       currentPassword: '',

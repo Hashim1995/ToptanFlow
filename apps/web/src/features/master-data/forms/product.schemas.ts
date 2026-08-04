@@ -31,6 +31,7 @@ export const PRODUCT_TYPES = [
   'MIXED_USE',
 ] as const;
 
+/** Create/edit form fields only (CHANGE-030). Barcode/notes remain in API/DB. */
 export const productFormSchema = z.object({
   name: requiredText('Ad'),
   type: z.enum(PRODUCT_TYPES, {
@@ -45,8 +46,6 @@ export const productFormSchema = z.object({
   standardSalePrice: optionalDecimal,
   latestPurchasePrice: optionalDecimal,
   criticalStockThreshold: optionalDecimal,
-  barcode: z.string().trim().max(128, { message: 'Barkod çox uzundur.' }),
-  notes: z.string().trim().max(4000, { message: 'Qeyd çox uzundur.' }),
 });
 
 export type ProductFormValues = z.infer<typeof productFormSchema>;

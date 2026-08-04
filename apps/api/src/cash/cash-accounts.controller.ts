@@ -129,7 +129,8 @@ export class CashAccountsController {
   @Patch(':id')
   @ApiOperation({
     summary: 'Update Cash Account metadata',
-    description: 'Does not allow changing currentBalance (ADR-033).',
+    description:
+      'Does not allow changing currentBalance directly (ADR-033). Super Admin may correct openingBalance via OPENING_BALANCE reverse+repost (CHANGE-028).',
   })
   @ApiOkResponse({ type: CashAccountResponseDto })
   update(
@@ -137,7 +138,7 @@ export class CashAccountsController {
     @Body() dto: UpdateCashAccountDto,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<CashAccountResponseDto> {
-    return this.cashAccountsService.update(id, dto, user.isSuperAdmin);
+    return this.cashAccountsService.update(id, dto, user.isSuperAdmin, user.id);
   }
 
   @Post(':id/deactivate')

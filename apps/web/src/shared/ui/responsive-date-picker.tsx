@@ -31,7 +31,7 @@ function formatDraft(value: Dayjs | null, format: string): string {
 
 /**
  * Desktop: standard Ant DatePicker popup.
- * Mobile: bottom drawer with an inline calendar panel (touch-friendly).
+ * Mobile: compact bottom drawer; selecting a day applies immediately.
  */
 export function ResponsiveDatePicker({
   format = DATE_DISPLAY_FORMAT,
@@ -91,9 +91,6 @@ export function ResponsiveDatePicker({
         onClose={() => setOpen(false)}
         destroyOnHidden
         className="responsive-date-picker-drawer"
-        styles={{
-          body: { paddingTop: 8, paddingBottom: 8 },
-        }}
         footer={
           <div className="responsive-date-picker-footer">
             <Button onClick={() => setOpen(false)}>
@@ -122,7 +119,10 @@ export function ResponsiveDatePicker({
             className="responsive-date-picker-hidden-input"
             classNames={{ popup: { root: 'responsive-date-picker-popup' } }}
             onChange={(next) => {
-              setDraft(asSingleDate(next));
+              const single = asSingleDate(next);
+              setDraft(single);
+              onChange?.(single, formatDraft(single, format));
+              setOpen(false);
             }}
           />
         </div>

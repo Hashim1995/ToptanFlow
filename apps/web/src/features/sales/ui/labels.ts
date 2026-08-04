@@ -33,6 +33,8 @@ export const SALES_LABELS = {
     partner: 'Müştəri',
     status: 'Status',
     dateRange: 'Əməliyyat tarixi',
+    dateFrom: 'Başlanğıc tarixi',
+    dateTo: 'Bitmə tarixi',
     product: 'Məhsul',
     minTotal: 'Minimum məbləğ',
     maxTotal: 'Maksimum məbləğ',
