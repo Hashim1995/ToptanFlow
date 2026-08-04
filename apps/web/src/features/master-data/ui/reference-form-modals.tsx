@@ -38,6 +38,7 @@ export function UnitFormModal({
     reset,
     formState: { errors },
   } = useForm<UnitFormValues>({
+    shouldFocusError: false,
     resolver: zodResolver(unitFormSchema),
     defaultValues: initialValues ?? {
       code: '',
@@ -173,6 +174,7 @@ export function ProductCategoryFormModal({
     reset,
     formState: { errors },
   } = useForm<ProductCategoryFormValues>({
+    shouldFocusError: false,
     resolver: zodResolver(productCategoryFormSchema),
     defaultValues: initialValues ?? { name: '' },
   });

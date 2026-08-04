@@ -26,6 +26,13 @@ export class CashAccountResponseDto {
   @ApiProperty({ example: '1500.00' })
   currentBalance!: string;
 
+  @ApiProperty({
+    example: '1000.00',
+    description:
+      'Active posted OPENING_BALANCE amount for this account (0.00 when none). Super Admin may correct via PATCH (CHANGE-028).',
+  })
+  openingBalance!: string;
+
   @ApiPropertyOptional({ nullable: true, type: String })
   notes!: string | null;
 

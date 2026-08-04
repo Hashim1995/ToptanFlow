@@ -7,7 +7,6 @@ import {
   Empty,
   Grid,
   Input,
-  Modal,
   Pagination,
   Select,
   Skeleton,
@@ -18,6 +17,7 @@ import {
   Typography,
   message,
 } from "antd";
+import { confirmWithoutAutofocus } from "../../../shared/ui/confirm-without-autofocus";
 import type { ColumnsType } from "antd/es/table";
 import type { MenuProps } from "antd";
 import {
@@ -294,8 +294,7 @@ export function ProductsPage() {
           criticalStockThreshold: emptyToUndefined(
             values.criticalStockThreshold,
           ),
-          barcode: emptyToUndefined(values.barcode),
-          notes: emptyToUndefined(values.notes),
+          // CHANGE-030: barcode / notes omitted so edit does not clear stored values.
         });
         message.success(common.createSuccess);
       } else if (formMode.kind === "edit") {
@@ -309,8 +308,7 @@ export function ProductsPage() {
             standardSalePrice: emptyToNull(values.standardSalePrice),
             latestPurchasePrice: emptyToNull(values.latestPurchasePrice),
             criticalStockThreshold: emptyToNull(values.criticalStockThreshold),
-            barcode: emptyToNull(values.barcode),
-            notes: emptyToNull(values.notes),
+            // CHANGE-030: barcode / notes omitted so edit does not clear stored values.
           },
         });
         message.success(common.updateSuccess);
@@ -322,7 +320,7 @@ export function ProductsPage() {
   }
 
   function confirmDeactivate(product: Product) {
-    Modal.confirm({
+    confirmWithoutAutofocus({
       className: "app-mobile-modal products-confirm-modal",
       centered: true,
       title: labels.deactivateConfirm,
@@ -348,7 +346,7 @@ export function ProductsPage() {
   }
 
   function confirmActivate(product: Product) {
-    Modal.confirm({
+    confirmWithoutAutofocus({
       className: "app-mobile-modal products-confirm-modal",
       centered: true,
       title: labels.activateConfirm,
@@ -385,8 +383,6 @@ export function ProductsPage() {
           standardSalePrice: formMode.product.standardSalePrice ?? "",
           latestPurchasePrice: formMode.product.latestPurchasePrice ?? "",
           criticalStockThreshold: formMode.product.criticalStockThreshold ?? "",
-          barcode: formMode.product.barcode ?? "",
-          notes: formMode.product.notes ?? "",
         }
       : undefined;
 

@@ -61,14 +61,11 @@ const emptyLine = {
   quantity: '',
   unitPrice: '',
   discountAmount: '',
-  notes: '',
 };
 
 const emptyForm: PurchaseFormValues = {
   partnerId: '',
   businessDate: bakuTodayDateOnly(),
-  notes: '',
-  supplierInvoiceNumber: '',
   discountAmount: '',
   items: [emptyLine],
 };
@@ -78,15 +75,13 @@ function toInput(values: PurchaseFormValues): PurchaseInput {
   return {
     partnerId: values.partnerId,
     businessDate: values.businessDate,
-    notes: optional(values.notes),
-    supplierInvoiceNumber: optional(values.supplierInvoiceNumber),
+    // CHANGE-030: notes + supplierInvoiceNumber omitted (preserve existing on update).
     discountAmount: optional(values.discountAmount),
     items: values.items.map((item) => ({
       productId: item.productId,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
       discountAmount: optional(item.discountAmount),
-      notes: optional(item.notes),
     })),
   };
 }
@@ -95,15 +90,12 @@ function toFormValues(purchase: Purchase): PurchaseFormValues {
   return {
     partnerId: purchase.partner.id,
     businessDate: toDateOnlyApi(purchase.businessDate) ?? '',
-    notes: purchase.notes ?? '',
-    supplierInvoiceNumber: purchase.supplierInvoiceNumber ?? '',
     discountAmount: purchase.discountAmount ?? '',
     items: purchase.items.map((item) => ({
       productId: item.productId,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
       discountAmount: item.discountAmount ?? '',
-      notes: item.notes ?? '',
     })),
   };
 }
@@ -143,6 +135,7 @@ export function PurchaseFormModal({
     setValue,
     formState: { errors },
   } = useForm<PurchaseFormValues>({
+    shouldFocusError: false,
     resolver: zodResolver(purchaseFormSchema),
     defaultValues: emptyForm,
   });
@@ -224,8 +217,6 @@ export function PurchaseFormModal({
       calculatePurchaseTotals({
         partnerId: values.partnerId ?? '',
         businessDate: values.businessDate ?? '',
-        notes: values.notes ?? '',
-        supplierInvoiceNumber: values.supplierInvoiceNumber ?? '',
         discountAmount: values.discountAmount ?? '',
         items: (values.items ?? []).map((item) => ({
           ...emptyLine,
@@ -425,8 +416,8 @@ export function PurchaseFormModal({
               />
             ) : null}
 
-            <Row className="commercial-document-meta-grid" gutter={[12, 0]}>
-              <Col xs={24} sm={12} md={8}>
+            <Row className="commercial-document-meta-grid" gutter={[12, 8]}>
+              <Col xs={24} sm={14} md={16}>
                 <Controller
                   control={control}
                   name="partnerId"
@@ -436,7 +427,7 @@ export function PurchaseFormModal({
                       required
                       validateStatus={errors.partnerId ? 'error' : undefined}
                       help={errors.partnerId?.message}
-                      style={{ marginBottom: 12 }}
+                      style={{ marginBottom: 0 }}
                     >
                       <Select
                         {...field}
@@ -450,7 +441,7 @@ export function PurchaseFormModal({
                   )}
                 />
               </Col>
-              <Col xs={24} sm={12} md={5}>
+              <Col xs={24} sm={10} md={8}>
                 <Controller
                   control={control}
                   name="businessDate"
@@ -460,7 +451,7 @@ export function PurchaseFormModal({
                       required
                       validateStatus={errors.businessDate ? 'error' : undefined}
                       help={errors.businessDate?.message}
-                      style={{ marginBottom: 12 }}
+                      style={{ marginBottom: 0 }}
                     >
                       <ResponsiveDatePicker
                         value={dateOnlyPickerValue(field.value)}
@@ -474,69 +465,9 @@ export function PurchaseFormModal({
                   )}
                 />
               </Col>
-              <Col xs={24} sm={12} md={6}>
-                <Controller
-                  control={control}
-                  name="supplierInvoiceNumber"
-                  render={({ field }) => (
-                    <Form.Item
-                      label={PURCHASE_LABELS.fields.supplierInvoiceNumber}
-                      validateStatus={
-                        errors.supplierInvoiceNumber ? 'error' : undefined
-                      }
-                      help={errors.supplierInvoiceNumber?.message}
-                      style={{ marginBottom: 12 }}
-                    >
-                      <Input
-                        {...field}
-                        placeholder={
-                          PURCHASE_LABELS.fields.supplierInvoicePlaceholder
-                        }
-                      />
-                    </Form.Item>
-                  )}
-                />
-              </Col>
-              <Col xs={24} sm={12} md={5}>
-                <Controller
-                  control={control}
-                  name="discountAmount"
-                  render={({ field }) => (
-                    <Form.Item
-                      label={PURCHASE_LABELS.fields.documentDiscount}
-                      validateStatus={
-                        errors.discountAmount ? 'error' : undefined
-                      }
-                      help={errors.discountAmount?.message}
-                      style={{ marginBottom: 12 }}
-                    >
-                      <DecimalInput {...field} placeholder="0.00" />
-                    </Form.Item>
-                  )}
-                />
-              </Col>
-              <Col xs={24}>
-                <Controller
-                  control={control}
-                  name="notes"
-                  render={({ field }) => (
-                    <Form.Item
-                      label={PURCHASE_LABELS.fields.notes}
-                      validateStatus={errors.notes ? 'error' : undefined}
-                      help={errors.notes?.message}
-                      style={{ marginBottom: 8 }}
-                    >
-                      <Input
-                        {...field}
-                        placeholder={PURCHASE_LABELS.fields.notesPlaceholder}
-                      />
-                    </Form.Item>
-                  )}
-                />
-              </Col>
             </Row>
 
-            <Divider style={{ margin: '8px 0 12px' }} />
+            <Divider style={{ margin: '12px 0' }} />
 
             <div className="commercial-lines-heading">
               <Text strong>{PURCHASE_LABELS.fields.items}</Text>
@@ -559,7 +490,7 @@ export function PurchaseFormModal({
               />
             ) : null}
 
-            <Space className="ui-document-lines" direction="vertical" size={10}>
+            <Space className="ui-document-lines" direction="vertical" size={8}>
               {fields.map((field, index) => {
                 const watchedLine = values.items?.[index];
                 const line = {
@@ -567,22 +498,24 @@ export function PurchaseFormModal({
                   quantity: watchedLine?.quantity ?? '',
                   unitPrice: watchedLine?.unitPrice ?? '',
                   discountAmount: watchedLine?.discountAmount ?? '',
-                  notes: watchedLine?.notes ?? '',
                 };
                 const lineErrors = errors.items?.[index];
                 return (
                   <div
                     className="ui-document-line-card commercial-line-card"
                     key={field.id}
-                    style={{
-                      border: '1px solid #f0f0f0',
-                      borderRadius: 8,
-                      padding: '8px 10px',
-                      background: '#fafafa',
-                    }}
                   >
-                    <Row gutter={[8, 0]} align="top">
-                      <Col className="commercial-line-product" xs={24} md={8}>
+                    <Button
+                      className="commercial-line-remove-icon"
+                      danger
+                      type="text"
+                      icon={phIcon(Trash, { size: ICON_SIZE.sm })}
+                      disabled={fields.length === 1}
+                      aria-label={PURCHASE_LABELS.actions.removeLine}
+                      onClick={() => remove(index)}
+                    />
+                    <div className="commercial-line-grid">
+                      <div className="commercial-line-product">
                         <Controller
                           control={control}
                           name={`items.${index}.productId`}
@@ -594,7 +527,7 @@ export function PurchaseFormModal({
                                 lineErrors?.productId ? 'error' : undefined
                               }
                               help={lineErrors?.productId?.message}
-                              style={{ marginBottom: 4 }}
+                              style={{ marginBottom: 0 }}
                             >
                               <Select
                                 {...itemField}
@@ -624,8 +557,8 @@ export function PurchaseFormModal({
                             </Form.Item>
                           )}
                         />
-                      </Col>
-                      <Col className="commercial-line-quantity" xs={12} md={3}>
+                      </div>
+                      <div className="commercial-line-quantity">
                         <Controller
                           control={control}
                           name={`items.${index}.quantity`}
@@ -637,14 +570,14 @@ export function PurchaseFormModal({
                                 lineErrors?.quantity ? 'error' : undefined
                               }
                               help={lineErrors?.quantity?.message}
-                              style={{ marginBottom: 4 }}
+                              style={{ marginBottom: 0 }}
                             >
                               <DecimalInput {...itemField} placeholder="0" />
                             </Form.Item>
                           )}
                         />
-                      </Col>
-                      <Col className="commercial-line-price" xs={12} md={3}>
+                      </div>
+                      <div className="commercial-line-price">
                         <Controller
                           control={control}
                           name={`items.${index}.unitPrice`}
@@ -656,36 +589,22 @@ export function PurchaseFormModal({
                                 lineErrors?.unitPrice ? 'error' : undefined
                               }
                               help={lineErrors?.unitPrice?.message}
-                              style={{ marginBottom: 4 }}
+                              style={{ marginBottom: 0 }}
                             >
-                              <DecimalInput {...itemField} placeholder="0.00" />
+                              <DecimalInput
+                                {...itemField}
+                                maxFractionDigits={2}
+                                placeholder="0.00"
+                              />
                             </Form.Item>
                           )}
                         />
-                      </Col>
-                      <Col className="commercial-line-discount" xs={12} md={3}>
-                        <Controller
-                          control={control}
-                          name={`items.${index}.discountAmount`}
-                          render={({ field: itemField }) => (
-                            <Form.Item
-                              label={PURCHASE_LABELS.fields.lineDiscount}
-                              validateStatus={
-                                lineErrors?.discountAmount ? 'error' : undefined
-                              }
-                              help={lineErrors?.discountAmount?.message}
-                              style={{ marginBottom: 4 }}
-                            >
-                              <DecimalInput {...itemField} placeholder="0.00" />
-                            </Form.Item>
-                          )}
-                        />
-                      </Col>
-                      <Col className="commercial-line-total" xs={12} md={4}>
+                      </div>
+                      <div className="commercial-line-total">
                         <Form.Item
                           className="ui-form-field-readonly"
                           label={PURCHASE_LABELS.fields.lineTotal}
-                          style={{ marginBottom: 4 }}
+                          style={{ marginBottom: 0 }}
                         >
                           <Input
                             readOnly
@@ -698,51 +617,8 @@ export function PurchaseFormModal({
                             )}
                           />
                         </Form.Item>
-                      </Col>
-                      <Col className="commercial-line-remove" xs={24} md={3}>
-                        <Form.Item
-                          className="commercial-line-remove-item"
-                          label=" "
-                          colon={false}
-                          style={{ marginBottom: 4 }}
-                        >
-                          <Button
-                            className="commercial-remove-line-button"
-                            danger
-                            type="text"
-                            icon={phIcon(Trash, { size: ICON_SIZE.sm })}
-                            disabled={fields.length === 1}
-                            aria-label={PURCHASE_LABELS.actions.removeLine}
-                            onClick={() => remove(index)}
-                            style={{ width: '100%' }}
-                          >
-                            <span>{PURCHASE_LABELS.actions.removeLine}</span>
-                          </Button>
-                        </Form.Item>
-                      </Col>
-                      <Col className="commercial-line-notes" xs={24} md={24}>
-                        <Controller
-                          control={control}
-                          name={`items.${index}.notes`}
-                          render={({ field: itemField }) => (
-                            <Form.Item
-                              validateStatus={
-                                lineErrors?.notes ? 'error' : undefined
-                              }
-                              help={lineErrors?.notes?.message}
-                              style={{ marginBottom: 0 }}
-                            >
-                              <Input
-                                {...itemField}
-                                placeholder={
-                                  PURCHASE_LABELS.fields.lineNotesPlaceholder
-                                }
-                              />
-                            </Form.Item>
-                          )}
-                        />
-                      </Col>
-                    </Row>
+                      </div>
+                    </div>
                   </div>
                 );
               })}
@@ -752,7 +628,11 @@ export function PurchaseFormModal({
               className="commercial-add-line-button"
               type="dashed"
               icon={phIcon(Plus, { size: ICON_SIZE.sm, weight: 'bold' })}
-              onClick={() => append(emptyLine)}
+              onClick={(event) => {
+                append(emptyLine);
+                // CHANGE-029: do not move focus into newly mounted inputs.
+                event.currentTarget.blur();
+              }}
             >
               {PURCHASE_LABELS.actions.addLine}
             </Button>
@@ -766,26 +646,10 @@ export function PurchaseFormModal({
               />
             </div>
 
-            <div
-              className="commercial-form-totals"
-              style={{
-                marginTop: 12,
-                padding: '10px 12px',
-                borderRadius: 8,
-                background: '#f5f5f5',
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: 16,
-                justifyContent: 'flex-end',
-              }}
-            >
+            <div className="commercial-form-totals">
               <Text>
                 {PURCHASE_LABELS.columns.subtotal}:{' '}
                 {formatMoney(totals.subtotal)}
-              </Text>
-              <Text>
-                {PURCHASE_LABELS.columns.discount}:{' '}
-                {formatMoney(totals.discount)}
               </Text>
               <Text strong>
                 {PURCHASE_LABELS.columns.total}: {formatMoney(totals.total)}

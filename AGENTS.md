@@ -4,7 +4,7 @@
 
 This document defines how every AI agent — human-directed or autonomous — must operate inside the TOPTANFLOW repository. TOPTANFLOW is a business-critical ERP system covering inventory, cash, receivables/payables, and field sales (Yatı) for a real operating business. Mistakes here are not cosmetic: they can misstate stock, money, or debt.
 
-AGENTS.md does not describe *what* the system does. It describes *how any agent must think, decide, and act* before, during, and after touching this repository. It is implementation-independent and outlives any particular framework, language, or architecture chosen later.
+AGENTS.md does not describe _what_ the system does. It describes _how any agent must think, decide, and act_ before, during, and after touching this repository. It is implementation-independent and outlives any particular framework, language, or architecture chosen later.
 
 Every agent must read and follow this document before performing any task in this repository, regardless of the size of the task.
 
@@ -53,7 +53,7 @@ Implementation (code, schema, configuration)
 Notes on this hierarchy:
 
 - `docs/analysis/01-document-analysis.md` is the reconciliation record between the BRD and the SRS/TDS. It does not sit above either source; it explains how they align, where they conflict, and what remains undecided. Agents must consult it to understand alignment status and known conflicts before acting.
-- The SRS/TDS is authoritative only for *how* something is built once the business behavior it builds is already approved. It is never authoritative for *what* the business behavior is.
+- The SRS/TDS is authoritative only for _how_ something is built once the business behavior it builds is already approved. It is never authoritative for _what_ the business behavior is.
 - A "recommendation" or "safe default" found in any document is not an approved decision. It becomes usable only after it is confirmed as an Approved Human Decision.
 
 ## Task Management
@@ -101,15 +101,18 @@ Open decisions and unresolved conflicts are tracked in `docs/analysis/01-documen
 ## File Modification Policy
 
 An agent **may create** a file when:
+
 - A task explicitly requires a new file, and no existing file already serves that purpose.
 - The new file's scope is clearly limited to what the task requires.
 
 An agent **may modify** a file when:
+
 - The change is within the explicit scope of the current task.
 - The change does not contradict any Business Invariant or introduce a resolution to an Open Decision.
 - The change preserves the intent and structure of documents it depends on.
 
 An agent **must refuse to modify** a file when:
+
 - The requested change would violate a stated invariant.
 - The requested change would silently resolve a documented conflict or open decision.
 - The requested change is outside the scope of the current task.
@@ -220,3 +223,21 @@ Agents must not:
 - It does not duplicate the content of `docs/analysis/01-document-analysis.md`, `docs/business/invariants.md`, `docs/business/terminology.md`, or `docs/business/workflow-map.md`. It references them.
 - It applies repository-wide, to every agent, on every task, regardless of which part of the repository is touched.
 - It is implementation-independent: it must remain valid regardless of the specific frontend, backend, database, or deployment technology eventually chosen.
+
+## Verification and Build Policy
+
+- Do not run build, lint, type-check, or tests after every small edit.
+- Complete the full task first.
+- During implementation, use code inspection and targeted searches.
+- Run verification only once at the end of the task.
+- Final verification order:
+  1. lint
+  2. type-check
+  3. relevant targeted tests
+  4. production build
+- Do not rerun successful commands.
+- If a command fails, fix the issue and rerun only that failed command.
+- Never run a production build during intermediate implementation.
+- Exactly one successful production build is expected per task.
+- For tiny UI-only changes, skip unrelated tests.
+- Report verification results only in the final task summary.

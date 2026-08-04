@@ -63,13 +63,11 @@ const emptyLine = {
   quantity: '',
   unitPrice: '',
   discountAmount: '',
-  notes: '',
 };
 
 const emptyForm: SaleFormValues = {
   partnerId: '',
   businessDate: bakuTodayDateOnly(),
-  notes: '',
   discountAmount: '',
   items: [emptyLine],
 };
@@ -79,14 +77,13 @@ function toInput(values: SaleFormValues): SaleInput {
   return {
     partnerId: values.partnerId,
     businessDate: values.businessDate,
-    notes: optional(values.notes),
+    // CHANGE-030: document/line notes omitted so edit does not clear stored values.
     discountAmount: optional(values.discountAmount),
     items: values.items.map((item) => ({
       productId: item.productId,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
       discountAmount: optional(item.discountAmount),
-      notes: optional(item.notes),
     })),
   };
 }
@@ -95,14 +92,12 @@ function toFormValues(sale: Sale): SaleFormValues {
   return {
     partnerId: sale.partner.id,
     businessDate: toDateOnlyApi(sale.businessDate) ?? '',
-    notes: sale.notes ?? '',
     discountAmount: sale.discountAmount ?? '',
     items: sale.items.map((item) => ({
       productId: item.productId,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
       discountAmount: item.discountAmount ?? '',
-      notes: item.notes ?? '',
     })),
   };
 }
@@ -140,6 +135,7 @@ export function SaleFormModal({
     setValue,
     formState: { errors },
   } = useForm<SaleFormValues>({
+    shouldFocusError: false,
     resolver: zodResolver(saleFormSchema),
     defaultValues: emptyForm,
   });
@@ -228,7 +224,6 @@ export function SaleFormModal({
       calculateSaleTotals({
         partnerId: values.partnerId ?? '',
         businessDate: values.businessDate ?? '',
-        notes: values.notes ?? '',
         discountAmount: values.discountAmount ?? '',
         items: (values.items ?? []).map((item) => ({
           ...emptyLine,
@@ -428,8 +423,8 @@ export function SaleFormModal({
               />
             ) : null}
 
-            <Row className="commercial-document-meta-grid" gutter={[12, 0]}>
-              <Col xs={24} sm={12} md={8}>
+            <Row className="commercial-document-meta-grid" gutter={[12, 8]}>
+              <Col xs={24} sm={14} md={16}>
                 <Controller
                   control={control}
                   name="partnerId"
@@ -439,7 +434,7 @@ export function SaleFormModal({
                       required
                       validateStatus={errors.partnerId ? 'error' : undefined}
                       help={errors.partnerId?.message}
-                      style={{ marginBottom: 12 }}
+                      style={{ marginBottom: 0 }}
                     >
                       <Select
                         {...field}
@@ -453,7 +448,7 @@ export function SaleFormModal({
                   )}
                 />
               </Col>
-              <Col xs={24} sm={12} md={5}>
+              <Col xs={24} sm={10} md={8}>
                 <Controller
                   control={control}
                   name="businessDate"
@@ -463,7 +458,7 @@ export function SaleFormModal({
                       required
                       validateStatus={errors.businessDate ? 'error' : undefined}
                       help={errors.businessDate?.message}
-                      style={{ marginBottom: 12 }}
+                      style={{ marginBottom: 0 }}
                     >
                       <ResponsiveDatePicker
                         value={dateOnlyPickerValue(field.value)}
@@ -477,46 +472,9 @@ export function SaleFormModal({
                   )}
                 />
               </Col>
-              <Col xs={24} sm={12} md={5}>
-                <Controller
-                  control={control}
-                  name="discountAmount"
-                  render={({ field }) => (
-                    <Form.Item
-                      label={SALES_LABELS.fields.documentDiscount}
-                      validateStatus={
-                        errors.discountAmount ? 'error' : undefined
-                      }
-                      help={errors.discountAmount?.message}
-                      style={{ marginBottom: 12 }}
-                    >
-                      <DecimalInput {...field} placeholder="0.00" />
-                    </Form.Item>
-                  )}
-                />
-              </Col>
-              <Col xs={24}>
-                <Controller
-                  control={control}
-                  name="notes"
-                  render={({ field }) => (
-                    <Form.Item
-                      label={SALES_LABELS.fields.notes}
-                      validateStatus={errors.notes ? 'error' : undefined}
-                      help={errors.notes?.message}
-                      style={{ marginBottom: 8 }}
-                    >
-                      <Input
-                        {...field}
-                        placeholder={SALES_LABELS.fields.notesPlaceholder}
-                      />
-                    </Form.Item>
-                  )}
-                />
-              </Col>
             </Row>
 
-            <Divider style={{ margin: '8px 0 12px' }} />
+            <Divider style={{ margin: '12px 0' }} />
 
             <div className="commercial-lines-heading">
               <Text strong>{SALES_LABELS.fields.items}</Text>
@@ -539,7 +497,7 @@ export function SaleFormModal({
               />
             ) : null}
 
-            <Space className="ui-document-lines" direction="vertical" size={10}>
+            <Space className="ui-document-lines" direction="vertical" size={8}>
               {fields.map((field, index) => {
                 const watchedLine = values.items?.[index];
                 const line = {
@@ -547,7 +505,6 @@ export function SaleFormModal({
                   quantity: watchedLine?.quantity ?? '',
                   unitPrice: watchedLine?.unitPrice ?? '',
                   discountAmount: watchedLine?.discountAmount ?? '',
-                  notes: watchedLine?.notes ?? '',
                 };
                 const lineErrors = errors.items?.[index];
                 const selectedProduct = line.productId
@@ -557,15 +514,18 @@ export function SaleFormModal({
                   <div
                     className="ui-document-line-card commercial-line-card"
                     key={field.id}
-                    style={{
-                      border: '1px solid #f0f0f0',
-                      borderRadius: 8,
-                      padding: '8px 10px',
-                      background: '#fafafa',
-                    }}
                   >
-                    <Row gutter={[8, 0]} align="top">
-                      <Col className="commercial-line-product" xs={24} md={8}>
+                    <Button
+                      className="commercial-line-remove-icon"
+                      danger
+                      type="text"
+                      icon={phIcon(Trash, { size: ICON_SIZE.sm })}
+                      disabled={fields.length === 1}
+                      aria-label={SALES_LABELS.actions.removeLine}
+                      onClick={() => remove(index)}
+                    />
+                    <div className="commercial-line-grid">
+                      <div className="commercial-line-product">
                         <Controller
                           control={control}
                           name={`items.${index}.productId`}
@@ -577,7 +537,7 @@ export function SaleFormModal({
                                 lineErrors?.productId ? 'error' : undefined
                               }
                               help={lineErrors?.productId?.message}
-                              style={{ marginBottom: 4 }}
+                              style={{ marginBottom: 0 }}
                             >
                               <Select
                                 {...itemField}
@@ -608,13 +568,16 @@ export function SaleFormModal({
                           )}
                         />
                         {selectedProduct ? (
-                          <Text type="secondary" style={{ fontSize: 12 }}>
+                          <Text
+                            type="secondary"
+                            className="commercial-line-available"
+                          >
                             {SALES_LABELS.fields.availableQuantity}:{' '}
                             {formatQuantity(selectedProduct.currentQuantity)}
                           </Text>
                         ) : null}
-                      </Col>
-                      <Col className="commercial-line-quantity" xs={12} md={3}>
+                      </div>
+                      <div className="commercial-line-quantity">
                         <Controller
                           control={control}
                           name={`items.${index}.quantity`}
@@ -626,14 +589,14 @@ export function SaleFormModal({
                                 lineErrors?.quantity ? 'error' : undefined
                               }
                               help={lineErrors?.quantity?.message}
-                              style={{ marginBottom: 4 }}
+                              style={{ marginBottom: 0 }}
                             >
                               <DecimalInput {...itemField} placeholder="0" />
                             </Form.Item>
                           )}
                         />
-                      </Col>
-                      <Col className="commercial-line-price" xs={12} md={3}>
+                      </div>
+                      <div className="commercial-line-price">
                         <Controller
                           control={control}
                           name={`items.${index}.unitPrice`}
@@ -645,36 +608,22 @@ export function SaleFormModal({
                                 lineErrors?.unitPrice ? 'error' : undefined
                               }
                               help={lineErrors?.unitPrice?.message}
-                              style={{ marginBottom: 4 }}
+                              style={{ marginBottom: 0 }}
                             >
-                              <DecimalInput {...itemField} placeholder="0.00" />
+                              <DecimalInput
+                                {...itemField}
+                                maxFractionDigits={2}
+                                placeholder="0.00"
+                              />
                             </Form.Item>
                           )}
                         />
-                      </Col>
-                      <Col className="commercial-line-discount" xs={12} md={3}>
-                        <Controller
-                          control={control}
-                          name={`items.${index}.discountAmount`}
-                          render={({ field: itemField }) => (
-                            <Form.Item
-                              label={SALES_LABELS.fields.lineDiscount}
-                              validateStatus={
-                                lineErrors?.discountAmount ? 'error' : undefined
-                              }
-                              help={lineErrors?.discountAmount?.message}
-                              style={{ marginBottom: 4 }}
-                            >
-                              <DecimalInput {...itemField} placeholder="0.00" />
-                            </Form.Item>
-                          )}
-                        />
-                      </Col>
-                      <Col className="commercial-line-total" xs={12} md={4}>
+                      </div>
+                      <div className="commercial-line-total">
                         <Form.Item
                           className="ui-form-field-readonly"
                           label={SALES_LABELS.fields.lineTotal}
-                          style={{ marginBottom: 4 }}
+                          style={{ marginBottom: 0 }}
                         >
                           <Input
                             readOnly
@@ -687,51 +636,8 @@ export function SaleFormModal({
                             )}
                           />
                         </Form.Item>
-                      </Col>
-                      <Col className="commercial-line-remove" xs={24} md={3}>
-                        <Form.Item
-                          className="commercial-line-remove-item"
-                          label=" "
-                          colon={false}
-                          style={{ marginBottom: 4 }}
-                        >
-                          <Button
-                            className="commercial-remove-line-button"
-                            danger
-                            type="text"
-                            icon={phIcon(Trash, { size: ICON_SIZE.sm })}
-                            disabled={fields.length === 1}
-                            aria-label={SALES_LABELS.actions.removeLine}
-                            onClick={() => remove(index)}
-                            style={{ width: '100%' }}
-                          >
-                            <span>{SALES_LABELS.actions.removeLine}</span>
-                          </Button>
-                        </Form.Item>
-                      </Col>
-                      <Col className="commercial-line-notes" xs={24} md={24}>
-                        <Controller
-                          control={control}
-                          name={`items.${index}.notes`}
-                          render={({ field: itemField }) => (
-                            <Form.Item
-                              validateStatus={
-                                lineErrors?.notes ? 'error' : undefined
-                              }
-                              help={lineErrors?.notes?.message}
-                              style={{ marginBottom: 0 }}
-                            >
-                              <Input
-                                {...itemField}
-                                placeholder={
-                                  SALES_LABELS.fields.lineNotesPlaceholder
-                                }
-                              />
-                            </Form.Item>
-                          )}
-                        />
-                      </Col>
-                    </Row>
+                      </div>
+                    </div>
                   </div>
                 );
               })}
@@ -741,7 +647,11 @@ export function SaleFormModal({
               className="commercial-add-line-button"
               type="dashed"
               icon={phIcon(Plus, { size: ICON_SIZE.sm, weight: 'bold' })}
-              onClick={() => append(emptyLine)}
+              onClick={(event) => {
+                append(emptyLine);
+                // CHANGE-029: do not move focus into newly mounted inputs.
+                event.currentTarget.blur();
+              }}
             >
               {SALES_LABELS.actions.addLine}
             </Button>
@@ -755,24 +665,9 @@ export function SaleFormModal({
               />
             </div>
 
-            <div
-              className="commercial-form-totals"
-              style={{
-                marginTop: 12,
-                padding: '10px 12px',
-                borderRadius: 8,
-                background: '#f5f5f5',
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: 16,
-                justifyContent: 'flex-end',
-              }}
-            >
+            <div className="commercial-form-totals">
               <Text>
                 {SALES_LABELS.columns.subtotal}: {formatMoney(totals.subtotal)}
-              </Text>
-              <Text>
-                {SALES_LABELS.columns.discount}: {formatMoney(totals.discount)}
               </Text>
               <Text strong>
                 {SALES_LABELS.columns.total}: {formatMoney(totals.total)}

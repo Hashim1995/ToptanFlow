@@ -37,6 +37,7 @@ export function LoginPage() {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({
+    shouldFocusError: false,
     resolver: zodResolver(loginSchema),
     defaultValues: { username: '', password: '' },
   });

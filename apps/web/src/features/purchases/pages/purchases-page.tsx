@@ -17,9 +17,10 @@ import {
   Typography,
   message,
 } from "antd";
+import { confirmWithoutAutofocus } from "../../../shared/ui/confirm-without-autofocus";
 import type { MenuProps, TableProps } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import dayjs, { type Dayjs } from "dayjs";
+import dayjs from "dayjs";
 import {
   DATE_DISPLAY_FORMAT,
   dateOnlyPickerToApi,
@@ -45,7 +46,7 @@ import { mapApiError } from "../../../api/map-api-error";
 import { formatMoney } from "../../../shared/money/format-money";
 import { formatDateTime } from "../../../shared/ui/format";
 import { phIcon, ICON_SIZE } from "../../../shared/ui/ph-icon";
-import { ResponsiveRangePicker } from "../../../shared/ui/responsive-date-pickers";
+import { ResponsiveDatePicker } from "../../../shared/ui/responsive-date-pickers";
 import {
   CodeText,
   EntityCell,
@@ -114,7 +115,8 @@ export function PurchasesPage() {
   const [documentNumber, setDocumentNumber] = useState("");
   const [partnerId, setPartnerId] = useState<string>();
   const [status, setStatus] = useState<PurchaseStatus>();
-  const [dateRange, setDateRange] = useState<[string, string]>();
+  const [dateFrom, setDateFrom] = useState<string>();
+  const [dateTo, setDateTo] = useState<string>();
   const [productId, setProductId] = useState<string>();
   const [minTotal, setMinTotal] = useState("");
   const [maxTotal, setMaxTotal] = useState("");
@@ -140,8 +142,8 @@ export function PurchasesPage() {
       documentNumber: documentNumber || undefined,
       partnerId,
       status,
-      businessDateFrom: dateRange?.[0],
-      businessDateTo: dateRange?.[1],
+      businessDateFrom: dateFrom,
+      businessDateTo: dateTo,
       productId,
       minTotal: minTotal || undefined,
       maxTotal: maxTotal || undefined,
@@ -154,7 +156,8 @@ export function PurchasesPage() {
       documentNumber,
       partnerId,
       status,
-      dateRange,
+      dateFrom,
+      dateTo,
       productId,
       minTotal,
       maxTotal,
@@ -195,7 +198,8 @@ export function PurchasesPage() {
     documentNumber,
     partnerId,
     status,
-    dateRange,
+    dateFrom,
+    dateTo,
     productId,
     minTotal,
     maxTotal,
@@ -206,7 +210,7 @@ export function PurchasesPage() {
   }
 
   function confirmRemove(record: PurchaseListItem) {
-    Modal.confirm({
+    confirmWithoutAutofocus({
       className: "app-mobile-modal",
       title: PURCHASE_LABELS.remove.title,
       content: PURCHASE_LABELS.remove.text,
@@ -527,7 +531,8 @@ export function PurchasesPage() {
             setDocumentNumber("");
             setPartnerId(undefined);
             setStatus(undefined);
-            setDateRange(undefined);
+            setDateFrom(undefined);
+            setDateTo(undefined);
             setProductId(undefined);
             setMinTotal("");
             setMaxTotal("");
@@ -580,23 +585,34 @@ export function PurchasesPage() {
               style={{ width: 160 }}
             />
           </FilterField>
-          <FilterField label={PURCHASE_LABELS.filters.dateRange}>
-            <ResponsiveRangePicker
+          <FilterField label={PURCHASE_LABELS.filters.dateFrom}>
+            <ResponsiveDatePicker
+              allowClear
               format={DATE_DISPLAY_FORMAT}
-              value={
-                dateRange ? [dayjs(dateRange[0]), dayjs(dateRange[1])] : null
-              }
-              onChange={(values: null | [Dayjs | null, Dayjs | null]) => {
-                setDateRange(
-                  values?.[0] && values[1]
-                    ? [
-                        dateOnlyPickerToApi(values[0]),
-                        dateOnlyPickerToApi(values[1]),
-                      ]
-                    : undefined,
+              value={dateFrom ? dayjs(dateFrom) : null}
+              placeholder={PURCHASE_LABELS.filters.dateFrom}
+              onChange={(value) => {
+                setDateFrom(
+                  value ? dateOnlyPickerToApi(value) || undefined : undefined,
                 );
                 setPage(1);
               }}
+              style={{ width: "100%" }}
+            />
+          </FilterField>
+          <FilterField label={PURCHASE_LABELS.filters.dateTo}>
+            <ResponsiveDatePicker
+              allowClear
+              format={DATE_DISPLAY_FORMAT}
+              value={dateTo ? dayjs(dateTo) : null}
+              placeholder={PURCHASE_LABELS.filters.dateTo}
+              onChange={(value) => {
+                setDateTo(
+                  value ? dateOnlyPickerToApi(value) || undefined : undefined,
+                );
+                setPage(1);
+              }}
+              style={{ width: "100%" }}
             />
           </FilterField>
           <FilterField label={PURCHASE_LABELS.filters.product}>
@@ -617,6 +633,8 @@ export function PurchasesPage() {
           <FilterField label={PURCHASE_LABELS.filters.minTotal}>
             <DecimalInput
               value={minTotal}
+              maxFractionDigits={2}
+              placeholder="0.00"
               onChange={(value) => {
                 setMinTotal(value);
                 setPage(1);
@@ -626,6 +644,8 @@ export function PurchasesPage() {
           <FilterField label={PURCHASE_LABELS.filters.maxTotal}>
             <DecimalInput
               value={maxTotal}
+              maxFractionDigits={2}
+              placeholder="0.00"
               onChange={(value) => {
                 setMaxTotal(value);
                 setPage(1);

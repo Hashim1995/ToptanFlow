@@ -23,7 +23,7 @@ import {
 import { formatMoney } from "../../../shared/money/format-money";
 import { formatDateTime } from "../../../shared/ui/format";
 import { ICON_SIZE, phIcon } from "../../../shared/ui/ph-icon";
-import { ResponsiveRangePicker } from "../../../shared/ui/responsive-date-pickers";
+import { ResponsiveDatePicker } from "../../../shared/ui/responsive-date-pickers";
 import { CodeText, MoneyCell } from "../../../shared/ui/table-cells";
 import { FilterBar, FilterField } from "../../master-data/ui/list-toolbar";
 import { PageHeader } from "../../master-data/ui/page-header";
@@ -73,14 +73,16 @@ export function CashReportsPage() {
   const screens = useBreakpoint();
   const isMobile = !screens.md;
 
-  const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null]>([
+  const [dateFromValue, setDateFromValue] = useState<Dayjs | null>(
     dayjs().startOf("month"),
-    dayjs(),
-  ]);
+  );
+  const [dateToValue, setDateToValue] = useState<Dayjs | null>(dayjs());
   const [accountId, setAccountId] = useState<string | undefined>();
 
-  const dateFrom = dateRange[0] ? dateOnlyPickerToApi(dateRange[0]) : undefined;
-  const dateTo = dateRange[1] ? dateOnlyPickerToApi(dateRange[1]) : undefined;
+  const dateFrom = dateFromValue
+    ? dateOnlyPickerToApi(dateFromValue)
+    : undefined;
+  const dateTo = dateToValue ? dateOnlyPickerToApi(dateToValue) : undefined;
 
   const summaryQuery = useMemo(
     () => ({
@@ -204,19 +206,29 @@ export function CashReportsPage() {
             }
           }}
           onReset={() => {
-            setDateRange([dayjs().startOf("month"), dayjs()]);
+            setDateFromValue(dayjs().startOf("month"));
+            setDateToValue(dayjs());
             setAccountId(undefined);
           }}
         >
-          <FilterField label={CASH_LABELS.dateRange}>
-            <ResponsiveRangePicker
+          <FilterField label={CASH_LABELS.dateFrom}>
+            <ResponsiveDatePicker
+              allowClear
               style={{ width: "100%" }}
               format={DATE_DISPLAY_FORMAT}
-              value={dateRange}
-              onChange={(values) => {
-                setDateRange([values?.[0] ?? null, values?.[1] ?? null]);
-              }}
+              value={dateFromValue}
+              placeholder={CASH_LABELS.dateFrom}
+              onChange={(value) => setDateFromValue(value)}
+            />
+          </FilterField>
+          <FilterField label={CASH_LABELS.dateTo}>
+            <ResponsiveDatePicker
               allowClear
+              style={{ width: "100%" }}
+              format={DATE_DISPLAY_FORMAT}
+              value={dateToValue}
+              placeholder={CASH_LABELS.dateTo}
+              onChange={(value) => setDateToValue(value)}
             />
           </FilterField>
           <FilterField label={CASH_LABELS.selectAccountForStatement}>

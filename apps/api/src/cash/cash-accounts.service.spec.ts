@@ -40,6 +40,10 @@ describe('CashAccountsService', () => {
       update: jest.fn(),
       aggregate: jest.fn(),
     },
+    cashTransaction: {
+      findMany: jest.fn(),
+      findFirst: jest.fn(),
+    },
     user: {
       findUnique: jest.fn(),
     },
@@ -51,6 +55,7 @@ describe('CashAccountsService', () => {
 
   const cashBalance = {
     applyPostedTransaction: jest.fn(),
+    cancelPostedTransaction: jest.fn(),
   };
 
   let service: CashAccountsService;
@@ -61,6 +66,10 @@ describe('CashAccountsService', () => {
       id: responsibleUserId,
       isActive: true,
     });
+    prisma.cashTransaction.findMany.mockResolvedValue([]);
+    prisma.$transaction.mockImplementation(
+      async (fn: (tx: unknown) => Promise<unknown>) => fn(prisma),
+    );
     service = new CashAccountsService(
       prisma as never,
       numberSequences as never,
@@ -95,6 +104,7 @@ describe('CashAccountsService', () => {
 
       expect(result.code).toBe('CA-0000001');
       expect(result.currentBalance).toBe('0.00');
+      expect(result.openingBalance).toBe('0.00');
       expect(cashBalance.applyPostedTransaction).not.toHaveBeenCalled();
     });
 
@@ -136,6 +146,7 @@ describe('CashAccountsService', () => {
         }),
       );
       expect(result.currentBalance).toBe('1000.00');
+      expect(result.openingBalance).toBe('1000.00');
     });
 
     it('throws ConflictException on duplicate name', async () => {
@@ -164,6 +175,12 @@ describe('CashAccountsService', () => {
     it('lists with pagination meta', async () => {
       prisma.cashAccount.findMany.mockResolvedValue([baseAccount]);
       prisma.cashAccount.count.mockResolvedValue(1);
+      prisma.cashTransaction.findMany.mockResolvedValue([
+        {
+          cashAccountId: accountId,
+          amount: new Decimal('1000.00'),
+        },
+      ]);
 
       const result = await service.list({
         page: 1,
@@ -176,6 +193,7 @@ describe('CashAccountsService', () => {
       expect(result.data).toHaveLength(1);
       expect(result.meta.total).toBe(1);
       expect(result.data[0].currentBalance).toBe('1000.00');
+      expect(result.data[0].openingBalance).toBe('1000.00');
     });
 
     it('getById throws when missing', async () => {
@@ -217,6 +235,18 @@ describe('CashAccountsService', () => {
       expect(prisma.cashAccount.update).not.toHaveBeenCalled();
     });
 
+    it('rejects an opening-balance change by an ordinary user', async () => {
+      prisma.cashAccount.findUnique.mockResolvedValue(baseAccount);
+
+      await expect(
+        service.update(accountId, { openingBalance: '500.00' }, false, actorId),
+      ).rejects.toMatchObject({
+        response: { code: 'SUPERADMIN_REQUIRED' },
+      });
+      expect(cashBalance.cancelPostedTransaction).not.toHaveBeenCalled();
+      expect(cashBalance.applyPostedTransaction).not.toHaveBeenCalled();
+    });
+
     it('allows a Super Admin to assign an active unowned user', async () => {
       const nextOwner = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
       prisma.cashAccount.findUnique.mockResolvedValue(baseAccount);
@@ -234,9 +264,127 @@ describe('CashAccountsService', () => {
         accountId,
         { responsibleUserId: nextOwner },
         true,
+        actorId,
       );
 
       expect(result.responsibleUserId).toBe(nextOwner);
+    });
+
+    it('allows a Super Admin to correct opening balance via reverse+repost', async () => {
+      const openingTxnId = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
+      prisma.cashAccount.findUnique.mockResolvedValue(baseAccount);
+      prisma.cashAccount.findUniqueOrThrow.mockResolvedValue({
+        ...baseAccount,
+        currentBalance: new Decimal('500.00'),
+      });
+      prisma.cashTransaction.findFirst.mockResolvedValue({
+        id: openingTxnId,
+        amount: new Decimal('1000.00'),
+      });
+      prisma.cashTransaction.findMany.mockResolvedValue([
+        {
+          cashAccountId: accountId,
+          amount: new Decimal('500.00'),
+        },
+      ]);
+      cashBalance.cancelPostedTransaction.mockResolvedValue({});
+      cashBalance.applyPostedTransaction.mockResolvedValue({
+        id: 'txn-2',
+        balanceAfter: '500.00',
+      });
+
+      const result = await service.update(
+        accountId,
+        { openingBalance: '500.00' },
+        true,
+        actorId,
+      );
+
+      expect(cashBalance.cancelPostedTransaction).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          transactionId: openingTxnId,
+          cancelledByUserId: actorId,
+          cancelReason: expect.stringContaining(
+            'from 1000.00 to 500.00',
+          ) as string,
+        }),
+      );
+      expect(cashBalance.applyPostedTransaction).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          type: 'OPENING_BALANCE',
+          amount: '500.00',
+          direction: 'IN',
+          notes: expect.stringContaining('from 1000.00 to 500.00') as string,
+        }),
+      );
+      expect(prisma.cashAccount.update).not.toHaveBeenCalled();
+      expect(result.openingBalance).toBe('500.00');
+    });
+
+    it('posts opening balance when Super Admin sets it on a zero-opening account', async () => {
+      prisma.cashAccount.findUnique.mockResolvedValue({
+        ...baseAccount,
+        currentBalance: new Decimal('0.00'),
+      });
+      prisma.cashAccount.findUniqueOrThrow.mockResolvedValue({
+        ...baseAccount,
+        currentBalance: new Decimal('250.00'),
+      });
+      prisma.cashTransaction.findFirst.mockResolvedValue(null);
+      prisma.cashTransaction.findMany.mockResolvedValue([
+        {
+          cashAccountId: accountId,
+          amount: new Decimal('250.00'),
+        },
+      ]);
+      cashBalance.applyPostedTransaction.mockResolvedValue({
+        id: 'txn-3',
+        balanceAfter: '250.00',
+      });
+
+      const result = await service.update(
+        accountId,
+        { openingBalance: '250.00' },
+        true,
+        actorId,
+      );
+
+      expect(cashBalance.cancelPostedTransaction).not.toHaveBeenCalled();
+      expect(cashBalance.applyPostedTransaction).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          type: 'OPENING_BALANCE',
+          amount: '250.00',
+        }),
+      );
+      expect(result.openingBalance).toBe('250.00');
+    });
+
+    it('skips balance mutation when Super Admin resubmits the same opening', async () => {
+      prisma.cashAccount.findUnique.mockResolvedValue(baseAccount);
+      prisma.cashAccount.findUniqueOrThrow.mockResolvedValue(baseAccount);
+      prisma.cashTransaction.findFirst.mockResolvedValue({
+        id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+        amount: new Decimal('1000.00'),
+      });
+      prisma.cashTransaction.findMany.mockResolvedValue([
+        {
+          cashAccountId: accountId,
+          amount: new Decimal('1000.00'),
+        },
+      ]);
+
+      await service.update(
+        accountId,
+        { openingBalance: '1000.00' },
+        true,
+        actorId,
+      );
+
+      expect(cashBalance.cancelPostedTransaction).not.toHaveBeenCalled();
+      expect(cashBalance.applyPostedTransaction).not.toHaveBeenCalled();
     });
   });
 

@@ -7,7 +7,6 @@ import {
   Empty,
   Grid,
   Input,
-  Modal,
   Pagination,
   Select,
   Skeleton,
@@ -18,6 +17,7 @@ import {
   Typography,
   message,
 } from "antd";
+import { confirmWithoutAutofocus } from "../../../shared/ui/confirm-without-autofocus";
 import type { MenuProps } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
@@ -129,11 +129,8 @@ function toPayload(
     name: values.name.trim(),
     isCustomer: values.isCustomer,
     isSupplier: values.isSupplier,
-    phone: emptyToNull(values.phone ?? ""),
     email: emptyToNull(values.email ?? ""),
-    taxNumber: emptyToNull(values.taxNumber ?? ""),
-    address: emptyToNull(values.address ?? ""),
-    notes: emptyToNull(values.notes ?? ""),
+    // CHANGE-030: phone / taxNumber / address / notes omitted so edit does not clear stored values.
   };
 }
 
@@ -395,7 +392,7 @@ export function BusinessPartnersPage() {
   }
 
   function confirmDeactivate(partner: BusinessPartner) {
-    Modal.confirm({
+    confirmWithoutAutofocus({
       className: "app-mobile-modal partners-confirm-modal",
       centered: true,
       title: labels.deactivateConfirm,
@@ -421,7 +418,7 @@ export function BusinessPartnersPage() {
   }
 
   function confirmActivate(partner: BusinessPartner) {
-    Modal.confirm({
+    confirmWithoutAutofocus({
       className: "app-mobile-modal partners-confirm-modal",
       centered: true,
       title: labels.activateConfirm,
@@ -454,11 +451,7 @@ export function BusinessPartnersPage() {
           name: formMode.partner.name,
           isCustomer: formMode.partner.isCustomer,
           isSupplier: formMode.partner.isSupplier,
-          phone: formMode.partner.phone ?? "",
           email: formMode.partner.email ?? "",
-          taxNumber: formMode.partner.taxNumber ?? "",
-          address: formMode.partner.address ?? "",
-          notes: formMode.partner.notes ?? "",
         }
       : undefined;
   const partners = list.data?.data ?? [];

@@ -14,6 +14,7 @@ import {
   Typography,
   message,
 } from "antd";
+import { confirmWithoutAutofocus } from "../../../shared/ui/confirm-without-autofocus";
 import type { ColumnsType } from "antd/es/table";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
@@ -159,7 +160,7 @@ export function PurchaseDetailPage() {
   }
 
   function confirmRemove() {
-    Modal.confirm({
+    confirmWithoutAutofocus({
       className: "app-mobile-modal",
       title: PURCHASE_LABELS.remove.title,
       content: PURCHASE_LABELS.remove.text,

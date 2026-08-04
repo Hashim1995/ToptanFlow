@@ -523,8 +523,7 @@
   border-radius: 9px;
 }
 
-.commercial-document-form .ui-form-field-readonly .ui-optional-mark,
-.commercial-document-form .commercial-line-remove-item .ui-optional-mark {
+.commercial-document-form .ui-form-field-readonly .ui-optional-mark {
   display: none;
 }
 
@@ -543,10 +542,57 @@
 }
 
 .commercial-line-card {
-  padding: 12px !important;
+  position: relative;
+  padding: 10px 10px 10px 10px !important;
   background: #fbfcfe !important;
-  border-color: #e3e9f0 !important;
+  border: 1px solid #e3e9f0 !important;
   border-radius: 12px !important;
+}
+
+.commercial-line-remove-icon.ant-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+  display: inline-flex;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  color: #cf1322;
+  border-radius: 9px;
+}
+
+.commercial-line-remove-icon.ant-btn:hover {
+  color: #a8071a;
+  background: #fff1f0;
+}
+
+.commercial-line-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding-right: 40px;
+}
+
+.commercial-line-product {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.commercial-line-quantity,
+.commercial-line-price,
+.commercial-line-total {
+  min-width: 0;
+}
+
+.commercial-line-available {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.3;
 }
 
 .commercial-lines-heading {
@@ -570,8 +616,8 @@
 
 .commercial-add-line-button.ant-btn {
   width: 100%;
-  min-height: 42px;
-  margin-top: 10px;
+  min-height: 40px;
+  margin-top: 8px;
   color: #1457a6;
   font-weight: 650;
   background: #f7faff;
@@ -581,11 +627,6 @@
 
 .commercial-add-line-button.ant-btn:hover {
   background: #eef6ff;
-}
-
-.commercial-remove-line-button.ant-btn {
-  min-height: 40px;
-  border-radius: 9px;
 }
 
 .commercial-record-list {
@@ -1000,15 +1041,22 @@
 }
 
 .commercial-payment-section {
-  margin-top: 14px;
-  padding: 14px;
+  margin-top: 12px;
+  padding: 12px;
   background: #f8fafc;
   border: 1px solid #e3e9f0;
   border-radius: 12px;
 }
 
 .commercial-form-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  justify-content: flex-end;
+  margin-top: 12px;
+  padding: 10px 12px;
   border: 1px solid #dce8f7;
+  border-radius: 10px;
   background: linear-gradient(135deg, #f8fbff, #edf5ff) !important;
 }
 
@@ -1055,11 +1103,6 @@
   .commercial-document-meta-grid
     > .ant-col:not(:last-child)
     > .ant-form-item
-    > .ant-form-item-row,
-  .commercial-line-card
-    > .ant-row
-    > .ant-col
-    > .ant-form-item
     > .ant-form-item-row {
     height: 100%;
   }
@@ -1067,8 +1110,7 @@
   .commercial-document-meta-grid
     > .ant-col:not(:last-child)
     > .ant-form-item
-    .ant-form-item-label,
-  .commercial-line-card .ant-form-item-label {
+    .ant-form-item-label {
     display: flex;
     min-height: 44px;
     align-items: flex-end;
@@ -1079,13 +1121,36 @@
     > .ant-col:not(:last-child)
     > .ant-form-item
     .ant-form-item-label
-    > label,
-  .commercial-line-card .ant-form-item-label > label {
+    > label {
     height: auto;
   }
 
-  .commercial-line-remove-item .ant-form-item-label {
-    visibility: hidden;
+  .commercial-line-card {
+    padding: 12px 44px 12px 12px !important;
+  }
+
+  .commercial-line-grid {
+    grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(88px, 0.7fr));
+    gap: 10px;
+    padding-right: 0;
+    align-items: start;
+  }
+
+  .commercial-line-product {
+    grid-column: auto;
+  }
+
+  .commercial-line-remove-icon.ant-btn {
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+  }
+
+  .commercial-line-card .ant-form-item-label {
+    display: flex;
+    min-height: 28px;
+    align-items: flex-end;
+    padding-bottom: 4px;
   }
 }
 
@@ -1252,11 +1317,11 @@
 
   :is(.commercial-document-modal, .commercial-confirm-modal) .ant-modal-body {
     flex: 1 1 auto;
-    padding: 14px;
+    padding: 12px;
   }
 
   :is(.commercial-document-modal, .commercial-confirm-modal) .ant-modal-footer {
-    padding: 11px 14px calc(11px + env(safe-area-inset-bottom));
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
   }
 
   .commercial-document-modal .ant-modal-footer > .ant-space {
@@ -1284,30 +1349,73 @@
     margin: 0;
   }
 
-  .commercial-line-discount .ant-form-item-label,
-  .commercial-line-total .ant-form-item-label {
-    display: flex;
-    min-height: 43px;
-    align-items: flex-end;
-    padding-bottom: 5px;
+  .commercial-document-form .ant-input,
+  .commercial-document-form .ant-input-affix-wrapper,
+  .commercial-document-form .ant-select-selector,
+  .commercial-document-form .ant-picker {
+    min-height: 40px;
   }
 
-  .commercial-line-discount .ant-form-item-label > label,
-  .commercial-line-total .ant-form-item-label > label {
-    height: auto;
+  .commercial-document-form .commercial-line-card .ant-form-item-control-input {
+    min-height: 40px;
   }
 
-  .commercial-line-remove-item {
-    margin-top: 5px;
+  .commercial-line-card {
+    padding: 8px 40px 8px 8px !important;
+    border-radius: 10px !important;
   }
 
-  .commercial-line-remove-item .ant-form-item-label {
-    display: none;
+  .commercial-line-grid {
+    gap: 6px;
+    padding-right: 0;
   }
 
-  .commercial-line-remove-button.ant-btn {
-    background: #fff7f7;
-    border: 1px solid #ffd6d6;
+  .commercial-line-card .ant-form-item-label {
+    padding-bottom: 2px !important;
+  }
+
+  .commercial-line-card .ant-form-item-label > label {
+    font-size: 10px;
+  }
+
+  .commercial-line-available {
+    margin-top: 2px;
+    font-size: 10px;
+  }
+
+  .commercial-line-quantity .ant-input,
+  .commercial-line-price .ant-input,
+  .commercial-line-total .ant-input,
+  .commercial-line-quantity .ant-input-affix-wrapper,
+  .commercial-line-price .ant-input-affix-wrapper,
+  .commercial-line-total .ant-input-affix-wrapper {
+    min-height: 40px;
+    padding-inline: 8px;
+    font-size: 13px;
+  }
+
+  .commercial-line-remove-icon.ant-btn {
+    top: 4px;
+    right: 4px;
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+  }
+
+  .commercial-payment-section {
+    margin-top: 10px;
+    padding: 10px;
+  }
+
+  .commercial-form-totals {
+    gap: 8px 14px;
+    margin-top: 10px;
+    padding: 9px 10px;
+  }
+
+  .commercial-add-line-button.ant-btn {
+    min-height: 38px;
+    margin-top: 6px;
   }
 
   .commercial-summary-card .ant-descriptions-item-label,

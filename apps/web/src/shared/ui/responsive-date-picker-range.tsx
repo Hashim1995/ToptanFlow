@@ -1,135 +1,78 @@
-import { useMemo, useState, type ComponentProps } from 'react';
-import { Button, DatePicker, Drawer, Grid } from 'antd';
+import type { CSSProperties } from 'react';
 import type { Dayjs } from 'dayjs';
 import { DATE_DISPLAY_FORMAT } from '../datetime';
-import { PWA_LABELS } from '../pwa/labels';
+import { ResponsiveDatePicker } from './responsive-date-picker';
 import './responsive-date-picker.css';
 
-type AntRangePickerProps = ComponentProps<typeof DatePicker.RangePicker>;
-type RangeValue = [Dayjs | null, Dayjs | null] | null;
+export type DateRangeValue = [Dayjs | null, Dayjs | null] | null;
 
-export type ResponsiveRangePickerProps = Omit<
-  AntRangePickerProps,
-  'value' | 'onChange' | 'format'
-> & {
-  value?: RangeValue;
+export type ResponsiveRangePickerProps = {
+  value?: DateRangeValue;
   format?: string;
-  onChange?: (dates: RangeValue, dateStrings: [string, string]) => void;
+  allowClear?: boolean;
+  disabled?: boolean;
+  className?: string;
+  style?: CSSProperties;
+  startPlaceholder?: string;
+  endPlaceholder?: string;
+  onChange?: (dates: DateRangeValue) => void;
 };
 
-function useIsMobileDatePicker(): boolean {
-  const screens = Grid.useBreakpoint();
-  return !screens.md;
-}
-
-function formatRangeDraft(value: RangeValue, format: string): [string, string] {
-  return [
-    value?.[0] ? value[0].format(format) : '',
-    value?.[1] ? value[1].format(format) : '',
-  ];
+function emitRange(
+  start: Dayjs | null,
+  end: Dayjs | null,
+  onChange?: (dates: DateRangeValue) => void,
+) {
+  if (!start && !end) {
+    onChange?.(null);
+    return;
+  }
+  onChange?.([start, end]);
 }
 
 /**
- * Desktop: standard Ant RangePicker popup.
- * Mobile: bottom drawer with an inline range panel.
+ * Date range as two independent single date pickers (start + end).
+ * Used everywhere a range filter was previously a RangePicker.
  */
 export function ResponsiveRangePicker({
-  format = DATE_DISPLAY_FORMAT,
   value = null,
+  format = DATE_DISPLAY_FORMAT,
+  allowClear = true,
+  disabled,
+  className,
+  style,
+  startPlaceholder = 'Başlanğıc tarixi',
+  endPlaceholder = 'Bitmə tarixi',
   onChange,
-  ...props
 }: ResponsiveRangePickerProps) {
-  const isMobile = useIsMobileDatePicker();
-  const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState<RangeValue>(null);
-
-  const panelValue = useMemo(() => {
-    if (open) return draft;
-    return value;
-  }, [draft, open, value]);
-
-  if (!isMobile) {
-    return (
-      <DatePicker.RangePicker
-        {...props}
-        format={format}
-        value={value}
-        onChange={(next) => {
-          onChange?.(next ?? null, formatRangeDraft(next ?? null, format));
-        }}
-      />
-    );
-  }
+  const start = value?.[0] ?? null;
+  const end = value?.[1] ?? null;
 
   return (
-    <>
-      <DatePicker.RangePicker
-        {...props}
+    <div
+      className={['responsive-date-range-fields', className]
+        .filter(Boolean)
+        .join(' ')}
+      style={style}
+    >
+      <ResponsiveDatePicker
+        value={start}
         format={format}
-        value={value}
-        inputReadOnly
-        open={false}
-        onOpenChange={(next) => {
-          if (next && !props.disabled) {
-            setDraft(value);
-            setOpen(true);
-          }
-        }}
-        onClick={() => {
-          if (!props.disabled) {
-            setDraft(value);
-            setOpen(true);
-          }
-        }}
+        allowClear={allowClear}
+        disabled={disabled}
+        placeholder={startPlaceholder}
+        style={{ width: '100%' }}
+        onChange={(next) => emitRange(next, end, onChange)}
       />
-      <Drawer
-        open={open}
-        placement="bottom"
-        size="auto"
-        title={PWA_LABELS.rangePickerTitle}
-        onClose={() => setOpen(false)}
-        destroyOnHidden
-        className="responsive-date-picker-drawer"
-        styles={{
-          body: { paddingTop: 8, paddingBottom: 8 },
-        }}
-        footer={
-          <div className="responsive-date-picker-footer">
-            <Button onClick={() => setOpen(false)}>
-              {PWA_LABELS.datePickerCancel}
-            </Button>
-            <Button
-              type="primary"
-              onClick={() => {
-                onChange?.(draft, formatRangeDraft(draft, format));
-                setOpen(false);
-              }}
-            >
-              {PWA_LABELS.datePickerDone}
-            </Button>
-          </div>
-        }
-      >
-        <div className="responsive-date-picker-panel-host responsive-date-picker-panel-host-range">
-          <DatePicker.RangePicker
-            {...props}
-            value={panelValue}
-            format={format}
-            open
-            inputReadOnly
-            getPopupContainer={(node) => node.parentElement ?? document.body}
-            className="responsive-date-picker-hidden-input"
-            classNames={{
-              popup: {
-                root: 'responsive-date-picker-popup responsive-date-picker-popup-range',
-              },
-            }}
-            onChange={(next) => {
-              setDraft(next ?? null);
-            }}
-          />
-        </div>
-      </Drawer>
-    </>
+      <ResponsiveDatePicker
+        value={end}
+        format={format}
+        allowClear={allowClear}
+        disabled={disabled}
+        placeholder={endPlaceholder}
+        style={{ width: '100%' }}
+        onChange={(next) => emitRange(start, next, onChange)}
+      />
+    </div>
   );
 }

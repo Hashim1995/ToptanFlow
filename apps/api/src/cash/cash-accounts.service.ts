@@ -112,7 +112,7 @@ export class CashAccountsService {
         });
       });
 
-      return this.toResponse(created);
+      return this.toResponse(created, opening);
     } catch (error) {
       this.rethrowUniqueAccountConflict(error);
       throw error;
@@ -159,8 +159,14 @@ export class CashAccountsService {
       this.prisma.cashAccount.count({ where }),
     ]);
 
+    const openings = await this.openingBalancesByAccountIds(
+      rows.map((row) => row.id),
+    );
+
     return {
-      data: rows.map((r) => this.toResponse(r)),
+      data: rows.map((r) =>
+        this.toResponse(r, openings.get(r.id) ?? new Decimal(0)),
+      ),
       meta: {
         page,
         pageSize,
@@ -178,13 +184,15 @@ export class CashAccountsService {
     if (!row) {
       throw new NotFoundException('Cash account not found');
     }
-    return this.toResponse(row);
+    const openings = await this.openingBalancesByAccountIds([id]);
+    return this.toResponse(row, openings.get(id) ?? new Decimal(0));
   }
 
   async update(
     id: string,
     dto: UpdateCashAccountDto,
     actorIsSuperAdmin = false,
+    actorUserId?: string,
   ): Promise<CashAccountResponseDto> {
     await this.getById(id);
     if (dto.responsibleUserId !== undefined && !actorIsSuperAdmin) {
@@ -193,23 +201,65 @@ export class CashAccountsService {
         code: 'SUPERADMIN_REQUIRED',
       });
     }
+    if (dto.openingBalance !== undefined && !actorIsSuperAdmin) {
+      throw new ForbiddenException({
+        message: 'Only a Super Admin may change Cash Account opening balance',
+        code: 'SUPERADMIN_REQUIRED',
+      });
+    }
     if (dto.responsibleUserId !== undefined) {
       await this.assertActiveUser(dto.responsibleUserId);
     }
 
+    const newOpening =
+      dto.openingBalance !== undefined ? new Decimal(dto.openingBalance) : null;
+    if (newOpening !== null && newOpening.isNegative()) {
+      throw new BadRequestException('Opening balance cannot be negative');
+    }
+    if (newOpening !== null && !newOpening.isFinite()) {
+      throw new BadRequestException('Opening balance must be a finite decimal');
+    }
+
     try {
-      const updated = await this.prisma.cashAccount.update({
-        where: { id },
-        data: {
+      const updated = await this.prisma.$transaction(async (tx) => {
+        if (newOpening !== null) {
+          if (!actorUserId) {
+            throw new BadRequestException(
+              'Actor is required to correct opening balance',
+            );
+          }
+          await this.applyOpeningBalanceCorrection(
+            tx,
+            id,
+            newOpening,
+            actorUserId,
+          );
+        }
+
+        const metadata: Prisma.CashAccountUncheckedUpdateInput = {
           ...(dto.name !== undefined ? { name: dto.name } : {}),
           ...(dto.notes !== undefined ? { notes: dto.notes } : {}),
           ...(dto.responsibleUserId !== undefined
             ? { responsibleUserId: dto.responsibleUserId }
             : {}),
-        },
-        select: accountSelect,
+        };
+
+        if (Object.keys(metadata).length === 0) {
+          return tx.cashAccount.findUniqueOrThrow({
+            where: { id },
+            select: accountSelect,
+          });
+        }
+
+        return tx.cashAccount.update({
+          where: { id },
+          data: metadata,
+          select: accountSelect,
+        });
       });
-      return this.toResponse(updated);
+
+      const openings = await this.openingBalancesByAccountIds([id]);
+      return this.toResponse(updated, openings.get(id) ?? new Decimal(0));
     } catch (error) {
       this.rethrowUniqueAccountConflict(error);
       throw error;
@@ -235,7 +285,7 @@ export class CashAccountsService {
       },
       select: accountSelect,
     });
-    return this.toResponse(updated);
+    return this.toResponse(updated, new Decimal(existing.openingBalance));
   }
 
   async reactivate(id: string): Promise<CashAccountResponseDto> {
@@ -253,7 +303,7 @@ export class CashAccountsService {
       },
       select: accountSelect,
     });
-    return this.toResponse(updated);
+    return this.toResponse(updated, new Decimal(existing.openingBalance));
   }
 
   async totalCompanyCash(): Promise<TotalCompanyCashResponseDto> {
@@ -373,11 +423,18 @@ export class CashAccountsService {
       });
     }
 
+    const openings = await this.openingBalancesByAccountIds(
+      accounts.map((account) => account.id),
+    );
+
     return {
       totalCompanyCash: totals.totalCompanyCash,
       activeAccountCount: totals.activeAccountCount,
       accounts: accounts.map((row) => {
-        const base = this.toResponse(row);
+        const base = this.toResponse(
+          row,
+          openings.get(row.id) ?? new Decimal(0),
+        );
         const day = byAccount.get(row.id) ?? {
           in: new Decimal(0),
           out: new Decimal(0),
@@ -394,6 +451,87 @@ export class CashAccountsService {
     };
   }
 
+  /**
+   * CHANGE-028: Super Admin opening-balance correction.
+   * Cancels the active OPENING_BALANCE (immutable reversal) when present,
+   * then posts a new OPENING_BALANCE when newOpening > 0. Does not rebuild
+   * ordinary inflow/outflow history.
+   */
+  private async applyOpeningBalanceCorrection(
+    tx: Prisma.TransactionClient,
+    cashAccountId: string,
+    newOpening: Decimal,
+    actorUserId: string,
+  ): Promise<void> {
+    const existing = await tx.cashTransaction.findFirst({
+      where: {
+        cashAccountId,
+        type: CashTransactionTypeValue.OPENING_BALANCE,
+        status: 'POSTED',
+      },
+      select: { id: true, amount: true },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const oldOpening = existing
+      ? new Decimal(existing.amount.toString())
+      : new Decimal(0);
+    const nextOpening = newOpening.toDecimalPlaces(2);
+
+    if (oldOpening.eq(nextOpening)) {
+      return;
+    }
+
+    const auditNote = `Opening balance corrected from ${oldOpening.toFixed(2)} to ${nextOpening.toFixed(2)}`;
+
+    if (existing) {
+      await this.cashBalance.cancelPostedTransaction(tx, {
+        transactionId: existing.id,
+        cancelReason: auditNote,
+        cancelledByUserId: actorUserId,
+      });
+    }
+
+    if (nextOpening.gt(0)) {
+      await this.cashBalance.applyPostedTransaction(tx, {
+        cashAccountId,
+        direction: CashTransactionDirectionValue.IN,
+        type: CashTransactionTypeValue.OPENING_BALANCE,
+        amount: nextOpening.toFixed(2),
+        transactionDate: new Date(),
+        notes: auditNote,
+        createdByUserId: actorUserId,
+      });
+    }
+  }
+
+  private async openingBalancesByAccountIds(
+    accountIds: string[],
+  ): Promise<Map<string, Decimal>> {
+    const map = new Map<string, Decimal>();
+    if (accountIds.length === 0) {
+      return map;
+    }
+
+    const rows = await this.prisma.cashTransaction.findMany({
+      where: {
+        cashAccountId: { in: accountIds },
+        type: CashTransactionTypeValue.OPENING_BALANCE,
+        status: 'POSTED',
+      },
+      select: { cashAccountId: true, amount: true },
+    });
+
+    for (const row of rows) {
+      const previous = map.get(row.cashAccountId) ?? new Decimal(0);
+      map.set(
+        row.cashAccountId,
+        previous.plus(new Decimal(row.amount.toString())),
+      );
+    }
+    return map;
+  }
+
   private async assertActiveUser(userId: string): Promise<void> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -404,12 +542,16 @@ export class CashAccountsService {
     }
   }
 
-  private toResponse(row: AccountRecord): CashAccountResponseDto {
+  private toResponse(
+    row: AccountRecord,
+    openingBalance: Decimal,
+  ): CashAccountResponseDto {
     return {
       id: row.id,
       name: row.name,
       code: row.code,
       currentBalance: new Decimal(row.currentBalance.toString()).toFixed(2),
+      openingBalance: openingBalance.toDecimalPlaces(2).toFixed(2),
       notes: row.notes,
       responsibleUserId: row.responsibleUserId,
       responsibleUserName: row.responsibleUser?.fullName ?? null,

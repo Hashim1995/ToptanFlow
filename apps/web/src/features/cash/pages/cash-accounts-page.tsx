@@ -8,7 +8,6 @@ import {
   Dropdown,
   Empty,
   Input,
-  Modal,
   Pagination,
   Row,
   Skeleton,
@@ -17,6 +16,7 @@ import {
   Typography,
   message,
 } from "antd";
+import { confirmWithoutAutofocus } from "../../../shared/ui/confirm-without-autofocus";
 import type { MenuProps } from "antd";
 import {
   ArrowDown,
@@ -146,7 +146,7 @@ export function CashAccountsPage() {
       if (formMode.kind === "create") {
         await createMutation.mutateAsync({
           name: values.name,
-          notes: values.notes || undefined,
+          // CHANGE-030: notes omitted from create/edit UI.
           openingBalance: values.openingBalance || undefined,
           responsibleUserId: values.responsibleUserId,
         });
@@ -156,9 +156,12 @@ export function CashAccountsPage() {
           id: formMode.account.id,
           input: {
             name: values.name,
-            notes: values.notes || null,
+            // CHANGE-030: notes omitted so edit does not clear stored values.
             ...(isSuperAdmin
-              ? { responsibleUserId: values.responsibleUserId }
+              ? {
+                  responsibleUserId: values.responsibleUserId,
+                  openingBalance: values.openingBalance,
+                }
               : {}),
           },
         });
@@ -248,7 +251,7 @@ export function CashAccountsPage() {
 
   function confirmDeactivate(account: CashAccount) {
     let reason = "";
-    Modal.confirm({
+    confirmWithoutAutofocus({
       className: "cash-confirm-modal cash-account-state-confirm",
       centered: true,
       width: 460,
@@ -290,7 +293,7 @@ export function CashAccountsPage() {
   }
 
   function confirmReactivate(account: CashAccount) {
-    Modal.confirm({
+    confirmWithoutAutofocus({
       className: "cash-confirm-modal cash-account-state-confirm",
       centered: true,
       width: 440,

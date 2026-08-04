@@ -36,8 +36,6 @@ const emptyValues: ProductFormValues = {
   standardSalePrice: '',
   latestPurchasePrice: '',
   criticalStockThreshold: '',
-  barcode: '',
-  notes: '',
 };
 
 export function ProductFormModal({
@@ -76,6 +74,7 @@ export function ProductFormModal({
     reset,
     formState: { errors },
   } = useForm<ProductFormValues>({
+    shouldFocusError: false,
     resolver: zodResolver(productFormSchema),
     defaultValues: initialValues ?? emptyValues,
   });
@@ -274,6 +273,7 @@ export function ProductFormModal({
                     value={field.value}
                     onChange={field.onChange}
                     onBlur={field.onBlur}
+                    maxFractionDigits={2}
                     placeholder={labels.decimalPlaceholder}
                   />
                 )}
@@ -293,6 +293,7 @@ export function ProductFormModal({
                     value={field.value}
                     onChange={field.onChange}
                     onBlur={field.onBlur}
+                    maxFractionDigits={2}
                     placeholder={labels.decimalPlaceholder}
                   />
                 )}
@@ -315,49 +316,6 @@ export function ProductFormModal({
                     onChange={field.onChange}
                     onBlur={field.onBlur}
                     placeholder={labels.decimalPlaceholder}
-                  />
-                )}
-              />
-            </Form.Item>
-          </div>
-        </section>
-
-        <section className="product-form-section">
-          <div className="product-form-section-heading">Əlavə məlumatlar</div>
-          <div className="product-form-grid">
-            <Form.Item
-              label={labels.barcode}
-              validateStatus={errors.barcode ? 'error' : undefined}
-              help={errors.barcode?.message}
-            >
-              <Controller
-                name="barcode"
-                control={control}
-                render={({ field }) => (
-                  <Input
-                    {...field}
-                    placeholder={labels.barcodePlaceholder}
-                    maxLength={128}
-                  />
-                )}
-              />
-            </Form.Item>
-
-            <Form.Item
-              className="product-form-field-wide"
-              label={labels.notes}
-              validateStatus={errors.notes ? 'error' : undefined}
-              help={errors.notes?.message}
-            >
-              <Controller
-                name="notes"
-                control={control}
-                render={({ field }) => (
-                  <Input.TextArea
-                    {...field}
-                    placeholder={labels.notesPlaceholder}
-                    rows={3}
-                    maxLength={4000}
                   />
                 )}
               />

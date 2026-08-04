@@ -65,6 +65,12 @@
   margin-top: 16px;
 }
 
+.partner-report-date-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 12px;
+}
+
 .partner-report-form .ant-form-item {
   margin-bottom: 15px;
 }
@@ -161,6 +167,10 @@
   .partner-report-grid {
     grid-template-columns: 1fr;
     gap: 0;
+  }
+
+  .partner-report-date-fields {
+    grid-template-columns: 1fr;
   }
 
   .partner-report-progress .ant-steps-item-title {

@@ -33,6 +33,8 @@ export const PURCHASE_LABELS = {
     partner: 'Təchizatçı',
     status: 'Status',
     dateRange: 'Əməliyyat tarixi',
+    dateFrom: 'Başlanğıc tarixi',
+    dateTo: 'Bitmə tarixi',
     product: 'Məhsul',
     minTotal: 'Minimum məbləğ',
     maxTotal: 'Maksimum məbləğ',

@@ -11,6 +11,11 @@ body,
   min-height: 100%;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   font-family:
     system-ui,
@@ -22,4 +27,65 @@ body {
     sans-serif;
   background: #f5f5f5;
   color: rgba(0, 0, 0, 0.88);
+}
+
+/*
+ * Mobile zoom hardening (CHANGE-029 / internal ERP PWA):
+ * - 16px form controls prevent iOS Safari focus auto-zoom
+ * - touch-action: manipulation reduces double-tap zoom on controls
+ * Desktop typography is unchanged outside this breakpoint.
+ */
+@media (max-width: 767px) {
+  input,
+  textarea,
+  select,
+  .ant-input,
+  .ant-input-affix-wrapper,
+  .ant-input-affix-wrapper > input.ant-input,
+  .ant-input-number,
+  .ant-input-number-input,
+  .ant-input-search .ant-input,
+  .ant-select-selector,
+  .ant-select-selection-search-input,
+  .ant-select-selection-item,
+  .ant-select-selection-placeholder,
+  .ant-select-auto-complete .ant-select-selection-search-input,
+  .ant-picker,
+  .ant-picker-input > input,
+  .ant-picker-range .ant-picker-input > input,
+  .ant-mentions,
+  .ant-mentions-textarea,
+  .ant-input-textarea textarea {
+    font-size: 16px !important;
+    line-height: 1.5 !important;
+  }
+
+  a,
+  button,
+  input,
+  textarea,
+  select,
+  label,
+  summary,
+  .ant-btn,
+  .ant-input,
+  .ant-input-affix-wrapper,
+  .ant-input-number,
+  .ant-input-search,
+  .ant-select-selector,
+  .ant-picker,
+  .ant-checkbox-wrapper,
+  .ant-radio-wrapper,
+  .ant-switch,
+  .ant-segmented-item,
+  .ant-pagination-item,
+  .ant-pagination-prev,
+  .ant-pagination-next,
+  .ant-tabs-tab,
+  .ant-menu-item,
+  .ant-dropdown-menu-item,
+  .ant-modal-close,
+  .ant-drawer-close {
+    touch-action: manipulation;
+  }
 }

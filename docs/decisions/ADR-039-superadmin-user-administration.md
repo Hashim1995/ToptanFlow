@@ -38,8 +38,9 @@ Deferred). Other business modules stay flat-equal under ADR-025.
    not writable via update DTO.
 6. **Auth payload:** login/refresh `user` object includes `isSuperAdmin` so the
    frontend can hide the Users nav (UX only; backend remains authoritative).
-7. **Scope limit (amended by ADR-040):** Super Admin gates user administration,
-   Cash Account creation, and responsible-user assignment/change only. Sales,
+7. **Scope limit (amended by ADR-040 / CHANGE-028):** Super Admin gates user
+   administration, Cash Account creation, responsible-user assignment/change,
+   and post-create Cash Account opening-balance correction only. Sales,
    purchases, Cash operations, and other master data remain available to every
    active authenticated user (ADR-025 unchanged for those actions).
 

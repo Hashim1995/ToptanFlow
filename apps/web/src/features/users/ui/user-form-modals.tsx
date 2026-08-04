@@ -32,6 +32,7 @@ export function CreateUserFormModal({
     reset,
     formState: { errors },
   } = useForm<CreateUserFormValues>({
+    shouldFocusError: false,
     resolver: zodResolver(createUserFormSchema),
     defaultValues: { fullName: '', username: '', password: '' },
   });
@@ -146,6 +147,7 @@ export function EditUserFormModal({
     reset,
     formState: { errors },
   } = useForm<EditUserFormValues>({
+    shouldFocusError: false,
     resolver: zodResolver(editUserFormSchema),
     defaultValues: initialValues,
   });

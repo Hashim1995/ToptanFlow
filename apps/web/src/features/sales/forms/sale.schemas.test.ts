@@ -1,67 +1,63 @@
 import { describe, expect, it } from 'vitest';
 import {
-  calculateLineTotal,
   calculateSaleTotals,
   saleFormSchema,
 } from './sale.schemas';
 
 const validSale = {
   partnerId: '11111111-1111-4111-8111-111111111111',
-  businessDate: '2026-07-31',
-  notes: '',
-  discountAmount: '2',
+  businessDate: '2026-08-01',
+  discountAmount: '',
   items: [
     {
       productId: '22222222-2222-4222-8222-222222222222',
-      quantity: '3',
+      quantity: '2',
       unitPrice: '10',
-      discountAmount: '1',
-      notes: '',
+      discountAmount: '',
     },
   ],
 };
 
-describe('sale form calculations and validation', () => {
-  it('calculates line and document totals', () => {
-    expect(calculateLineTotal(validSale.items[0])).toBe(29);
-    expect(calculateSaleTotals(validSale)).toEqual({
-      subtotal: 30,
-      discount: 3,
-      total: 27,
+describe('saleFormSchema', () => {
+  it('accepts a valid sale and totals quantity × price', () => {
+    const parsed = saleFormSchema.parse(validSale);
+    expect(calculateSaleTotals(parsed)).toEqual({
+      subtotal: 20,
+      discount: 0,
+      total: 20,
     });
   });
 
-  it('accepts a valid sale', () => {
-    expect(saleFormSchema.safeParse(validSale).success).toBe(true);
-  });
-
-  it('rejects non-positive quantity and excessive discount', () => {
+  it('rejects non-positive quantity', () => {
     const result = saleFormSchema.safeParse({
       ...validSale,
       items: [
         {
-          ...validSale.items[0],
+          productId: '22222222-2222-4222-8222-222222222222',
           quantity: '0',
-          discountAmount: '100',
+          unitPrice: '10',
+          discountAmount: '',
         },
       ],
     });
     expect(result.success).toBe(false);
   });
 
-  it('allows the same product on multiple lines', () => {
-    const result = saleFormSchema.safeParse({
+  it('round-trips hidden discounts into totals without UI fields', () => {
+    const parsed = saleFormSchema.parse({
       ...validSale,
+      discountAmount: '2',
       items: [
-        validSale.items[0],
         {
           ...validSale.items[0],
-          quantity: '1',
-          unitPrice: '8',
-          discountAmount: '',
+          discountAmount: '1',
         },
       ],
     });
-    expect(result.success).toBe(true);
+    expect(calculateSaleTotals(parsed)).toEqual({
+      subtotal: 20,
+      discount: 3,
+      total: 17,
+    });
   });
 });

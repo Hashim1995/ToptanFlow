@@ -5,13 +5,13 @@ import {
   Card,
   Grid,
   Input,
-  Modal,
   Pagination,
   Space,
   Table,
   Typography,
   message,
 } from "antd";
+import { confirmWithoutAutofocus } from "../../../shared/ui/confirm-without-autofocus";
 import type { ColumnsType } from "antd/es/table";
 import {
   PencilSimple,
@@ -104,7 +104,7 @@ export function ExpenseCategoriesPage() {
   }
 
   function confirmDeactivate(category: ExpenseCategory) {
-    Modal.confirm({
+    confirmWithoutAutofocus({
       className: "cash-confirm-modal cash-account-state-confirm",
       centered: true,
       width: 440,

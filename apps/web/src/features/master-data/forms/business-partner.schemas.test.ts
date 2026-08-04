@@ -5,11 +5,7 @@ const validBase = {
   name: 'Müştəri MMC',
   isCustomer: true,
   isSupplier: false,
-  phone: '',
   email: '',
-  taxNumber: '',
-  address: '',
-  notes: '',
 };
 
 describe('businessPartnerFormSchema', () => {
