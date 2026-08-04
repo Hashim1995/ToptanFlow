@@ -1,10 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Decimal } from '@prisma/client/runtime/client';
 import { Prisma } from '../../generated/prisma/client.js';
-import {
-  toApiDateTime,
-  toDateOnlyApi,
-} from '../common/datetime/index.js';
+import { toApiDateTime, toDateOnlyApi } from '../common/datetime/index.js';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CashTransactionDirectionValue,
@@ -322,7 +319,9 @@ export class CashReportsService {
         expenseCategoryName: value.name,
         total: value.total.toFixed(2),
       }))
-      .sort((a, b) => a.expenseCategoryName.localeCompare(b.expenseCategoryName));
+      .sort((a, b) =>
+        a.expenseCategoryName.localeCompare(b.expenseCategoryName),
+      );
 
     const transferTotal = transferAgg._sum.amount
       ? new Decimal(transferAgg._sum.amount.toString())

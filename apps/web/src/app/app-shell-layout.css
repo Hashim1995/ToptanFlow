@@ -238,7 +238,7 @@
 }
 
 .app-topbar-logo {
-  width: clamp(118px, 36vw, 146px);
+  width: 34px;
   height: 34px;
 }
 
@@ -268,8 +268,8 @@
 }
 
 .app-drawer-logo {
-  width: 148px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
 }
 
 .app-nav-drawer .ant-drawer-body {
@@ -316,7 +316,7 @@
   }
 
   .app-topbar-logo {
-    width: clamp(108px, 34vw, 132px);
+    width: 30px;
     height: 30px;
   }
 }

@@ -22,10 +22,7 @@ describe('NumberSequencesService', () => {
   it('allocates PRODUCT codes via $queryRaw on the transaction client', async () => {
     tx.$queryRaw.mockResolvedValue([{ currentValue: 1n, padding: 7 }]);
 
-    const code = await service.nextCode(
-      tx as never,
-      BusinessCodeSequenceKey.PRODUCT,
-    );
+    const code = await service.nextCode(tx, BusinessCodeSequenceKey.PRODUCT);
 
     expect(code).toBe('0000001');
     expect(tx.$queryRaw).toHaveBeenCalledTimes(1);
@@ -35,7 +32,7 @@ describe('NumberSequencesService', () => {
     tx.$queryRaw.mockResolvedValue([{ currentValue: 2n, padding: 7 }]);
 
     const code = await service.nextCode(
-      tx as never,
+      tx,
       BusinessCodeSequenceKey.BUSINESS_PARTNER,
     );
 
@@ -46,10 +43,7 @@ describe('NumberSequencesService', () => {
   it('allocates PURCHASE codes via $queryRaw on the transaction client', async () => {
     tx.$queryRaw.mockResolvedValue([{ currentValue: 5n, padding: 7 }]);
 
-    const code = await service.nextCode(
-      tx as never,
-      BusinessCodeSequenceKey.PURCHASE,
-    );
+    const code = await service.nextCode(tx, BusinessCodeSequenceKey.PURCHASE);
 
     expect(code).toBe('0000005');
     expect(tx.$queryRaw).toHaveBeenCalledTimes(1);
@@ -58,10 +52,7 @@ describe('NumberSequencesService', () => {
   it('allocates SALE codes via $queryRaw on the transaction client', async () => {
     tx.$queryRaw.mockResolvedValue([{ currentValue: 6n, padding: 7 }]);
 
-    const code = await service.nextCode(
-      tx as never,
-      BusinessCodeSequenceKey.SALE,
-    );
+    const code = await service.nextCode(tx, BusinessCodeSequenceKey.SALE);
 
     expect(code).toBe('0000006');
     expect(tx.$queryRaw).toHaveBeenCalledTimes(1);
@@ -72,11 +63,8 @@ describe('NumberSequencesService', () => {
       .mockResolvedValueOnce([{ currentValue: 3n, padding: 7 }])
       .mockResolvedValueOnce([{ currentValue: 4n, padding: 7 }]);
 
-    await service.nextCode(tx as never, BusinessCodeSequenceKey.PRODUCT);
-    await service.nextCode(
-      tx as never,
-      BusinessCodeSequenceKey.BUSINESS_PARTNER,
-    );
+    await service.nextCode(tx, BusinessCodeSequenceKey.PRODUCT);
+    await service.nextCode(tx, BusinessCodeSequenceKey.BUSINESS_PARTNER);
 
     expect(tx.$queryRaw).toHaveBeenCalledTimes(2);
   });

@@ -374,7 +374,9 @@ export function AppShellLayout() {
                 onClick={() => setDrawerOpen(true)}
               />
             ) : null}
-            {!isDesktop ? <BrandLogo className="app-topbar-logo" /> : null}
+            {!isDesktop ? (
+              <BrandLogo className="app-topbar-logo" compact />
+            ) : null}
           </Space>
           {!isDesktop ? (
             <Space size={8}>
@@ -407,7 +409,7 @@ export function AppShellLayout() {
 
       <Drawer
         className="app-nav-drawer"
-        title={<BrandLogo className="app-drawer-logo" />}
+        title={<BrandLogo className="app-drawer-logo" compact />}
         placement="left"
         width={320}
         open={drawerOpen}

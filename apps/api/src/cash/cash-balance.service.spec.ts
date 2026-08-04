@@ -74,7 +74,7 @@ describe('CashBalanceService', () => {
     };
     const tx = mockTx(account);
 
-    const result = await service.applyPostedTransaction(tx as never, {
+    const result = await service.applyPostedTransaction(tx, {
       cashAccountId: 'acc-1',
       direction: CashTransactionDirectionValue.IN,
       type: CashTransactionTypeValue.OTHER_INCOME,
@@ -120,7 +120,7 @@ describe('CashBalanceService', () => {
     };
     const tx = mockTx(account);
 
-    const result = await service.applyPostedTransaction(tx as never, {
+    const result = await service.applyPostedTransaction(tx, {
       cashAccountId: 'acc-1',
       direction: CashTransactionDirectionValue.OUT,
       type: CashTransactionTypeValue.OWNER_WITHDRAWAL,
@@ -197,7 +197,7 @@ describe('CashBalanceService', () => {
     tx.cashTransaction.update = jest.fn().mockResolvedValue({});
     numberSequences.nextCode.mockResolvedValueOnce('0000002');
 
-    const reversal = await service.cancelPostedTransaction(tx as never, {
+    const reversal = await service.cancelPostedTransaction(tx, {
       transactionId: 'cash-in-1',
       cancelReason: 'Səhv mədaxil',
       cancelledByUserId: 'user-1',
@@ -280,7 +280,7 @@ describe('CashBalanceService', () => {
 
     numberSequences.nextCode.mockResolvedValueOnce('0000002');
 
-    const reversal = await service.cancelPostedTransaction(tx as never, {
+    const reversal = await service.cancelPostedTransaction(tx, {
       transactionId: 'orig-1',
       cancelReason: 'Wrong amount',
       cancelledByUserId: 'user-1',
@@ -362,7 +362,7 @@ describe('CashBalanceService', () => {
     };
     const tx = mockTx(account);
 
-    const result = await service.applyPostedTransaction(tx as never, {
+    const result = await service.applyPostedTransaction(tx, {
       cashAccountId: 'acc-1',
       direction: CashTransactionDirectionValue.IN,
       type: CashTransactionTypeValue.OTHER_INCOME,

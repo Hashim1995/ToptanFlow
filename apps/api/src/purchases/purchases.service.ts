@@ -38,12 +38,6 @@ import { PostPurchaseDto } from './dto/post-purchase.dto';
 import { PurchaseListItemResponseDto } from './dto/purchase-list-item-response.dto';
 import { PurchaseResponseDto } from './dto/purchase-response.dto';
 import { UpdatePurchaseDto } from './dto/update-purchase.dto';
-import { PushEventKey } from '../push/push-event-keys.js';
-import {
-  buildPurchaseCancelledBody,
-  buildPurchaseCreatedBody,
-  buildPurchasePostedBody,
-} from '../push/push-message-builder.js';
 import { PushNotificationsService } from '../push/push-notifications.service.js';
 
 type CalculatedLine = {
@@ -363,7 +357,7 @@ export class PurchasesService {
     userId: string,
     dto: CreatePurchaseDto,
   ): Promise<PurchaseResponseDto> {
-    const created = await this.prisma.$transaction(async (tx) => {
+    const purchaseId = await this.prisma.$transaction(async (tx) => {
       await this.assertValidPartner(tx, dto.partnerId);
       const products = await this.loadAndValidateProducts(tx, dto.items);
       const calculated = recalculateLines(dto.items, dto.discountAmount);
@@ -403,21 +397,13 @@ export class PurchasesService {
         select: { id: true },
       });
 
-      const actorName = await this.pushNotifications.resolveActorName(
-        tx,
-        userId,
-      );
-      const eventId = await this.pushNotifications.enqueueInTransaction(tx, {
-        idempotencyKey: `purchase.create:${purchase.id}`,
-        eventKey: PushEventKey.PURCHASE_CREATED,
-        actorUserId: userId,
-        body: buildPurchaseCreatedBody({ actorName }),
-      });
-
-      return { purchaseId: purchase.id, eventId };
+      return purchase.id;
     });
-    this.pushNotifications.scheduleDispatch(created.eventId);
-    return this.findOne(created.purchaseId);
+    this.pushNotifications.notifyPurchaseCreated({
+      actorUserId: userId,
+      purchaseId,
+    });
+    return this.findOne(purchaseId);
   }
 
   async list(
@@ -688,23 +674,17 @@ export class PurchasesService {
         });
       }
 
-      const actorName = await this.pushNotifications.resolveActorName(
-        tx,
-        userId,
-      );
-      const eventId = await this.pushNotifications.enqueueInTransaction(tx, {
-        idempotencyKey: `purchase.post:${id}`,
-        eventKey: PushEventKey.PURCHASE_POSTED,
-        actorUserId: userId,
-        body: buildPurchasePostedBody({
-          actorName,
-          documentNumber: purchase.documentNumber,
-          amount: totals.totalAmount.toFixed(2),
-        }),
-      });
-      return { eventId };
+      return {
+        documentNumber: purchase.documentNumber,
+        amount: totals.totalAmount.toFixed(2),
+      };
     });
-    this.pushNotifications.scheduleDispatch(postResult.eventId);
+    this.pushNotifications.notifyPurchasePosted({
+      actorUserId: userId,
+      purchaseId: id,
+      documentNumber: postResult.documentNumber,
+      amount: postResult.amount,
+    });
     return this.findOne(id);
   }
 
@@ -796,22 +776,13 @@ export class PurchasesService {
         reversalOfId: original?.id,
       });
 
-      const actorName = await this.pushNotifications.resolveActorName(
-        tx,
-        userId,
-      );
-      const eventId = await this.pushNotifications.enqueueInTransaction(tx, {
-        idempotencyKey: `purchase.cancel:${id}`,
-        eventKey: PushEventKey.PURCHASE_CANCELLED,
-        actorUserId: userId,
-        body: buildPurchaseCancelledBody({
-          actorName,
-          documentNumber: purchase.documentNumber,
-        }),
-      });
-      return { eventId };
+      return purchase.documentNumber;
     });
-    this.pushNotifications.scheduleDispatch(cancelResult.eventId);
+    this.pushNotifications.notifyPurchaseCancelled({
+      actorUserId: userId,
+      purchaseId: id,
+      documentNumber: cancelResult,
+    });
     return this.findOne(id);
   }
 

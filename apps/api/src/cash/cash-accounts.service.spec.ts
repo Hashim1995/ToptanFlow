@@ -75,9 +75,8 @@ describe('CashAccountsService', () => {
       numberSequences as never,
       cashBalance as never,
       {
-        resolveActorName: jest.fn().mockResolvedValue('Murad'),
-        enqueueInTransaction: jest.fn().mockResolvedValue('evt-1'),
-        scheduleDispatch: jest.fn(),
+        notifyCashAccountCreated: jest.fn(),
+        notifyOpeningBalanceCorrected: jest.fn(),
       } as never,
     );
   });

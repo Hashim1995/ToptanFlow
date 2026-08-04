@@ -31,12 +31,12 @@
   - Permission requested only after explicit user action
 - **Impact on current work:** none (no active story)
 - **Roadmap impact:** Advances notification capability ahead of EPIC-018 without resolving EPIC-018 Yellow Cards
-- **Result:** Implemented transactional outbox Web Push end-to-end (API + PWA SW + Account Settings). Awaiting owner env/migration cutover and manual device matrix.
-- **Follow-up actions:** Set Vercel env vars + cron; apply migration before enable; owner manual verification matrix
+- **Result:** Implemented Web Push with fire-and-forget `notify*` after business commit (push never inside business `$transaction`). Missing push tables / push errors cannot abort cash/sale/purchase/stock APIs. Awaiting owner migration + VAPID cutover.
+- **Follow-up actions:** **Required:** apply migration `20260804190000_web_push_outbox` on Neon/production for notifications to deliver. Set Vercel VAPID env; redeploy API after this isolation fix; owner manual verification matrix.
 - **Evidence:**
-  - Migration `20260804190000_web_push_outbox`
-  - Module `apps/api/src/push/**`
+  - Migration `20260804190000_web_push_outbox` (must be applied on each environment)
+  - Module `apps/api/src/push/**` — `enqueueBestEffort` after business commit
   - SW `apps/web/src/sw.ts` (injectManifest)
-  - API tests: 136 passed (push + cash + sales + purchases + products suites)
-  - Web unit: push-support.test.ts (3)
-  - API build + Vite production build passed
+  - API tests: push + cash + sales + purchases + products suites
+  - Web unit: push-support.test.ts
+  - API build + Vite production build passed (initial delivery)
