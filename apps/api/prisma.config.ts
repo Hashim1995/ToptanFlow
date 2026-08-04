@@ -1,5 +1,6 @@
-// Prisma loads env before connecting. Prefer `.env.<NODE_ENV>`, then `.env`.
-// Production on Vercel uses Project Environment Variables (no file required).
+// Prisma loads env before connecting via loadApiEnvFiles (NODE_ENV-aware).
+// Shell / Vercel process.env always wins over files. Production never loads
+// .env.development* or .env.local (see env-file-paths.ts).
 import { loadApiEnvFiles } from './src/config/load-api-env';
 import { defineConfig } from 'prisma/config';
 
