@@ -95,6 +95,11 @@ describe('CashTransactionsService', () => {
       expenseCategories as never,
       partnerDebt as never,
       numberSequences as never,
+      {
+        resolveActorName: jest.fn().mockResolvedValue('Murad'),
+        enqueueInTransaction: jest.fn().mockResolvedValue('evt-1'),
+        scheduleDispatch: jest.fn(),
+      } as never,
     );
   });
 
@@ -107,7 +112,15 @@ describe('CashTransactionsService', () => {
       cashBalance.applyPostedTransaction.mockResolvedValue({ id: txnId });
       partnerDebt.applyChange.mockResolvedValue({});
       prisma.$transaction.mockImplementation(
-        async (fn: (tx: unknown) => Promise<unknown>) => fn({}),
+        async (fn: (tx: unknown) => Promise<unknown>) =>
+          fn({
+            cashAccount: {
+              findUniqueOrThrow: jest.fn().mockResolvedValue({ name: 'Əsas kassa' }),
+            },
+            cashTransfer: prisma.cashTransfer,
+            cashTransaction: prisma.cashTransaction,
+            user: { findUnique: jest.fn().mockResolvedValue({ fullName: 'Murad', username: 'murad' }) },
+          }),
       );
       prisma.cashTransaction.findUnique.mockResolvedValue({
         ...baseTxn,
@@ -166,7 +179,15 @@ describe('CashTransactionsService', () => {
       cashBalance.applyPostedTransaction.mockResolvedValue({ id: txnId });
       partnerDebt.applyChange.mockResolvedValue({});
       prisma.$transaction.mockImplementation(
-        async (fn: (tx: unknown) => Promise<unknown>) => fn({}),
+        async (fn: (tx: unknown) => Promise<unknown>) =>
+          fn({
+            cashAccount: {
+              findUniqueOrThrow: jest.fn().mockResolvedValue({ name: 'Əsas kassa' }),
+            },
+            cashTransfer: prisma.cashTransfer,
+            cashTransaction: prisma.cashTransaction,
+            user: { findUnique: jest.fn().mockResolvedValue({ fullName: 'Murad', username: 'murad' }) },
+          }),
       );
       prisma.cashTransaction.findUnique.mockResolvedValue(outTxn);
 
@@ -215,7 +236,15 @@ describe('CashTransactionsService', () => {
       };
       cashBalance.applyPostedTransaction.mockResolvedValue({ id: txnId });
       prisma.$transaction.mockImplementation(
-        async (fn: (tx: unknown) => Promise<unknown>) => fn({}),
+        async (fn: (tx: unknown) => Promise<unknown>) =>
+          fn({
+            cashAccount: {
+              findUniqueOrThrow: jest.fn().mockResolvedValue({ name: 'Əsas kassa' }),
+            },
+            cashTransfer: prisma.cashTransfer,
+            cashTransaction: prisma.cashTransaction,
+            user: { findUnique: jest.fn().mockResolvedValue({ fullName: 'Murad', username: 'murad' }) },
+          }),
       );
       prisma.cashTransaction.findUnique.mockResolvedValue(expenseTxn);
 
@@ -287,7 +316,15 @@ describe('CashTransactionsService', () => {
       cashBalance.applyPostedTransaction.mockResolvedValue({ id: txnId });
       partnerDebt.applyChange.mockResolvedValue({ movementId: debtMovementId });
       prisma.$transaction.mockImplementation(
-        async (fn: (tx: unknown) => Promise<unknown>) => fn({}),
+        async (fn: (tx: unknown) => Promise<unknown>) =>
+          fn({
+            cashAccount: {
+              findUniqueOrThrow: jest.fn().mockResolvedValue({ name: 'Əsas kassa' }),
+            },
+            cashTransfer: prisma.cashTransfer,
+            cashTransaction: prisma.cashTransaction,
+            user: { findUnique: jest.fn().mockResolvedValue({ fullName: 'Murad', username: 'murad' }) },
+          }),
       );
       prisma.cashTransaction.findUnique.mockResolvedValue(receiptTxn);
     });
@@ -455,7 +492,15 @@ describe('CashTransactionsService', () => {
       cashBalance.applyPostedTransaction.mockResolvedValue({ id: txnId });
       partnerDebt.applyChange.mockResolvedValue({ movementId: debtMovementId });
       prisma.$transaction.mockImplementation(
-        async (fn: (tx: unknown) => Promise<unknown>) => fn({}),
+        async (fn: (tx: unknown) => Promise<unknown>) =>
+          fn({
+            cashAccount: {
+              findUniqueOrThrow: jest.fn().mockResolvedValue({ name: 'Əsas kassa' }),
+            },
+            cashTransfer: prisma.cashTransfer,
+            cashTransaction: prisma.cashTransaction,
+            user: { findUnique: jest.fn().mockResolvedValue({ fullName: 'Murad', username: 'murad' }) },
+          }),
       );
       prisma.cashTransaction.findUnique.mockResolvedValue(paymentTxn);
     });

@@ -35,6 +35,16 @@ import {
 } from './dto/list-cash-transactions-query.dto';
 import { CashTransferResponseDto } from './dto/cash-transfer-response.dto';
 import { ExpenseCategoriesService } from './expense-categories.service';
+import { PushEventKey } from '../push/push-event-keys.js';
+import {
+  buildCashExpenseBody,
+  buildCashInBody,
+  buildCashOutBody,
+  buildCashTransactionCancelBody,
+  buildCashTransferBody,
+  buildCashTransferCancelBody,
+} from '../push/push-message-builder.js';
+import { PushNotificationsService } from '../push/push-notifications.service.js';
 
 const txnSelect = {
   id: true,
@@ -73,6 +83,7 @@ export class CashTransactionsService {
     private readonly expenseCategories: ExpenseCategoriesService,
     private readonly partnerDebt: PartnerDebtBalanceService,
     private readonly numberSequences: NumberSequencesService,
+    private readonly pushNotifications: PushNotificationsService,
   ) {}
 
   /**
@@ -111,10 +122,30 @@ export class CashTransactionsService {
         saleId: dto.saleId ?? null,
       });
 
-      return cashTxn;
+      const account = await tx.cashAccount.findUniqueOrThrow({
+        where: { id: dto.cashAccountId },
+        select: { name: true },
+      });
+      const actorName = await this.pushNotifications.resolveActorName(
+        tx,
+        actorUserId,
+      );
+      const eventId = await this.pushNotifications.enqueueInTransaction(tx, {
+        idempotencyKey: `cash.in:${cashTxn.id}`,
+        eventKey: PushEventKey.CASH_IN,
+        actorUserId,
+        body: buildCashInBody({
+          actorName,
+          amount: cashTxn.amount,
+          accountName: account.name,
+        }),
+      });
+
+      return { cashTxn, eventId };
     });
 
-    return this.getById(posted.id);
+    this.pushNotifications.scheduleDispatch(posted.eventId);
+    return this.getById(posted.cashTxn.id);
   }
 
   /**
@@ -154,10 +185,30 @@ export class CashTransactionsService {
         purchaseId: dto.purchaseId ?? null,
       });
 
-      return cashTxn;
+      const account = await tx.cashAccount.findUniqueOrThrow({
+        where: { id: dto.cashAccountId },
+        select: { name: true },
+      });
+      const actorName = await this.pushNotifications.resolveActorName(
+        tx,
+        actorUserId,
+      );
+      const eventId = await this.pushNotifications.enqueueInTransaction(tx, {
+        idempotencyKey: `cash.out:${cashTxn.id}`,
+        eventKey: PushEventKey.CASH_OUT,
+        actorUserId,
+        body: buildCashOutBody({
+          actorName,
+          amount: cashTxn.amount,
+          accountName: account.name,
+        }),
+      });
+
+      return { cashTxn, eventId };
     });
 
-    return this.getById(posted.id);
+    this.pushNotifications.scheduleDispatch(posted.eventId);
+    return this.getById(posted.cashTxn.id);
   }
 
   /** Alias for older route name — same as cashIn. */
@@ -184,8 +235,8 @@ export class CashTransactionsService {
     actorUserId: string,
   ): Promise<CashTransactionResponseDto> {
     await this.expenseCategories.assertActiveCategory(dto.expenseCategoryId);
-    const posted = await this.prisma.$transaction((tx) =>
-      this.cashBalance.applyPostedTransaction(tx, {
+    const posted = await this.prisma.$transaction(async (tx) => {
+      const cashTxn = await this.cashBalance.applyPostedTransaction(tx, {
         cashAccountId: dto.cashAccountId,
         direction: CashTransactionDirectionValue.OUT,
         type: CashTransactionTypeValue.EXPENSE,
@@ -195,9 +246,32 @@ export class CashTransactionsService {
         createdByUserId: actorUserId,
         negativeBalanceOverrideReason: dto.negativeBalanceOverrideReason,
         expenseCategoryId: dto.expenseCategoryId,
-      }),
-    );
-    return this.getById(posted.id);
+      });
+
+      const account = await tx.cashAccount.findUniqueOrThrow({
+        where: { id: dto.cashAccountId },
+        select: { name: true },
+      });
+      const actorName = await this.pushNotifications.resolveActorName(
+        tx,
+        actorUserId,
+      );
+      const eventId = await this.pushNotifications.enqueueInTransaction(tx, {
+        idempotencyKey: `cash.expense:${cashTxn.id}`,
+        eventKey: PushEventKey.CASH_EXPENSE,
+        actorUserId,
+        body: buildCashExpenseBody({
+          actorName,
+          amount: cashTxn.amount,
+          accountName: account.name,
+        }),
+      });
+
+      return { cashTxn, eventId };
+    });
+
+    this.pushNotifications.scheduleDispatch(posted.eventId);
+    return this.getById(posted.cashTxn.id);
   }
 
   /**
@@ -214,7 +288,7 @@ export class CashTransactionsService {
       });
     }
 
-    const transferId = await this.prisma.$transaction(async (tx) => {
+    const transferResult = await this.prisma.$transaction(async (tx) => {
       // Lock both accounts in stable UUID order to avoid deadlocks.
       const [firstId, secondId] = [
         dto.sourceCashAccountId,
@@ -268,10 +342,37 @@ export class CashTransactionsService {
         cashTransferId: transfer.id,
       });
 
-      return transfer.id;
+      const [source, destination] = await Promise.all([
+        tx.cashAccount.findUniqueOrThrow({
+          where: { id: dto.sourceCashAccountId },
+          select: { name: true },
+        }),
+        tx.cashAccount.findUniqueOrThrow({
+          where: { id: dto.destinationCashAccountId },
+          select: { name: true },
+        }),
+      ]);
+      const actorName = await this.pushNotifications.resolveActorName(
+        tx,
+        actorUserId,
+      );
+      const eventId = await this.pushNotifications.enqueueInTransaction(tx, {
+        idempotencyKey: `cash.transfer:${transfer.id}`,
+        eventKey: PushEventKey.CASH_TRANSFER,
+        actorUserId,
+        body: buildCashTransferBody({
+          actorName,
+          amount: dto.amount,
+          sourceAccountName: source.name,
+          destinationAccountName: destination.name,
+        }),
+      });
+
+      return { transferId: transfer.id, eventId };
     });
 
-    return this.getTransferById(transferId);
+    this.pushNotifications.scheduleDispatch(transferResult.eventId);
+    return this.getTransferById(transferResult.transferId);
   }
 
   async cancelTransfer(
@@ -287,12 +388,13 @@ export class CashTransactionsService {
       });
     }
 
-    await this.prisma.$transaction(async (tx) => {
+    const cancelResult = await this.prisma.$transaction(async (tx) => {
       const transfer = await tx.cashTransfer.findUnique({
         where: { id },
         select: {
           id: true,
           status: true,
+          transferNumber: true,
           legs: {
             where: { type: { in: ['TRANSFER_OUT', 'TRANSFER_IN'] } },
             select: { id: true, status: true },
@@ -331,8 +433,25 @@ export class CashTransactionsService {
           cancelledByUserId: actorUserId,
         });
       }
+
+      const actorName = await this.pushNotifications.resolveActorName(
+        tx,
+        actorUserId,
+      );
+      const eventId = await this.pushNotifications.enqueueInTransaction(tx, {
+        idempotencyKey: `cash.transfer.cancel:${transfer.id}`,
+        eventKey: PushEventKey.CASH_TRANSFER_CANCEL,
+        actorUserId,
+        body: buildCashTransferCancelBody({
+          actorName,
+          transferNumber: transfer.transferNumber,
+        }),
+      });
+
+      return { eventId };
     });
 
+    this.pushNotifications.scheduleDispatch(cancelResult.eventId);
     return this.getTransferById(id);
   }
 
@@ -372,7 +491,7 @@ export class CashTransactionsService {
     const reversal = await this.prisma.$transaction(async (tx) => {
       const original = await tx.cashTransaction.findUnique({
         where: { id },
-        select: { type: true, partnerId: true },
+        select: { type: true, partnerId: true, transactionNumber: true },
       });
       if (!original) {
         throw new NotFoundException({
@@ -415,10 +534,25 @@ export class CashTransactionsService {
         }
       }
 
-      return cashReversal;
+      const actorName = await this.pushNotifications.resolveActorName(
+        tx,
+        actorUserId,
+      );
+      const eventId = await this.pushNotifications.enqueueInTransaction(tx, {
+        idempotencyKey: `cash.cancel:${id}`,
+        eventKey: PushEventKey.CASH_TRANSACTION_CANCEL,
+        actorUserId,
+        body: buildCashTransactionCancelBody({
+          actorName,
+          transactionNumber: original.transactionNumber,
+        }),
+      });
+
+      return { cashReversal, eventId };
     });
 
-    return this.getById(reversal.id);
+    this.pushNotifications.scheduleDispatch(reversal.eventId);
+    return this.getById(reversal.cashReversal.id);
   }
 
   async getById(id: string): Promise<CashTransactionResponseDto> {

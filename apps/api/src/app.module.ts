@@ -16,6 +16,7 @@ import { AuthModule } from './auth/auth.module';
 import { PurchasesModule } from './purchases/purchases.module';
 import { SalesModule } from './sales/sales.module';
 import { CashModule } from './cash/cash.module';
+import { PushModule } from './push/push.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 @Module({
@@ -26,6 +27,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
       validate: validateEnv,
     }),
     PrismaModule,
+    PushModule,
     HealthModule,
     UnitsModule,
     ProductCategoriesModule,

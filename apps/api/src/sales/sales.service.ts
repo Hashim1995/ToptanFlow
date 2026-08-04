@@ -37,6 +37,13 @@ import { PostSaleDto } from './dto/post-sale.dto';
 import { SaleListItemResponseDto } from './dto/sale-list-item-response.dto';
 import { SaleResponseDto } from './dto/sale-response.dto';
 import { UpdateSaleDto } from './dto/update-sale.dto';
+import { PushEventKey } from '../push/push-event-keys.js';
+import {
+  buildSaleCancelledBody,
+  buildSaleCreatedBody,
+  buildSalePostedBody,
+} from '../push/push-message-builder.js';
+import { PushNotificationsService } from '../push/push-notifications.service.js';
 
 type CalculatedLine = {
   quantity: Decimal;
@@ -346,10 +353,11 @@ export class SalesService {
     private readonly productQuantity: ProductQuantityService,
     private readonly partnerDebt: PartnerDebtBalanceService,
     private readonly cashBalance: CashBalanceService,
+    private readonly pushNotifications: PushNotificationsService,
   ) {}
 
   async create(userId: string, dto: CreateSaleDto): Promise<SaleResponseDto> {
-    const saleId = await this.prisma.$transaction(async (tx) => {
+    const created = await this.prisma.$transaction(async (tx) => {
       await this.assertValidPartner(tx, dto.partnerId);
       const products = await this.loadAndValidateProducts(tx, dto.items);
       const calculated = recalculateLines(dto.items, dto.discountAmount);
@@ -385,9 +393,22 @@ export class SalesService {
         },
         select: { id: true },
       });
-      return sale.id;
+
+      const actorName = await this.pushNotifications.resolveActorName(
+        tx,
+        userId,
+      );
+      const eventId = await this.pushNotifications.enqueueInTransaction(tx, {
+        idempotencyKey: `sale.create:${sale.id}`,
+        eventKey: PushEventKey.SALE_CREATED,
+        actorUserId: userId,
+        body: buildSaleCreatedBody({ actorName }),
+      });
+
+      return { saleId: sale.id, eventId };
     });
-    return this.findOne(saleId);
+    this.pushNotifications.scheduleDispatch(created.eventId);
+    return this.findOne(created.saleId);
   }
 
   async list(query: ListSalesQueryDto): Promise<PaginatedSalesResponseDto> {
@@ -530,7 +551,7 @@ export class SalesService {
     userId: string,
     dto?: PostSaleDto,
   ): Promise<SaleResponseDto> {
-    await this.prisma.$transaction(async (tx) => {
+    const postResult = await this.prisma.$transaction(async (tx) => {
       const sale = await tx.sale.findUnique({
         where: { id },
         include: { items: true },
@@ -670,7 +691,24 @@ export class SalesService {
           relatedDocumentId: id,
         });
       }
+
+      const actorName = await this.pushNotifications.resolveActorName(
+        tx,
+        userId,
+      );
+      const eventId = await this.pushNotifications.enqueueInTransaction(tx, {
+        idempotencyKey: `sale.post:${id}`,
+        eventKey: PushEventKey.SALE_POSTED,
+        actorUserId: userId,
+        body: buildSalePostedBody({
+          actorName,
+          documentNumber: sale.documentNumber,
+          amount: totals.totalAmount.toFixed(2),
+        }),
+      });
+      return { eventId };
     });
+    this.pushNotifications.scheduleDispatch(postResult.eventId);
     return this.findOne(id);
   }
 
@@ -683,7 +721,7 @@ export class SalesService {
     if (reason.length === 0) {
       throw new BadRequestException('Cancellation reason is required');
     }
-    await this.prisma.$transaction(async (tx) => {
+    const cancelResult = await this.prisma.$transaction(async (tx) => {
       const sale = await tx.sale.findUnique({
         where: { id },
         include: { items: true },
@@ -748,7 +786,23 @@ export class SalesService {
         relatedDocumentId: id,
         reversalOfId: original?.id,
       });
+
+      const actorName = await this.pushNotifications.resolveActorName(
+        tx,
+        userId,
+      );
+      const eventId = await this.pushNotifications.enqueueInTransaction(tx, {
+        idempotencyKey: `sale.cancel:${id}`,
+        eventKey: PushEventKey.SALE_CANCELLED,
+        actorUserId: userId,
+        body: buildSaleCancelledBody({
+          actorName,
+          documentNumber: sale.documentNumber,
+        }),
+      });
+      return { eventId };
     });
+    this.pushNotifications.scheduleDispatch(cancelResult.eventId);
     return this.findOne(id);
   }
 

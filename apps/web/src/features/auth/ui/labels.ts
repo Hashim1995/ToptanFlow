@@ -26,4 +26,22 @@ export const AUTH_LABELS = {
   passwordMismatch: 'Yeni şifrə və təkrarı eyni olmalıdır.',
   passwordTooShort: 'Şifrə ən azı 8 simvol olmalıdır.',
   passwordUnchanged: 'Yeni şifrə cari şifrədən fərqli olmalıdır.',
+  pushTitle: 'Bildirişlər',
+  pushDescription:
+    'Biznes əməliyyatları haqqında qısa sistem bildirişləri alın. İcazə yalnız sizin klikinizdən sonra soruşulur.',
+  pushEnable: 'Bildirişləri aktiv et',
+  pushDisable: 'Bildirişləri söndür',
+  pushEnableSuccess: 'Bildirişlər aktivləşdirildi.',
+  pushDisableSuccess: 'Bildirişlər söndürüldü.',
+  pushLoading: 'Bildiriş statusu yoxlanılır…',
+  pushUnsupported:
+    'Bu brauzer Web Push bildirişlərini dəstəkləmir.',
+  pushDenied:
+    'Bildiriş icazəsi rədd edilib. Brauzer və ya sistem ayarlarından əl ilə aktivləşdirin.',
+  pushSubscribed: 'Bu cihazda bildirişlər aktivdir.',
+  pushServerDisabled:
+    'Bildiriş xidməti hazırda serverdə konfiqurasiya olunmayıb.',
+  pushIosHomescreenTitle: 'iOS üçün Əsas ekrana əlavə edin',
+  pushIosHomescreenDescription:
+    'iPhone/iPad-də Web Push yalnız Əsas ekrana əlavə edilmiş TOPTANFLOW tətbiqindən işləyir. Safari Paylaş → Əsas ekrana əlavə et, sonra tətbiqi açın və bildirişləri aktiv edin.',
 } as const;

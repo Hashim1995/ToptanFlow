@@ -31,3 +31,22 @@ export class PrismaClient {
     return Promise.resolve();
   }
 }
+
+
+export class PrismaClientKnownRequestError extends Error {
+  code: string;
+  clientVersion: string;
+  constructor(
+    message: string,
+    options: { code: string; clientVersion: string },
+  ) {
+    super(message);
+    this.name = 'PrismaClientKnownRequestError';
+    this.code = options.code;
+    this.clientVersion = options.clientVersion;
+  }
+}
+
+export const Prisma = {
+  PrismaClientKnownRequestError,
+};
