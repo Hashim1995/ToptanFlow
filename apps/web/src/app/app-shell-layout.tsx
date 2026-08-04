@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useState } from "react";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Avatar,
   Button,
@@ -11,8 +11,8 @@ import {
   Tooltip,
   Typography,
   theme,
-} from 'antd';
-import type { MenuProps } from 'antd';
+} from "antd";
+import type { MenuProps } from "antd";
 import {
   ChartLine,
   CaretLeft,
@@ -31,22 +31,22 @@ import {
   Wallet,
   Receipt,
   ArrowsDownUp,
-} from '@phosphor-icons/react';
-import { MASTER_DATA_LABELS } from '../features/master-data/ui/labels';
-import { AUTH_LABELS } from '../features/auth/ui/labels';
-import { useAuth } from '../features/auth/use-auth';
-import { CASH_LABELS } from '../features/cash/ui/labels';
-import { PURCHASE_LABELS } from '../features/purchases/ui/labels';
-import { SALES_LABELS } from '../features/sales/ui/labels';
-import { USERS_LABELS } from '../features/users/ui/labels';
-import { BrandLogo } from '../shared/ui/brand-logo';
-import { ICON_SIZE, phIcon } from '../shared/ui/ph-icon';
-import './app-shell-layout.css';
+} from "@phosphor-icons/react";
+import { MASTER_DATA_LABELS } from "../features/master-data/ui/labels";
+import { AUTH_LABELS } from "../features/auth/ui/labels";
+import { useAuth } from "../features/auth/use-auth";
+import { CASH_LABELS } from "../features/cash/ui/labels";
+import { PURCHASE_LABELS } from "../features/purchases/ui/labels";
+import { SALES_LABELS } from "../features/sales/ui/labels";
+import { USERS_LABELS } from "../features/users/ui/labels";
+import { BrandLogo } from "../shared/ui/brand-logo";
+import { ICON_SIZE, phIcon } from "../shared/ui/ph-icon";
+import "./app-shell-layout.css";
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
 
-type MenuItem = Required<MenuProps>['items'][number];
+type MenuItem = Required<MenuProps>["items"][number];
 
 function navLabel(text: string, to: string) {
   return (
@@ -58,110 +58,110 @@ function navLabel(text: string, to: string) {
 
 const NAV_ITEMS: MenuItem[] = [
   {
-    key: 'group-home',
-    type: 'group',
-    label: 'Ana',
+    key: "group-home",
+    type: "group",
+    label: "Ana",
     children: [
       {
-        key: '/',
+        key: "/",
         icon: phIcon(House, { size: ICON_SIZE.md }),
-        label: navLabel('Ana səhifə', '/'),
+        label: navLabel("Ana səhifə", "/"),
       },
       {
-        key: '/account',
+        key: "/account",
         icon: phIcon(Key, { size: ICON_SIZE.md }),
-        label: navLabel(AUTH_LABELS.accountNav, '/account'),
+        label: navLabel(AUTH_LABELS.accountNav, "/account"),
       },
     ],
   },
   {
-    key: 'group-cash',
-    type: 'group',
+    key: "group-cash",
+    type: "group",
     label: CASH_LABELS.nav,
     children: [
       {
-        key: '/cash/accounts',
+        key: "/cash/accounts",
         icon: phIcon(Wallet, { size: ICON_SIZE.md }),
-        label: navLabel(CASH_LABELS.navAccounts, '/cash/accounts'),
+        label: navLabel(CASH_LABELS.navAccounts, "/cash/accounts"),
       },
       {
-        key: '/cash/transactions',
+        key: "/cash/transactions",
         icon: phIcon(ArrowsDownUp, { size: ICON_SIZE.md }),
-        label: navLabel(CASH_LABELS.navTransactions, '/cash/transactions'),
+        label: navLabel(CASH_LABELS.navTransactions, "/cash/transactions"),
       },
       {
-        key: '/cash/reports',
+        key: "/cash/reports",
         icon: phIcon(ChartLine, { size: ICON_SIZE.md }),
-        label: navLabel(CASH_LABELS.navReports, '/cash/reports'),
+        label: navLabel(CASH_LABELS.navReports, "/cash/reports"),
       },
       {
-        key: '/cash/expense-categories',
+        key: "/cash/expense-categories",
         icon: phIcon(Receipt, { size: ICON_SIZE.md }),
         label: navLabel(
           CASH_LABELS.expenseCategories,
-          '/cash/expense-categories',
+          "/cash/expense-categories",
         ),
       },
     ],
   },
   {
-    key: 'group-purchases',
-    type: 'group',
+    key: "group-purchases",
+    type: "group",
     label: PURCHASE_LABELS.nav,
     children: [
       {
-        key: '/purchases',
+        key: "/purchases",
         icon: phIcon(ShoppingCart, { size: ICON_SIZE.md }),
-        label: navLabel(PURCHASE_LABELS.nav, '/purchases'),
+        label: navLabel(PURCHASE_LABELS.nav, "/purchases"),
       },
     ],
   },
   {
-    key: 'group-sales',
-    type: 'group',
+    key: "group-sales",
+    type: "group",
     label: SALES_LABELS.nav,
     children: [
       {
-        key: '/sales',
+        key: "/sales",
         icon: phIcon(ShoppingBag, { size: ICON_SIZE.md }),
-        label: navLabel(SALES_LABELS.nav, '/sales'),
+        label: navLabel(SALES_LABELS.nav, "/sales"),
       },
     ],
   },
   {
-    key: 'group-products',
-    type: 'group',
-    label: 'Məhsullar',
+    key: "group-products",
+    type: "group",
+    label: "Məhsullar",
     children: [
       {
-        key: '/products',
+        key: "/products",
         icon: phIcon(Package, { size: ICON_SIZE.md }),
-        label: navLabel(MASTER_DATA_LABELS.products.nav, '/products'),
+        label: navLabel(MASTER_DATA_LABELS.products.nav, "/products"),
       },
       {
-        key: '/product-categories',
+        key: "/product-categories",
         icon: phIcon(SquaresFour, { size: ICON_SIZE.md }),
         label: navLabel(
           MASTER_DATA_LABELS.categories.nav,
-          '/product-categories',
+          "/product-categories",
         ),
       },
       {
-        key: '/units',
+        key: "/units",
         icon: phIcon(Ruler, { size: ICON_SIZE.md }),
-        label: navLabel(MASTER_DATA_LABELS.units.nav, '/units'),
+        label: navLabel(MASTER_DATA_LABELS.units.nav, "/units"),
       },
     ],
   },
   {
-    key: 'group-partners',
-    type: 'group',
-    label: 'Tərəfdaşlar',
+    key: "group-partners",
+    type: "group",
+    label: "Tərəfdaşlar",
     children: [
       {
-        key: '/business-partners',
+        key: "/business-partners",
         icon: phIcon(UsersThree, { size: ICON_SIZE.md }),
-        label: navLabel(MASTER_DATA_LABELS.partners.nav, '/business-partners'),
+        label: navLabel(MASTER_DATA_LABELS.partners.nav, "/business-partners"),
       },
     ],
   },
@@ -174,14 +174,14 @@ function buildNavItems(isSuperAdmin: boolean): MenuItem[] {
   return [
     ...NAV_ITEMS,
     {
-      key: 'group-users',
-      type: 'group',
+      key: "group-users",
+      type: "group",
       label: USERS_LABELS.nav,
       children: [
         {
-          key: '/users',
+          key: "/users",
           icon: phIcon(UserCircle, { size: ICON_SIZE.md }),
-          label: navLabel(USERS_LABELS.nav, '/users'),
+          label: navLabel(USERS_LABELS.nav, "/users"),
         },
       ],
     },
@@ -204,32 +204,32 @@ export function AppShellLayout() {
   const { token } = theme.useToken();
 
   const selectedKeys = [
-    location.pathname === '/'
-      ? '/'
-      : location.pathname.startsWith('/account')
-        ? '/account'
-      : location.pathname.startsWith('/purchases')
-        ? '/purchases'
-        : location.pathname.startsWith('/sales')
-          ? '/sales'
-          : location.pathname.startsWith('/cash/expense-categories')
-            ? '/cash/expense-categories'
-            : location.pathname.startsWith('/cash/transactions')
-              ? '/cash/transactions'
-            : location.pathname.startsWith('/cash/reports')
-              ? '/cash/reports'
-              : location.pathname.startsWith('/cash')
-                ? '/cash/accounts'
-                : location.pathname.startsWith('/users')
-                  ? '/users'
-                  : location.pathname,
+    location.pathname === "/"
+      ? "/"
+      : location.pathname.startsWith("/account")
+        ? "/account"
+        : location.pathname.startsWith("/purchases")
+          ? "/purchases"
+          : location.pathname.startsWith("/sales")
+            ? "/sales"
+            : location.pathname.startsWith("/cash/expense-categories")
+              ? "/cash/expense-categories"
+              : location.pathname.startsWith("/cash/transactions")
+                ? "/cash/transactions"
+                : location.pathname.startsWith("/cash/reports")
+                  ? "/cash/reports"
+                  : location.pathname.startsWith("/cash")
+                    ? "/cash/accounts"
+                    : location.pathname.startsWith("/users")
+                      ? "/users"
+                      : location.pathname,
   ];
 
   async function handleLogout() {
     setLoggingOut(true);
     try {
       await auth.logout();
-      navigate('/login', { replace: true });
+      navigate("/login", { replace: true });
     } finally {
       setLoggingOut(false);
     }
@@ -247,17 +247,17 @@ export function AppShellLayout() {
   );
 
   const displayName =
-    auth.user?.fullName ?? auth.user?.username ?? 'İstifadəçi';
+    auth.user?.fullName ?? auth.user?.username ?? "İstifadəçi";
   const displayInitial = displayName
     .trim()
     .charAt(0)
-    .toLocaleUpperCase('az-AZ');
+    .toLocaleUpperCase("az-AZ");
 
   return (
     <Layout className="app-shell">
       {isDesktop ? (
         <Sider
-          className={`app-sidebar${sidebarCollapsed ? ' is-collapsed' : ''}`}
+          className={`app-sidebar${sidebarCollapsed ? " is-collapsed" : ""}`}
           width={264}
           collapsedWidth={84}
           collapsed={sidebarCollapsed}
@@ -273,18 +273,18 @@ export function AppShellLayout() {
                 />
               </div>
               <Tooltip
-                title={sidebarCollapsed ? 'Menyunu genişləndir' : 'Menyunu yığ'}
+                title={sidebarCollapsed ? "Menyunu genişləndir" : "Menyunu yığ"}
                 placement="right"
               >
                 <Button
                   className="app-sidebar-toggle"
                   type="text"
                   aria-label={
-                    sidebarCollapsed ? 'Menyunu genişləndir' : 'Menyunu yığ'
+                    sidebarCollapsed ? "Menyunu genişləndir" : "Menyunu yığ"
                   }
                   icon={phIcon(sidebarCollapsed ? CaretRight : CaretLeft, {
                     size: ICON_SIZE.sm,
-                    weight: 'bold',
+                    weight: "bold",
                   })}
                   onClick={() => setSidebarCollapsed((value) => !value)}
                 />
@@ -322,7 +322,7 @@ export function AppShellLayout() {
                   icon={phIcon(Key, { size: ICON_SIZE.md })}
                   aria-label={AUTH_LABELS.accountNav}
                   onClick={() => {
-                    navigate('/account');
+                    navigate("/account");
                     setDrawerOpen(false);
                   }}
                 >
@@ -357,12 +357,12 @@ export function AppShellLayout() {
             background: token.colorBgContainer,
             borderBottom: `1px solid ${token.colorBorderSecondary}`,
             paddingInline: 16,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
             gap: 12,
             height: 56,
-            lineHeight: '56px',
+            lineHeight: "56px",
           }}
         >
           <Space>
@@ -384,18 +384,14 @@ export function AppShellLayout() {
               <Button
                 icon={phIcon(Key, { size: ICON_SIZE.md })}
                 aria-label={AUTH_LABELS.accountNav}
-                onClick={() => navigate('/account')}
-              >
-                {AUTH_LABELS.accountNav}
-              </Button>
+                onClick={() => navigate("/account")}
+              ></Button>
               <Button
                 icon={phIcon(SignOut, { size: ICON_SIZE.md })}
                 loading={loggingOut}
                 aria-label={AUTH_LABELS.logout}
                 onClick={() => void handleLogout()}
-              >
-                {AUTH_LABELS.logout}
-              </Button>
+              ></Button>
             </Space>
           ) : null}
         </Header>

@@ -88,4 +88,202 @@ body {
   .ant-drawer-close {
     touch-action: manipulation;
   }
+
+  /*
+   * Trial: compact mobile controls + buttons (owner preview).
+   * Desktop (≥768px) is untouched. Discard this block if not preferred.
+   * Text fields keep 16px font (above) to avoid iOS focus zoom.
+   */
+  .ant-btn {
+    min-height: 34px !important;
+    height: 34px !important;
+    padding-block: 0 !important;
+    padding-inline: 14px !important;
+    font-size: 14px !important;
+    line-height: 32px !important;
+    border-radius: 7px !important;
+  }
+
+  .ant-btn.ant-btn-lg {
+    min-height: 36px !important;
+    height: 36px !important;
+    padding-inline: 16px !important;
+    font-size: 14px !important;
+    line-height: 34px !important;
+  }
+
+  .ant-btn.ant-btn-sm {
+    min-height: 30px !important;
+    height: 30px !important;
+    padding-inline: 12px !important;
+    font-size: 13px !important;
+    line-height: 28px !important;
+  }
+
+  .ant-btn.ant-btn-icon-only,
+  .ant-btn.ant-btn-circle,
+  .ant-btn.ant-btn-round.ant-btn-icon-only {
+    width: 34px !important;
+    min-width: 34px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    padding-inline: 0 !important;
+  }
+
+  .ant-btn.ant-btn-icon-only.ant-btn-sm {
+    width: 30px !important;
+    min-width: 30px !important;
+    height: 30px !important;
+    min-height: 30px !important;
+  }
+
+  .ant-input,
+  .ant-input-affix-wrapper,
+  .ant-input-number,
+  .ant-input-search .ant-input-affix-wrapper,
+  .ant-picker,
+  .ant-picker-range {
+    min-height: 32px !important;
+    height: 32px !important;
+    padding-block: 0 !important;
+    border-radius: 6px !important;
+  }
+
+  .ant-input-affix-wrapper {
+    padding-inline: 8px !important;
+  }
+
+  .ant-input-affix-wrapper > input.ant-input,
+  .ant-input-number-input,
+  .ant-picker-input > input {
+    height: 30px !important;
+    min-height: 30px !important;
+    line-height: 30px !important;
+  }
+
+  .ant-input:not(textarea),
+  textarea.ant-input,
+  .ant-input-textarea textarea,
+  .ant-mentions > textarea {
+    min-height: 32px !important;
+    padding-block: 4px !important;
+    padding-inline: 8px !important;
+    border-radius: 6px !important;
+  }
+
+  textarea.ant-input,
+  .ant-input-textarea textarea,
+  .ant-mentions > textarea {
+    height: auto !important;
+    min-height: 64px !important;
+  }
+
+  /* All Select variants (filters, forms, modals) — override feature 40/42px roots */
+  .ant-select,
+  .ant-select-single,
+  .ant-select-multiple,
+  .ant-select-auto-complete,
+  .ui-filter-layout .ant-select-single,
+  .cash-modal-form .ant-select-single,
+  .commercial-document-form .ant-select,
+  .commercial-filter-card .ant-select,
+  .partners-filter-card .ant-select,
+  .reference-filter-card .ant-select,
+  .cash-filter-card .ant-select,
+  .cash-report-filter-card .ant-select,
+  .cash-transactions-filters .ant-select,
+  .expense-filter-card .ant-select,
+  .partner-report-form .ant-select {
+    height: 32px !important;
+    min-height: 32px !important;
+  }
+
+  .ant-select-multiple,
+  .ant-select-multiple.ant-select-lg,
+  .ant-select-multiple.ant-select-sm {
+    height: auto !important;
+    min-height: 32px !important;
+  }
+
+  .ant-select .ant-select-selector,
+  .ant-select-single .ant-select-selector,
+  .ant-select-single:not(.ant-select-customize-input) .ant-select-selector,
+  .ant-select-multiple .ant-select-selector,
+  .ant-select-auto-complete .ant-select-selector,
+  .ui-filter-layout .ant-select-selector,
+  .cash-modal-form .ant-select-selector,
+  .cash-modal-form .ant-select-single .ant-select-selector,
+  .commercial-document-form .ant-select-selector,
+  .commercial-filter-card .ant-select-selector,
+  .partners-filter-card .ant-select-selector,
+  .reference-filter-card .ant-select-selector,
+  .cash-filter-card .ant-select-selector,
+  .cash-report-filter-card .ant-select-selector,
+  .cash-transactions-filters .ant-select-selector,
+  .expense-filter-card .ant-select-selector,
+  .partner-report-form .ant-select-selector {
+    min-height: 32px !important;
+    height: 32px !important;
+    padding-block: 0 !important;
+    padding-inline: 8px !important;
+    border-radius: 6px !important;
+    align-items: center !important;
+  }
+
+  .ant-select-multiple .ant-select-selector {
+    height: auto !important;
+    min-height: 32px !important;
+    padding-block: 2px !important;
+  }
+
+  .ant-select-selection-search-input {
+    height: 30px !important;
+    min-height: 30px !important;
+    line-height: 30px !important;
+  }
+
+  .ant-select-single .ant-select-selector .ant-select-selection-item,
+  .ant-select-single .ant-select-selector .ant-select-selection-placeholder,
+  .ant-select-selection-item,
+  .ant-select-selection-placeholder {
+    line-height: 30px !important;
+  }
+
+  .ant-picker .ant-picker-input,
+  .ant-picker-range .ant-picker-input {
+    height: 30px !important;
+  }
+
+  .ant-input-search .ant-input-search-button.ant-btn {
+    min-height: 32px !important;
+    height: 32px !important;
+    padding-inline: 12px !important;
+  }
+
+  .ant-checkbox-wrapper,
+  .ant-radio-wrapper {
+    font-size: 13px !important;
+  }
+
+  .ant-form-item {
+    margin-bottom: 12px !important;
+  }
+
+  .ant-form-item-label {
+    padding-bottom: 2px !important;
+  }
+
+  .ant-form-item-label > label {
+    font-size: 12px !important;
+    height: auto !important;
+  }
+
+  .ant-modal-footer .ant-btn,
+  .ant-drawer-footer .ant-btn,
+  .ant-space .ant-btn,
+  .ui-filter-actions .ant-btn {
+    min-height: 34px !important;
+    height: 34px !important;
+    padding-inline: 14px !important;
+  }
 }

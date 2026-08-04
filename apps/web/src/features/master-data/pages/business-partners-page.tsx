@@ -129,8 +129,8 @@ function toPayload(
     name: values.name.trim(),
     isCustomer: values.isCustomer,
     isSupplier: values.isSupplier,
-    email: emptyToNull(values.email ?? ""),
-    // CHANGE-030: phone / taxNumber / address / notes omitted so edit does not clear stored values.
+    phone: emptyToNull(values.phone ?? ""),
+    // Email / taxNumber / address / notes omitted so edit does not clear stored values.
   };
 }
 
@@ -451,7 +451,7 @@ export function BusinessPartnersPage() {
           name: formMode.partner.name,
           isCustomer: formMode.partner.isCustomer,
           isSupplier: formMode.partner.isSupplier,
-          email: formMode.partner.email ?? "",
+          phone: formMode.partner.phone ?? "",
         }
       : undefined;
   const partners = list.data?.data ?? [];

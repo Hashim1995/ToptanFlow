@@ -70,7 +70,7 @@ export const SALES_LABELS = {
     remove: 'Sil',
     cancel: 'Ləğv et',
     save: 'Yadda saxla',
-    saveAndPost: 'Yadda saxla və təsdiqlə',
+    saveAndPost: 'Təsdiqlə',
     back: 'Geri',
     addLine: 'Sətir əlavə et',
     removeLine: 'Sətiri sil',
@@ -88,7 +88,7 @@ export const SALES_LABELS = {
     negativeQuantityReasonRequired: 'Mənfi miqdar səbəbi mütləqdir.',
     acceptPayment: 'Ödəniş qəbul et',
     acceptPaymentHint:
-      'Yalnız «Yadda saxla və təsdiqlə» / «Təsdiqlə» zamanı ayrıca Mədaxil kassa əməliyyatı yaradılır.',
+      'Yalnız «Təsdiqlə» zamanı ayrıca Mədaxil kassa əməliyyatı yaradılır.',
     cashAccount: 'Kassa hesabı',
     cashAccountPlaceholder: 'Kassa hesabı seçin',
     paymentAmount: 'Ödəniş məbləği',

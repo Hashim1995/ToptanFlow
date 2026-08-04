@@ -535,6 +535,11 @@
 
 .commercial-document-form .commercial-line-card .ant-form-item {
   width: 100%;
+  margin-bottom: 6px;
+}
+
+.commercial-document-form .commercial-line-card .ant-form-item:last-child {
+  margin-bottom: 0;
 }
 
 .commercial-document-form .commercial-line-card .ant-form-item-control-input {
@@ -543,7 +548,7 @@
 
 .commercial-line-card {
   position: relative;
-  padding: 10px 10px 10px 10px !important;
+  padding: 8px !important;
   background: #fbfcfe !important;
   border: 1px solid #e3e9f0 !important;
   border-radius: 12px !important;
@@ -572,8 +577,8 @@
 
 .commercial-line-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
   padding-right: 40px;
 }
 
@@ -586,6 +591,10 @@
 .commercial-line-price,
 .commercial-line-total {
   min-width: 0;
+}
+
+.commercial-line-total {
+  grid-column: 1 / -1;
 }
 
 .commercial-line-available {
@@ -1136,7 +1145,8 @@
     align-items: start;
   }
 
-  .commercial-line-product {
+  .commercial-line-product,
+  .commercial-line-total {
     grid-column: auto;
   }
 
@@ -1335,11 +1345,13 @@
     min-width: 0;
   }
 
+  /* Mobile: close via header X; keep Save / Confirm side by side */
+  .commercial-document-modal .commercial-document-modal-back,
   .commercial-document-modal
     .ant-modal-footer
     > .ant-space
-    > .ant-space-item:first-child {
-    grid-column: 1 / -1;
+    > .ant-space-item:has(.commercial-document-modal-back) {
+    display: none !important;
   }
 
   .commercial-document-modal .ant-modal-footer .ant-btn,
@@ -1356,30 +1368,43 @@
     min-height: 40px;
   }
 
+  .commercial-document-form .commercial-line-card .ant-form-item {
+    margin-bottom: 4px !important;
+  }
+
+  .commercial-document-form .commercial-line-card .ant-form-item:last-child {
+    margin-bottom: 0 !important;
+  }
+
   .commercial-document-form .commercial-line-card .ant-form-item-control-input {
-    min-height: 40px;
+    min-height: 32px;
   }
 
   .commercial-line-card {
-    padding: 8px 40px 8px 8px !important;
+    padding: 6px 34px 6px 6px !important;
     border-radius: 10px !important;
   }
 
   .commercial-line-grid {
-    gap: 6px;
+    gap: 4px;
     padding-right: 0;
   }
 
+  .ui-document-lines.ant-space-vertical {
+    gap: 6px !important;
+  }
+
   .commercial-line-card .ant-form-item-label {
-    padding-bottom: 2px !important;
+    padding-bottom: 0 !important;
   }
 
   .commercial-line-card .ant-form-item-label > label {
     font-size: 10px;
+    height: auto !important;
   }
 
   .commercial-line-available {
-    margin-top: 2px;
+    margin-top: 1px;
     font-size: 10px;
   }
 
@@ -1389,7 +1414,7 @@
   .commercial-line-quantity .ant-input-affix-wrapper,
   .commercial-line-price .ant-input-affix-wrapper,
   .commercial-line-total .ant-input-affix-wrapper {
-    min-height: 40px;
+    min-height: 32px;
     padding-inline: 8px;
     font-size: 13px;
   }
@@ -1397,9 +1422,9 @@
   .commercial-line-remove-icon.ant-btn {
     top: 4px;
     right: 4px;
-    width: 34px;
-    min-width: 34px;
-    height: 34px;
+    width: 30px;
+    min-width: 30px;
+    height: 30px;
   }
 
   .commercial-payment-section {

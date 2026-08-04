@@ -352,6 +352,7 @@ export function PurchaseFormModal({
         footer={
           <Space wrap style={{ width: '100%', justifyContent: 'flex-end' }}>
             <Button
+              className="commercial-document-modal-back"
               onClick={() => {
                 resetImmediatePayment();
                 onCancel();
@@ -360,6 +361,8 @@ export function PurchaseFormModal({
               {PURCHASE_LABELS.actions.back}
             </Button>
             <Button
+              color="green"
+              variant="solid"
               loading={submitting}
               disabled={loadingEdit || Boolean(loadError) || !paymentValid}
               icon={phIcon(CheckCircle, { size: ICON_SIZE.sm })}
@@ -370,7 +373,8 @@ export function PurchaseFormModal({
               {PURCHASE_LABELS.actions.saveAndPost}
             </Button>
             <Button
-              type="primary"
+              color="orange"
+              variant="solid"
               loading={submitting}
               disabled={loadingEdit || Boolean(loadError)}
               onClick={() =>
@@ -490,7 +494,7 @@ export function PurchaseFormModal({
               />
             ) : null}
 
-            <Space className="ui-document-lines" direction="vertical" size={8}>
+            <Space className="ui-document-lines" direction="vertical" size={6}>
               {fields.map((field, index) => {
                 const watchedLine = values.items?.[index];
                 const line = {
