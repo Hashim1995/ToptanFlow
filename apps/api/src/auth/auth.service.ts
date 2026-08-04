@@ -269,13 +269,14 @@ export class AuthService {
   private cookieOptions(expires: Date): CookieOptions {
     const nodeEnv = this.configService.get<string>('NODE_ENV', 'development');
     const isProduction = nodeEnv === 'production';
-    // Local Vite proxies `/api` same-origin → SameSite=Lax is correct.
-    // Production web + API are different vercel.app sites → cross-site
-    // credentialed refresh requires SameSite=None with Secure.
+    // Browser-facing auth goes through the frontend origin:
+    // - local: Vite proxies `/api` → localhost API (same-site)
+    // - production: Vercel rewrites `/api/v1/*` → Nest API (first-party on web host)
+    // SameSite=Lax is correct for first-party credentialed cookies; Secure in prod.
     return {
       httpOnly: true,
       secure: isProduction,
-      sameSite: isProduction ? 'none' : 'lax',
+      sameSite: 'lax',
       path: '/',
       expires,
     };

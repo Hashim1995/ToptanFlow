@@ -4,7 +4,6 @@ import {
   Alert,
   Button,
   Col,
-  DatePicker,
   Divider,
   Form,
   Input,
@@ -30,6 +29,7 @@ import { mapApiError } from '../../../api/map-api-error';
 import { formatMoney } from '../../../shared/money/format-money';
 import { formatQuantity } from '../../../shared/ui/format';
 import { ICON_SIZE, phIcon } from '../../../shared/ui/ph-icon';
+import { ResponsiveDatePicker } from '../../../shared/ui/responsive-date-pickers';
 import { useBusinessPartnersList } from '../../master-data/api/business-partners.hooks';
 import { useProductsList } from '../../master-data/api/products.hooks';
 import { DecimalInput } from '../../master-data/ui/decimal-input';
@@ -465,7 +465,7 @@ export function SaleFormModal({
                       help={errors.businessDate?.message}
                       style={{ marginBottom: 12 }}
                     >
-                      <DatePicker
+                      <ResponsiveDatePicker
                         value={dateOnlyPickerValue(field.value)}
                         format={DATE_DISPLAY_FORMAT}
                         style={{ width: '100%' }}

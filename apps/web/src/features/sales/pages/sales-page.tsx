@@ -4,7 +4,6 @@ import {
   Badge,
   Button,
   Card,
-  DatePicker,
   Dropdown,
   Grid,
   Input,
@@ -46,6 +45,7 @@ import { mapApiError } from "../../../api/map-api-error";
 import { formatMoney } from "../../../shared/money/format-money";
 import { formatDateTime } from "../../../shared/ui/format";
 import { phIcon, ICON_SIZE } from "../../../shared/ui/ph-icon";
+import { ResponsiveRangePicker } from "../../../shared/ui/responsive-date-pickers";
 import {
   CodeText,
   EntityCell,
@@ -580,7 +580,7 @@ export function SalesPage() {
             />
           </FilterField>
           <FilterField label={SALES_LABELS.filters.dateRange}>
-            <DatePicker.RangePicker
+            <ResponsiveRangePicker
               format={DATE_DISPLAY_FORMAT}
               value={
                 dateRange ? [dayjs(dateRange[0]), dayjs(dateRange[1])] : null

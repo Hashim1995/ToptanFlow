@@ -1,0 +1,105 @@
+.responsive-date-picker-drawer .ant-drawer-body {
+  overflow-x: hidden;
+}
+
+.responsive-date-picker-footer {
+  display: flex;
+  gap: 8px;
+}
+
+.responsive-date-picker-footer .ant-btn {
+  flex: 1 1 0;
+  min-height: 42px;
+}
+
+.responsive-date-picker-panel-host {
+  position: relative;
+  width: 100%;
+  min-height: 320px;
+}
+
+.responsive-date-picker-panel-host-range {
+  min-height: 360px;
+}
+
+.responsive-date-picker-hidden-input.ant-picker,
+.responsive-date-picker-hidden-input.ant-picker-range {
+  position: absolute;
+  width: 1px !important;
+  height: 1px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border: 0 !important;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.responsive-date-picker-popup.ant-picker-dropdown,
+.responsive-date-picker-popup-range.ant-picker-dropdown {
+  position: static !important;
+  inset: auto !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  overflow: visible;
+}
+
+.responsive-date-picker-popup .ant-picker-panel-container,
+.responsive-date-picker-popup-range .ant-picker-panel-container {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-shadow: none !important;
+}
+
+.responsive-date-picker-popup .ant-picker-panels,
+.responsive-date-picker-popup-range .ant-picker-panels {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+}
+
+.responsive-date-picker-popup .ant-picker-panel,
+.responsive-date-picker-popup-range .ant-picker-panel {
+  width: 100% !important;
+  max-width: 100% !important;
+  border-inline-end: 0 !important;
+}
+
+.responsive-date-picker-popup .ant-picker-content,
+.responsive-date-picker-popup-range .ant-picker-content,
+.responsive-date-picker-popup .ant-picker-content th,
+.responsive-date-picker-popup-range .ant-picker-content th,
+.responsive-date-picker-popup .ant-picker-content td,
+.responsive-date-picker-popup-range .ant-picker-content td {
+  width: auto;
+}
+
+.responsive-date-picker-popup .ant-picker-cell-inner,
+.responsive-date-picker-popup-range .ant-picker-cell-inner {
+  min-width: 40px;
+  min-height: 40px;
+  line-height: 40px !important;
+}
+
+.responsive-date-picker-popup .ant-picker-header-view button,
+.responsive-date-picker-popup-range .ant-picker-header-view button,
+.responsive-date-picker-popup .ant-picker-header button,
+.responsive-date-picker-popup-range .ant-picker-header button {
+  min-width: 40px;
+  min-height: 40px;
+}
+
+@media (orientation: landscape) and (max-width: 900px) {
+  .responsive-date-picker-drawer.ant-drawer-content-wrapper {
+    max-height: 100%;
+  }
+
+  .responsive-date-picker-drawer .ant-drawer-body {
+    max-height: min(70vh, 420px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}

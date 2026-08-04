@@ -108,7 +108,12 @@ describe('AuthService', () => {
       expect(cookie).toHaveBeenCalledWith(
         'refresh_token',
         'opaque-refresh-token',
-        expect.objectContaining({ httpOnly: true }),
+        expect.objectContaining({
+          httpOnly: true,
+          sameSite: 'lax',
+          path: '/',
+          secure: false,
+        }),
       );
       expect(result).toEqual({
         accessToken: 'access.jwt.token',

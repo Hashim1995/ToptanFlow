@@ -3,7 +3,6 @@ import {
   Alert,
   Card,
   Col,
-  DatePicker,
   Empty,
   Grid,
   Row,
@@ -24,6 +23,7 @@ import {
 import { formatMoney } from "../../../shared/money/format-money";
 import { formatDateTime } from "../../../shared/ui/format";
 import { ICON_SIZE, phIcon } from "../../../shared/ui/ph-icon";
+import { ResponsiveRangePicker } from "../../../shared/ui/responsive-date-pickers";
 import { CodeText, MoneyCell } from "../../../shared/ui/table-cells";
 import { FilterBar, FilterField } from "../../master-data/ui/list-toolbar";
 import { PageHeader } from "../../master-data/ui/page-header";
@@ -209,7 +209,7 @@ export function CashReportsPage() {
           }}
         >
           <FilterField label={CASH_LABELS.dateRange}>
-            <DatePicker.RangePicker
+            <ResponsiveRangePicker
               style={{ width: "100%" }}
               format={DATE_DISPLAY_FORMAT}
               value={dateRange}

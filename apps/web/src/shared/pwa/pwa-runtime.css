@@ -1,0 +1,13 @@
+.pwa-runtime-stack {
+  position: sticky;
+  top: 0;
+  z-index: 1100;
+}
+
+.pwa-runtime-alert {
+  border-radius: 0;
+}
+
+.pwa-runtime-alert .ant-alert-action {
+  margin-inline-start: 12px;
+}

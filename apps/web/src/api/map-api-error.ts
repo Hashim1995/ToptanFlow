@@ -1,5 +1,7 @@
 import { AxiosError, isAxiosError } from 'axios';
 import type { ApiErrorKind, MappedApiError } from './api-error.types';
+import { isOfflineMutationError } from '../shared/pwa/offline-guard';
+import { PWA_LABELS } from '../shared/pwa/labels';
 
 /**
  * Stub mapper: classifies Axios failures and returns Azerbaijani text
@@ -7,6 +9,13 @@ import type { ApiErrorKind, MappedApiError } from './api-error.types';
  * with feature screens — do not invent domain messages here.
  */
 export function mapApiError(error: unknown): MappedApiError {
+  if (isOfflineMutationError(error)) {
+    return {
+      kind: 'network',
+      userMessage: PWA_LABELS.offlineSubmitBlocked,
+    };
+  }
+
   if (isAxiosError(error)) {
     return mapAxiosError(error);
   }
