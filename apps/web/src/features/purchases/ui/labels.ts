@@ -71,7 +71,7 @@ export const PURCHASE_LABELS = {
     remove: 'Sil',
     cancel: 'Ləğv et',
     save: 'Yadda saxla',
-    saveAndPost: 'Yadda saxla və təsdiqlə',
+    saveAndPost: 'Təsdiqlə',
     back: 'Geri',
     addLine: 'Sətir əlavə et',
     removeLine: 'Sətiri sil',
@@ -84,7 +84,7 @@ export const PURCHASE_LABELS = {
     text: 'Təsdiqdən sonra məhsul miqdarı artacaq, tərəfdaşın borc qalığı azalacaq, alış redaktə üçün bağlanacaq. «İndi ödə» seçildikdə ayrıca Məxaric kassa əməliyyatı yaradılır.',
     payNow: 'İndi ödə',
     payNowHint:
-      'Yalnız «Yadda saxla və təsdiqlə» / «Təsdiqlə» zamanı ayrıca Məxaric kassa əməliyyatı yaradılır.',
+      'Yalnız «Təsdiqlə» zamanı ayrıca Məxaric kassa əməliyyatı yaradılır.',
     cashAccount: 'Kassa hesabı',
     cashAccountPlaceholder: 'Kassa hesabı seçin',
     paymentAmount: 'Ödəniş məbləği',

@@ -485,9 +485,7 @@ export function CashAccountDetailPage() {
             className="cash-detail-edit"
             icon={phIcon(PencilSimple, { size: ICON_SIZE.sm })}
             onClick={() => setEditOpen(true)}
-          >
-            {CASH_LABELS.editAccount}
-          </Button>
+          ></Button>
         ) : null}
       </header>
 
