@@ -2,6 +2,11 @@
 
 Planning-history only. Not a product release-notes replacement.
 
+## 2026-08-06
+
+- **CHANGE-033 Review:** Günlük report — live company snapshot of all Business Partner signed debt balances plus active Cash Account balances and company cash total; Excel download and browser print from `/reports/daily` in shared desktop/mobile nav. Transient in-memory XLSX (CHANGE-027 pattern); no historical as-of-date, storage, migrations, or ledger changes. API report tests (2), web report tests (5), scoped lint, type-checks, nest build, and Vite production build passed.
+- **CHANGE-033 In Progress:** Owner-approved Günlük report — live company snapshot of all Business Partner signed debt balances plus active Cash Account balances and company cash total; Excel download and browser print from a dedicated nav page (`/reports/daily`). Patterned on CHANGE-027 transient export/print; no historical as-of-date, storage, or ledger changes.
+
 ## 2026-08-04
 
 - **CHANGE-032 Review:** Production-ready Web Push with transactional outbox (`PushSubscription` / `PushNotificationEvent` / `PushDelivery`), VAPID-authenticated `web-push` dispatcher, secret-protected `/push/dispatch` retry endpoint (Vercel Cron-friendly), authenticated subscribe/status APIs, Service Worker `push`/`notificationclick` handlers (no deep links), and Account Settings enable/disable UX. Emits after canonical Cash / Sale / Purchase / inventory-adjust completions; actor excluded; push failures never roll back business txs. Prisma validate/generate, scoped lint, API typecheck, 136 targeted API tests, web push unit tests, API + Vite production builds passed.

@@ -1,0 +1,42 @@
+.daily-balance-report-page {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.daily-balance-report-page .ui-page-header {
+  margin-bottom: 20px !important;
+}
+
+.daily-balance-actions-card.ant-card,
+.daily-balance-summary-card.ant-card {
+  border-color: #e3e8ef;
+  border-radius: 14px;
+  box-shadow: 0 7px 24px rgba(15, 23, 42, 0.045);
+}
+
+.daily-balance-actions-card.ant-card {
+  margin-bottom: 16px;
+  background: #fbfcfe;
+}
+
+.daily-balance-actions-card > .ant-card-body {
+  padding: 16px;
+}
+
+.daily-balance-process {
+  margin-top: 16px;
+}
+
+.daily-balance-error {
+  margin-top: 14px;
+}
+
+.daily-balance-summary-card > .ant-card-body {
+  padding: 16px;
+}
+
+.daily-balance-stamp {
+  display: block;
+  margin-bottom: 12px;
+}

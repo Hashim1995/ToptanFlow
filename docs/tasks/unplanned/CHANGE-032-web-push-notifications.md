@@ -31,10 +31,12 @@
   - Permission requested only after explicit user action
 - **Impact on current work:** none (no active story)
 - **Roadmap impact:** Advances notification capability ahead of EPIC-018 without resolving EPIC-018 Yellow Cards
-- **Result:** Implemented Web Push with fire-and-forget `notify*` after business commit (push never inside business `$transaction`). Missing push tables / push errors cannot abort cash/sale/purchase/stock APIs. Awaiting owner migration + VAPID cutover.
-- **Follow-up actions:** **Required:** apply migration `20260804190000_web_push_outbox` on Neon/production for notifications to deliver. Set Vercel VAPID env; redeploy API after this isolation fix; owner manual verification matrix.
+- **Result:** Implemented Web Push with fire-and-forget `notify*` after business commit (push never inside business `$transaction`). Missing push tables / push errors cannot abort cash/sale/purchase/stock APIs. Production Neon migration applied via `yarn workspace api prisma:migrate:prod` (2026-08-04). VAPID keys must still be set on the Vercel API project (see Follow-up).
+- **Follow-up actions:** **Required on Vercel API (Production):** set `WEB_PUSH_VAPID_PUBLIC_KEY`, `WEB_PUSH_VAPID_PRIVATE_KEY`, `WEB_PUSH_CONTACT` (keys also in gitignored `apps/api/.env.production.local`), then redeploy API. Owner manual verification matrix after redeploy.
 - **Evidence:**
-  - Migration `20260804190000_web_push_outbox` (must be applied on each environment)
+  - Migration `20260804190000_web_push_outbox` applied on Neon production (`prisma:migrate:prod`)
+  - Env loading: production skips `.env.local` / development files; shell env always wins (`env-file-paths.ts`, `load-api-env.ts`)
+  - Script `yarn workspace api prisma:migrate:prod` with localhost guard
   - Module `apps/api/src/push/**` — `enqueueBestEffort` after business commit
   - SW `apps/web/src/sw.ts` (injectManifest)
   - API tests: push + cash + sales + purchases + products suites

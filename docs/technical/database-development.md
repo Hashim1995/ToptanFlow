@@ -127,4 +127,21 @@ Aşağıdakı əmrlər **məlumat itkisinə** səbəb ola bilər. Bunları heç 
 - Əl ilə yazılmış `DROP DATABASE`, `DROP SCHEMA`, `DROP TABLE`, `TRUNCATE` kimi SQL əmrləri.
 - `yarn prisma:migrate:deploy` (`prisma migrate deploy`) — bu, **yalnız deployment (CI/CD və ya production) proseslərinə aid** bir əmrdir: gözləyən miqrasiyaları sualsız/interaktivsiz tətbiq edir. Bu, adi lokal inkişaf iş axınının bir hissəsi deyil (adi halda `prisma:migrate:dev` istifadə edin); istifadəsi ayrıca, sənədləşdirilmiş bir deployment tapşırığı çərçivəsində olmalıdır.
 
+## 12. Production (Neon) miqrasiyanı təhlükəsiz necə tətbiq etmək olar?
+
+Developer maşınından Neon-a `migrate deploy` işlətmək üçün **yalnız**:
+
+```
+yarn workspace api prisma:migrate:prod
+```
+
+Bu skript:
+
+- `NODE_ENV=production` təyin edir;
+- yalnız `.env.production.local` → `.env.production` → `.env` yükləyir (`.env.development*` / `.env.local` **yox**);
+- shell / CI `DATABASE_URL` dəyərlərini fayllardan üstün tutur;
+- `localhost` / `toptanflow_dev` aşkar edərsə imtina edir.
+
+Lokal inkişaf üçün əvvəlki kimi `yarn prisma:migrate:dev` istifadə edin.
+
 Bu əmrlərdən hər hansını icra etməzdən əvvəl, hansı mühitə (lokal/production) qarşı işlədiyinizi mütləq iki dəfə yoxlayın.

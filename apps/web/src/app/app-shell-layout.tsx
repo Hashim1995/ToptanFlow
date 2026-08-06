@@ -17,6 +17,7 @@ import {
   ChartLine,
   CaretLeft,
   CaretRight,
+  ClipboardText,
   House,
   Key,
   List,
@@ -37,6 +38,7 @@ import { AUTH_LABELS } from "../features/auth/ui/labels";
 import { useAuth } from "../features/auth/use-auth";
 import { CASH_LABELS } from "../features/cash/ui/labels";
 import { PURCHASE_LABELS } from "../features/purchases/ui/labels";
+import { DAILY_BALANCE_REPORT_LABELS } from "../features/reports/ui/labels";
 import { SALES_LABELS } from "../features/sales/ui/labels";
 import { USERS_LABELS } from "../features/users/ui/labels";
 import { BrandLogo } from "../shared/ui/brand-logo";
@@ -71,6 +73,14 @@ const NAV_ITEMS: MenuItem[] = [
         key: "/account",
         icon: phIcon(Key, { size: ICON_SIZE.md }),
         label: navLabel(AUTH_LABELS.accountNav, "/account"),
+      },
+      {
+        key: "/reports/daily",
+        icon: phIcon(ClipboardText, { size: ICON_SIZE.md }),
+        label: navLabel(
+          DAILY_BALANCE_REPORT_LABELS.nav,
+          "/reports/daily",
+        ),
       },
     ],
   },
@@ -206,23 +216,25 @@ export function AppShellLayout() {
   const selectedKeys = [
     location.pathname === "/"
       ? "/"
-      : location.pathname.startsWith("/account")
-        ? "/account"
-        : location.pathname.startsWith("/purchases")
-          ? "/purchases"
-          : location.pathname.startsWith("/sales")
-            ? "/sales"
-            : location.pathname.startsWith("/cash/expense-categories")
-              ? "/cash/expense-categories"
-              : location.pathname.startsWith("/cash/transactions")
-                ? "/cash/transactions"
-                : location.pathname.startsWith("/cash/reports")
-                  ? "/cash/reports"
-                  : location.pathname.startsWith("/cash")
-                    ? "/cash/accounts"
-                    : location.pathname.startsWith("/users")
-                      ? "/users"
-                      : location.pathname,
+      : location.pathname.startsWith("/reports/daily")
+        ? "/reports/daily"
+        : location.pathname.startsWith("/account")
+          ? "/account"
+          : location.pathname.startsWith("/purchases")
+            ? "/purchases"
+            : location.pathname.startsWith("/sales")
+              ? "/sales"
+              : location.pathname.startsWith("/cash/expense-categories")
+                ? "/cash/expense-categories"
+                : location.pathname.startsWith("/cash/transactions")
+                  ? "/cash/transactions"
+                  : location.pathname.startsWith("/cash/reports")
+                    ? "/cash/reports"
+                    : location.pathname.startsWith("/cash")
+                      ? "/cash/accounts"
+                      : location.pathname.startsWith("/users")
+                        ? "/users"
+                        : location.pathname,
   ];
 
   async function handleLogout() {

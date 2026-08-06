@@ -1,0 +1,28 @@
+export const DAILY_BALANCE_REPORT_LABELS = {
+  nav: 'Günlük report',
+  title: 'Günlük report',
+  description:
+    'Cari an üzrə bütün tərəfdaş borc balansı və aktiv kassa hesablarının vəziyyəti.',
+  excelAction: 'Excel yüklə',
+  printAction: 'Çap et',
+  abortTitle: 'Report hazırlanmasını dayandırırsınız?',
+  abortContent:
+    'Report hazırlanır və ya yükləmə tamamlanmayıb. Dayandırsanız əməliyyat yarımçıq qala bilər.',
+  abortOk: 'Prosesi dayandır',
+  abortCancel: 'Davam et',
+  excelSuccess: 'Report uğurla yükləndi.',
+  printSuccess: 'Print pəncərəsi açıldı. Report hazırdır.',
+  printOpenError: 'Çap pəncərəsini açmaq mümkün olmadı.',
+  stagePreparing: 'Məlumatlar hazırlanır',
+  stageGenerating: 'Fayl / çap hazırlanır',
+  stageReady: 'Hazırdır',
+  stageStarted: 'Başladıldı',
+  stageCompleted: 'Tamamlandı',
+  partnerCount: 'Tərəfdaş sayı',
+  cashAccountCount: 'Aktiv kassa hesabı',
+  totalPartnerReceivable: 'Alacağımız',
+  totalPartnerPayable: 'Verəcəyimiz',
+  totalPartnerDebt: 'Xalis borc balansı',
+  totalCompanyCash: 'Ümumi kassa cəmi',
+  generatedAt: 'Hazırlanma vaxtı',
+} as const;

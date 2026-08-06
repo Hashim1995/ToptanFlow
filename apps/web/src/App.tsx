@@ -17,6 +17,7 @@ import { PurchaseDetailPage } from './features/purchases/pages/purchase-detail-p
 import { PurchasesPage } from './features/purchases/pages/purchases-page';
 import { SaleDetailPage } from './features/sales/pages/sale-detail-page';
 import { SalesPage } from './features/sales/pages/sales-page';
+import { DailyBalanceReportPage } from './features/reports/pages/daily-balance-report-page';
 import { UsersPage } from './features/users/pages/users-page';
 import { HomePage } from './pages/home-page';
 import { PwaRuntime } from './shared/pwa/pwa-runtime';
@@ -60,6 +61,10 @@ function App() {
               element={<ExpenseCategoriesPage />}
             />
             <Route path="account" element={<AccountSettingsPage />} />
+            <Route
+              path="reports/daily"
+              element={<DailyBalanceReportPage />}
+            />
             <Route element={<RequireSuperAdmin />}>
               <Route path="users" element={<UsersPage />} />
             </Route>

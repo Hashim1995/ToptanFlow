@@ -1,0 +1,38 @@
+# CHANGE-033: Günlük report (daily balance snapshot)
+
+- **ID:** CHANGE-033
+- **Type:** CHANGE
+- **Title:** Günlük report (daily balance snapshot)
+- **Status:** Review
+- **Trigger:** Owner requested a live company-wide daily report reachable from desktop and mobile navigation: all Business Partner debt balances, active Cash Account balances, and company cash total; Excel download and a simple browser print page.
+- **Urgency:** High
+- **Affected epics / stories / tasks:** Business Partners (ADR-030 signed debt); Cash (ADR-032 / ADR-033 balances); related reporting UX from CHANGE-027 (Excel/Print pattern only).
+- **Why not in the original plan:** Existing Cash Reports cover period turnover; Business Partner movement report is per-partner. No company-wide live balance snapshot export/print existed in the roadmap.
+- **Scope:** Authenticated `GET /reports/daily-balance` (JSON) and `GET /reports/daily-balance/export?format=EXCEL` (in-memory XLSX); all partners (active + inactive, including zero debt) with signed balances; active cash accounts only with per-account balance and company total; dedicated `/reports/daily` page with Excel and Print actions; shared shell nav entry `Günlük report` (desktop sider + mobile drawer); browser-only A4 print view; no file persistence, jobs, archives, or migrations.
+- **Out of scope:** Historical as-of-date reconstruction; product stock; expense/period cash turnover; inactive cash accounts; separate receivable/payable ledgers; new authorization policy; changes to Sale/Purchase/Cash posting behavior; US-017 full partner statement.
+- **Risks:** Paginated list APIs truncating “all” partners; including inactive cash in company total; inventing receivable/payable primary totals contrary to ADR-030; leaking enum/API field names into UI/print/Excel; treating print-dialog cancellation as failure.
+- **Acceptance criteria:**
+  - Desktop sider and mobile drawer both expose `Günlük report` and open `/reports/daily`.
+  - Snapshot is live as of request time: every Business Partner with code, name, active flag, signed debt amount and Azerbaijani debt meaning; every active Cash Account with code, name, responsible user, balance; company cash total equals the sum of active account balances.
+  - Excel is generated in memory and returned as an attachment without server storage, background jobs, or archives.
+  - Print fetches JSON and opens a separate Azerbaijani A4 browser view (partners table, cash accounts table, total) without application chrome; cancelling the browser print dialog is not an error.
+  - Page shows honest preparation stages, supports abort/cleanup for in-flight work, and surfaces Azerbaijani success/error messages.
+  - Backend and frontend tests cover inclusion rules, totals, Excel non-empty buffer, and print markup; scoped lint, type-check, targeted tests, and production builds pass.
+- **Impact on current work:** Standalone owner-approved unplanned change; CHANGE-032 remains in Review and is not displaced.
+- **Roadmap impact:** None. Operational snapshot report only; does not claim Settlement / US-017 completion.
+- **Result:** Added `ReportsModule` with live daily-balance JSON and in-memory XLSX export. Shared shell nav (desktop + mobile) opens `/reports/daily` with Excel and Print actions, preparation stages, abort cleanup, and a browser-only A4 print view. Partners include inactive/zero-debt rows; cash includes active accounts only with matching company total. No migrations, file storage, jobs, or ledger behavior changes.
+- **Follow-up actions:** Owner visual acceptance of nav placement, Excel content, and print preview.
+- **Evidence:**
+  - `apps/api/src/reports/daily-balance-report.service.ts`
+  - `apps/api/src/reports/reports.controller.ts`
+  - `apps/api/src/reports/reports.module.ts`
+  - `apps/web/src/features/reports/pages/daily-balance-report-page.tsx`
+  - `apps/web/src/features/reports/ui/print-daily-balance-report.ts`
+  - `apps/web/src/app/app-shell-layout.tsx`
+  - `yarn workspace api test --runInBand src/reports/daily-balance-report.service.spec.ts` — 1 suite / 2 tests passed.
+  - `yarn workspace web test --run src/features/reports` — 2 files / 5 tests passed.
+  - Scoped API and web ESLint — passed.
+  - `yarn workspace api tsc --noEmit -p tsconfig.build.json` — passed.
+  - `yarn workspace web tsc --noEmit` — passed.
+  - API `prisma generate` + `nest build` (+ patch) — passed.
+  - `yarn workspace web vite build` — passed (existing bundle-size warning only).
