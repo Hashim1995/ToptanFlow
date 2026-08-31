@@ -800,6 +800,24 @@ export function CashInFormModal({
               )}
             />
           </Form.Item>
+          <Form.Item
+            className="cash-form-field-wide"
+            label={CASH_LABELS.fields.notes}
+            validateStatus={errors.notes ? 'error' : undefined}
+            help={errors.notes?.message}
+          >
+            <Controller
+              name="notes"
+              control={control}
+              render={({ field }) => (
+                <Input
+                  {...field}
+                  maxLength={2000}
+                  placeholder={CASH_LABELS.fields.notesPlaceholder}
+                />
+              )}
+            />
+          </Form.Item>
         </div>
       </Form>
     </Modal>
@@ -1196,6 +1214,24 @@ export function CashOutFormModal({
                   allowClear={false}
                   value={dateOnlyPickerValue(field.value)}
                   onChange={(d) => field.onChange(dateOnlyPickerToApi(d))}
+                />
+              )}
+            />
+          </Form.Item>
+          <Form.Item
+            className="cash-form-field-wide"
+            label={CASH_LABELS.fields.notes}
+            validateStatus={errors.notes ? 'error' : undefined}
+            help={errors.notes?.message}
+          >
+            <Controller
+              name="notes"
+              control={control}
+              render={({ field }) => (
+                <Input
+                  {...field}
+                  maxLength={2000}
+                  placeholder={CASH_LABELS.fields.notesPlaceholder}
                 />
               )}
             />

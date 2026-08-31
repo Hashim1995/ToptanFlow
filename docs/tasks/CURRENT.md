@@ -2,7 +2,7 @@
 
 > Short operational snapshot. Details live in linked Epic/Story/Task/Unplanned files.
 
-- **Last meaningful update:** 2026-08-06 — CHANGE-033 Review (Günlük report implemented).
+- **Last meaningful update:** 2026-09-01 — CHANGE-035 Cancelled; scheduled email implementation removed because the current Vercel subscription does not support the required Cron job.
 - **Active epic:** none (EPIC-011 Cash presentation hardening Done)
 - **Active user story:** none
 - **Active tasks:** none

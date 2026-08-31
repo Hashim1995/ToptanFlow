@@ -1,0 +1,23 @@
+# CHANGE-034: Restore Cash In / Cash Out notes fields
+
+- **ID:** CHANGE-034
+- **Type:** CHANGE
+- **Title:** Restore Cash In / Cash Out notes fields
+- **Status:** Done
+- **Trigger:** Owner requested the optional note field to be restored in the Cash In and Cash Out frontend forms as a single-line input.
+- **Urgency:** Medium
+- **Affected epics / stories / tasks:** EPIC-011; US-024; US-045; follow-up to CHANGE-030.
+- **Why not in the original plan:** CHANGE-030 intentionally removed optional Cash notes from the frontend; the owner has now reversed that presentation decision for Cash In and Cash Out only.
+- **Scope:** Restore the existing optional `notes` form value in Cash In and Cash Out modals using an Ant Design single-line `Input`, the canonical Azerbaijani label/placeholder, and the existing 2,000-character limit.
+- **Out of scope:** Cash Account, Expense, and Transfer forms; backend/API/schema changes; posting, debt, balance, lifecycle, or validation behavior; scheduled email reports.
+- **Risks:** Accidentally making the field required or changing the existing submit payload.
+- **Acceptance criteria:** Cash In and Cash Out each show `Qeyd` as an optional single-line input; empty values remain valid; entered values continue through the existing submit payload; no `TextArea` is used for these two note controls.
+- **Impact on current work:** Standalone owner-approved frontend change; existing Review items are not displaced.
+- **Roadmap impact:** None.
+- **Result:** Restored the already-supported optional `notes` controller in both Cash In and Cash Out modals as a full-width single-line Ant Design `Input`. Existing schema, defaults, payload handling, and backend behavior remain unchanged.
+- **Follow-up actions:** None.
+- **Evidence:**
+  - `apps/web/src/features/cash/ui/cash-form-modals.tsx`
+  - `yarn workspace web eslint src/features/cash/ui/cash-form-modals.tsx` — passed.
+  - `yarn workspace web tsc --noEmit` — passed.
+  - `yarn workspace web vite build` — passed (existing chunk-size and PWA deprecation warnings only).

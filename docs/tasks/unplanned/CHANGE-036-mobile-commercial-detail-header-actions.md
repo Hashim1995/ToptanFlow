@@ -1,0 +1,25 @@
+# CHANGE-036: Mobile commercial detail header actions
+
+- **ID:** CHANGE-036
+- **Type:** CHANGE
+- **Title:** Mobile commercial detail header actions
+- **Status:** Done
+- **Trigger:** Owner reported overlapping action text in the Sale and Purchase detail-page headers on narrow mobile screens and requested icon-only controls.
+- **Urgency:** High
+- **Affected epics / stories / tasks:** EPIC-009 / US-022; EPIC-010 / US-023; follow-up to CHANGE-025.
+- **Why not in the original plan:** The existing responsive CSS visually reduced mobile buttons but their text remained in the React output and could still overflow in the deployed presentation.
+- **Scope:** Render Sale and Purchase detail header actions as icon-only controls below the existing `md` breakpoint; retain desktop text labels; preserve Azerbaijani accessible names and native hover titles.
+- **Out of scope:** List-page actions, form modal actions, business behavior, permissions, mutations, API/backend changes, or desktop layout redesign.
+- **Risks:** Removing accessible action names together with visible text; changing click behavior or status-dependent action availability.
+- **Acceptance criteria:** Narrow Sale and Purchase detail headers show only fixed-size action icons without text overlap; each icon button retains its existing action, tone, `aria-label`, and title; desktop labels remain unchanged.
+- **Impact on current work:** Standalone owner-approved frontend correction; existing Review and Blocked items are not displaced.
+- **Roadmap impact:** None.
+- **Result:** Sale and Purchase detail header buttons now omit visible labels below `md`, matching their existing 40px mobile icon styling. Desktop labels and all action handlers remain unchanged; every affected control has an Azerbaijani accessible name and title.
+- **Follow-up actions:** None.
+- **Evidence:**
+  - `apps/web/src/features/sales/pages/sale-detail-page.tsx`
+  - `apps/web/src/features/purchases/pages/purchase-detail-page.tsx`
+  - Existing `apps/web/src/shared/ui/commercial-documents.css` mobile rules keep these icon controls at 40 x 40px below 768px.
+  - `yarn workspace web eslint src/features/sales/pages/sale-detail-page.tsx src/features/purchases/pages/purchase-detail-page.tsx` — passed.
+  - `yarn workspace web tsc --noEmit` — passed.
+  - `yarn workspace web vite build` — passed (existing chunk-size and PWA deprecation warnings only).
