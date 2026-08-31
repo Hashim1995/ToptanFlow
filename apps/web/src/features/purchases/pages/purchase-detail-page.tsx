@@ -384,12 +384,16 @@ export function PurchaseDetailPage() {
             <Button
               icon={phIcon(ArrowLeft, { size: ICON_SIZE.md })}
               onClick={() => navigate("/purchases")}
+              aria-label={PURCHASE_LABELS.actions.back}
+              title={PURCHASE_LABELS.actions.back}
             >
-              {PURCHASE_LABELS.actions.back}
+              {isDesktop ? PURCHASE_LABELS.actions.back : null}
             </Button>
             <Button
               className="commercial-print-trigger"
               icon={phIcon(Printer, { size: ICON_SIZE.md })}
+              aria-label={PURCHASE_LABELS.actions.print}
+              title={PURCHASE_LABELS.actions.print}
               onClick={() => {
                 const opened = printCommercialDocument(
                   "purchase-print-document",
@@ -399,29 +403,35 @@ export function PurchaseDetailPage() {
                   void message.error(PURCHASE_LABELS.messages.printOpenError);
               }}
             >
-              {PURCHASE_LABELS.actions.print}
+              {isDesktop ? PURCHASE_LABELS.actions.print : null}
             </Button>
             {record.status === "DRAFT" ? (
               <>
                 <Button
                   icon={phIcon(PencilSimple, { size: ICON_SIZE.md })}
                   onClick={() => setEditOpen(true)}
+                  aria-label={PURCHASE_LABELS.actions.edit}
+                  title={PURCHASE_LABELS.actions.edit}
                 >
-                  {PURCHASE_LABELS.actions.edit}
+                  {isDesktop ? PURCHASE_LABELS.actions.edit : null}
                 </Button>
                 <Button
                   type="primary"
                   icon={phIcon(CheckCircle, { size: ICON_SIZE.md })}
                   onClick={confirmPost}
+                  aria-label={PURCHASE_LABELS.actions.post}
+                  title={PURCHASE_LABELS.actions.post}
                 >
-                  {PURCHASE_LABELS.actions.post}
+                  {isDesktop ? PURCHASE_LABELS.actions.post : null}
                 </Button>
                 <Button
                   danger
                   icon={phIcon(Trash, { size: ICON_SIZE.md })}
                   onClick={confirmRemove}
+                  aria-label={PURCHASE_LABELS.actions.remove}
+                  title={PURCHASE_LABELS.actions.remove}
                 >
-                  {PURCHASE_LABELS.actions.remove}
+                  {isDesktop ? PURCHASE_LABELS.actions.remove : null}
                 </Button>
               </>
             ) : null}
@@ -430,8 +440,10 @@ export function PurchaseDetailPage() {
                 danger
                 icon={phIcon(XCircle, { size: ICON_SIZE.md })}
                 onClick={() => setCancelOpen(true)}
+                aria-label={PURCHASE_LABELS.actions.cancel}
+                title={PURCHASE_LABELS.actions.cancel}
               >
-                {PURCHASE_LABELS.actions.cancel}
+                {isDesktop ? PURCHASE_LABELS.actions.cancel : null}
               </Button>
             ) : null}
           </Space>

@@ -524,12 +524,16 @@ export function SaleDetailPage() {
             <Button
               icon={phIcon(ArrowLeft, { size: ICON_SIZE.md })}
               onClick={() => navigate("/sales")}
+              aria-label={SALES_LABELS.actions.back}
+              title={SALES_LABELS.actions.back}
             >
-              {SALES_LABELS.actions.back}
+              {isDesktop ? SALES_LABELS.actions.back : null}
             </Button>
             <Button
               className="commercial-print-trigger"
               icon={phIcon(Printer, { size: ICON_SIZE.md })}
+              aria-label={SALES_LABELS.actions.print}
+              title={SALES_LABELS.actions.print}
               onClick={() => {
                 const opened = printCommercialDocument(
                   "sale-print-document",
@@ -539,29 +543,35 @@ export function SaleDetailPage() {
                   void message.error(SALES_LABELS.messages.printOpenError);
               }}
             >
-              {SALES_LABELS.actions.print}
+              {isDesktop ? SALES_LABELS.actions.print : null}
             </Button>
             {record.status === "DRAFT" ? (
               <>
                 <Button
                   icon={phIcon(PencilSimple, { size: ICON_SIZE.md })}
                   onClick={() => setEditOpen(true)}
+                  aria-label={SALES_LABELS.actions.edit}
+                  title={SALES_LABELS.actions.edit}
                 >
-                  {SALES_LABELS.actions.edit}
+                  {isDesktop ? SALES_LABELS.actions.edit : null}
                 </Button>
                 <Button
                   type="primary"
                   icon={phIcon(CheckCircle, { size: ICON_SIZE.md })}
                   onClick={() => setPostOpen(true)}
+                  aria-label={SALES_LABELS.actions.post}
+                  title={SALES_LABELS.actions.post}
                 >
-                  {SALES_LABELS.actions.post}
+                  {isDesktop ? SALES_LABELS.actions.post : null}
                 </Button>
                 <Button
                   danger
                   icon={phIcon(Trash, { size: ICON_SIZE.md })}
                   onClick={confirmRemove}
+                  aria-label={SALES_LABELS.actions.remove}
+                  title={SALES_LABELS.actions.remove}
                 >
-                  {SALES_LABELS.actions.remove}
+                  {isDesktop ? SALES_LABELS.actions.remove : null}
                 </Button>
               </>
             ) : null}
@@ -570,8 +580,10 @@ export function SaleDetailPage() {
                 danger
                 icon={phIcon(XCircle, { size: ICON_SIZE.md })}
                 onClick={() => setCancelOpen(true)}
+                aria-label={SALES_LABELS.actions.cancel}
+                title={SALES_LABELS.actions.cancel}
               >
-                {SALES_LABELS.actions.cancel}
+                {isDesktop ? SALES_LABELS.actions.cancel : null}
               </Button>
             ) : null}
           </Space>

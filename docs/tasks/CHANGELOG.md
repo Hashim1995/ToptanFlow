@@ -2,6 +2,20 @@
 
 Planning-history only. Not a product release-notes replacement.
 
+## 2026-09-01
+
+- **CHANGE-035 Cancelled:** Owner cancelled scheduled daily-report email because the current Vercel subscription does not support the required Cron job. All email application code, dependencies, environment declarations, Vercel Cron configuration, migration files, and local development delivery-ledger database objects were removed; the task record remains as planning history.
+- **CHANGE-035 In Progress:** Owner created a Google App Password and confirmed the 22:00 Baku schedule. Implementation activated with Gmail SMTP, Vercel Cron at 18:00 UTC, PDF + Excel attachments from one snapshot, environment-only credentials/addresses, and a durable idempotent delivery ledger.
+- **CHANGE-035 provider revision:** Owner rejected Resend because of cost. Replacement transport remains blocked on owner approval; Gmail SMTP with a dedicated Google App Password is the proposed no-subscription option, with the normal Gmail password explicitly excluded.
+- **CHANGE-035 delivery decisions (provider choice later superseded):** Owner approved Vercel Cron, an environment-configured two-recipient list, and the same environment-configured admin address for replies/failure handling. Resend was initially selected but was subsequently rejected in the provider revision above.
+- **CHANGE-035 format decision:** Owner approved both server-generated PDF and Excel attachments in every scheduled daily-report email, superseding the earlier PDF-only instruction. Both files must be generated from the same report snapshot and be directly downloadable from the email.
+
+## 2026-08-31
+
+- **CHANGE-036 Done:** Sale and Purchase detail-page header actions now render as fixed-size icon-only controls below the existing `md` breakpoint, preventing mobile text overlap while retaining desktop labels, Azerbaijani accessible names, titles, colors, and behavior.
+- **CHANGE-035 Blocked:** Recorded the owner-requested daily email delivery of the existing CHANGE-033 report at 22:00 Asia/Baku. Implementation is blocked until recipients, sender/email provider, report format, production scheduler/deployment environment, and failure handling are explicitly approved; US-039 still tracks deployment provider as an open decision.
+- **CHANGE-034 Done:** Restored the existing optional `Qeyd` field in the Cash In and Cash Out frontend modals as a single-line input. Existing schemas, payloads, backend behavior, and the separate mandatory negative-balance reason remain unchanged.
+
 ## 2026-08-06
 
 - **CHANGE-033 Review:** Günlük report — live company snapshot of all Business Partner signed debt balances plus active Cash Account balances and company cash total; Excel download and browser print from `/reports/daily` in shared desktop/mobile nav. Transient in-memory XLSX (CHANGE-027 pattern); no historical as-of-date, storage, migrations, or ledger changes. API report tests (2), web report tests (5), scoped lint, type-checks, nest build, and Vite production build passed.
